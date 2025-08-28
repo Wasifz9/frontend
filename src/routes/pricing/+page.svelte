@@ -1446,7 +1446,7 @@
           >
         </div>
       </div>
-
+      <!--
       <div
         class="relative text-left w-full col-span-1 lg:col-span-3 text-white bg-[#18181B] dark:bg-zinc-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-[3px] overflow-visible border border-zinc-200 dark:border-zinc-600 p-6 isolate translate-y-5 opacity-100"
       >
@@ -1487,6 +1487,7 @@
           </label>
         </div>
       </div>
+      -->
     </div>
 
     <!--Start FAQ-->

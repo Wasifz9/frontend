@@ -2,7 +2,7 @@ import { error, fail, redirect } from "@sveltejs/kit";
 import { validateData, checkDisposableEmail, validateReturnUrl } from "$lib/utils";
 import { loginUserSchema, registerUserSchema } from "$lib/schemas";
 
-
+/*
 export const load = async ({ locals }) => {
   const { pb } = locals;
 
@@ -24,7 +24,7 @@ export const load = async ({ locals }) => {
     getLTDCount: await getLTDCount(),
   };
 };
-
+*/
 
 export const actions = {
     login: async ({ request, locals, url, cookies }) => {
