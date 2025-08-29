@@ -818,7 +818,7 @@
         let:index
         let:style
         {style}
-        class="grid grid-cols-16 gap-0"
+        class="grid grid-cols-16 gap-0 relative overflow-hidden"
         class:bg-[#fff]={index % 2 === 0 && $mode === "light"}
         class:bg-[#09090B]={index % 2 === 0 && $mode !== "light"}
         class:bg-[#121217]={index % 2 !== 0 && $mode !== "light"}
@@ -826,12 +826,69 @@
         class:opacity-30={index + 1 === rawData?.length &&
           data?.user?.tier !== "Pro"}
       >
-        <div class="p-2 text-end text-xs sm:text-sm whitespace-nowrap">
+        <!-- Apply gradient overlay for options -->
+        {#if displayedData[index]}
+          {@const item = displayedData[index]}
+          {@const isBullishCall = item?.put_call === 'Calls' && 
+            (item?.execution_estimate === 'At Ask' || item?.execution_estimate === 'Above Ask')}
+          {@const isBearishCall = item?.put_call === 'Calls' && 
+            (item?.execution_estimate === 'At Bid' || item?.execution_estimate === 'Below Bid')}
+          {@const isPut = item?.put_call === 'Puts'}
+          {@const isSweep = item?.option_activity_type === 'Sweep'}
+          
+          {#if isBullishCall || isBearishCall || isPut}
+            {@const baseColor = $mode === 'light' 
+              ? (index % 2 === 0 ? '#ffffff' : '#F6F7F8')
+              : (index % 2 === 0 ? '#09090B' : '#121217')}
+            
+            <div 
+              class="absolute inset-0 pointer-events-none z-0"
+              style="background: {(() => {
+                if ($mode === 'light') {
+                  if (isBullishCall) {
+                    return isSweep 
+                      ? `linear-gradient(90deg, ${baseColor} 0%, rgba(34, 197, 94, 0.1) 70%, rgba(34, 197, 94, 0.2) 100%)`
+                      : `linear-gradient(90deg, ${baseColor} 0%, rgba(34, 197, 94, 0.05) 70%, rgba(34, 197, 94, 0.1) 100%)`;
+                  }
+                  if (isBearishCall) {
+                    return isSweep
+                      ? `linear-gradient(90deg, ${baseColor} 0%, rgba(239, 68, 68, 0.1) 70%, rgba(239, 68, 68, 0.2) 100%)`
+                      : `linear-gradient(90deg, ${baseColor} 0%, rgba(239, 68, 68, 0.05) 70%, rgba(239, 68, 68, 0.1) 100%)`;
+                  }
+                  if (isPut) {
+                    return isSweep
+                      ? `linear-gradient(90deg, ${baseColor} 0%, rgba(147, 51, 234, 0.1) 70%, rgba(147, 51, 234, 0.2) 100%)`
+                      : `linear-gradient(90deg, ${baseColor} 0%, rgba(147, 51, 234, 0.05) 70%, rgba(147, 51, 234, 0.1) 100%)`;
+                  }
+                } else {
+                  // Dark mode - CheddarFlow style
+                  if (isBullishCall) {
+                    return isSweep
+                      ? `linear-gradient(90deg, ${baseColor} 0%, rgba(0, 252, 80, 0.08) 60%, rgba(0, 252, 80, 0.15) 100%)`
+                      : `linear-gradient(90deg, ${baseColor} 0%, rgba(0, 252, 80, 0.03) 70%, rgba(0, 252, 80, 0.08) 100%)`;
+                  }
+                  if (isBearishCall) {
+                    return isSweep
+                      ? `linear-gradient(90deg, ${baseColor} 0%, rgba(255, 47, 31, 0.08) 60%, rgba(255, 47, 31, 0.15) 100%)`
+                      : `linear-gradient(90deg, ${baseColor} 0%, rgba(255, 47, 31, 0.03) 70%, rgba(255, 47, 31, 0.08) 100%)`;
+                  }
+                  if (isPut) {
+                    return isSweep
+                      ? `linear-gradient(90deg, ${baseColor} 0%, rgba(147, 51, 234, 0.08) 60%, rgba(147, 51, 234, 0.15) 100%)`
+                      : `linear-gradient(90deg, ${baseColor} 0%, rgba(147, 51, 234, 0.03) 70%, rgba(147, 51, 234, 0.08) 100%)`;
+                  }
+                }
+                return 'transparent';
+              })()}"
+            ></div>
+          {/if}
+        {/if}
+        <div class="p-2 text-end text-xs sm:text-sm whitespace-nowrap relative z-10">
           {formatTime(displayedData[index]?.time)}
         </div>
         <div
           on:click|stopPropagation
-          class="p-2 text-center text-sm sm:text-[1rem] whitespace-nowrap"
+          class="p-2 text-center text-sm sm:text-[1rem] whitespace-nowrap relative z-10"
         >
           <HoverStockChart
             symbol={displayedData[index]?.ticker}
@@ -841,7 +898,7 @@
 
         <div
           on:click|stopPropagation={() => optionsInsight(displayedData[index])}
-          class="p-2 text-center text-sm sm:text-[1rem] whitespace-nowrap"
+          class="p-2 text-center text-sm sm:text-[1rem] whitespace-nowrap relative z-10"
         >
           <Spark
             class="w-5 h-5 inline-block cursor-pointer shrink-0 text-black sm:hover:text-muted dark:text-white dark:sm:hover:text-gray-200"
@@ -873,22 +930,22 @@
           >
         </div>
 -->
-        <div class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap">
+        <div class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap relative z-10">
           {reformatDate(displayedData[index]?.date_expiration)}
         </div>
 
-        <div class="p-2 text-center text-sm sm:text-[1rem] whitespace-nowrap">
+        <div class="p-2 text-center text-sm sm:text-[1rem] whitespace-nowrap relative z-10">
           {displayedData[index]?.dte < 0
             ? "expired"
             : displayedData[index]?.dte + "d"}
         </div>
 
-        <div class="p-2 text-center text-sm sm:text-[1rem] whitespace-nowrap">
+        <div class="p-2 text-center text-sm sm:text-[1rem] whitespace-nowrap relative z-10">
           {displayedData[index]?.strike_price}
         </div>
 
         <div
-          class="p-2 text-center text-sm sm:text-[1rem] whitespace-nowrap {displayedData[
+          class="p-2 text-center text-sm sm:text-[1rem] whitespace-nowrap relative z-10 {displayedData[
             index
           ]?.put_call === 'Calls'
             ? 'text-green-800 dark:text-[#00FC50]'
@@ -898,7 +955,7 @@
         </div>
 
         <div
-          class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap {displayedData[
+          class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap relative z-10 {displayedData[
             index
           ]?.sentiment === 'Bullish'
             ? 'text-green-800 dark:text-[#00FC50]'
@@ -909,15 +966,15 @@
           {displayedData[index]?.sentiment}
         </div>
 
-        <div class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap">
+        <div class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap relative z-10">
           {displayedData[index]?.underlying_price}
         </div>
 
-        <div class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap">
+        <div class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap relative z-10">
           {displayedData[index]?.price}
         </div>
 
-        <div class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap">
+        <div class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap relative z-10">
           {@html abbreviateNumber(
             displayedData[index]?.cost_basis,
             false,
@@ -926,7 +983,7 @@
         </div>
 
         <div
-          class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap {displayedData[
+          class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap relative z-10 {displayedData[
             index
           ]?.option_activity_type === 'Sweep'
             ? 'text-muted dark:text-[#C6A755]'
@@ -936,7 +993,7 @@
         </div>
 
         <div
-          class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap {[
+          class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap relative z-10 {[
             'At Ask',
             'Above Ask',
           ]?.includes(displayedData[index]?.execution_estimate)
@@ -954,21 +1011,21 @@
             ?.replace("Midpoint", "Mid")}
         </div>
 
-        <div class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap">
+        <div class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap relative z-10">
           {new Intl.NumberFormat("en", {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
           }).format(displayedData[index]?.size)}
         </div>
 
-        <div class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap">
+        <div class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap relative z-10">
           {new Intl.NumberFormat("en", {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
           }).format(displayedData[index]?.volume)}
         </div>
 
-        <div class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap">
+        <div class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap relative z-10">
           {new Intl.NumberFormat("en", {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
