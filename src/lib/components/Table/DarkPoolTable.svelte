@@ -350,7 +350,7 @@
         let:index
         let:style
         {style}
-        class="grid grid-cols-10 gap-0"
+        class="grid grid-cols-10 gap-0 relative overflow-hidden"
         class:bg-[#fff]={index % 2 === 0 && $mode === "light"}
         class:bg-[#09090B]={index % 2 === 0 && $mode !== "light"}
         class:bg-[#121217]={index % 2 !== 0 && $mode !== "light"}
@@ -358,52 +358,95 @@
         class:opacity-30={index + 1 === rawData?.length &&
           data?.user?.tier !== "Pro"}
       >
+        <!-- Apply gradient overlay for dark pool trades -->
+        {#if displayedData[index]}
+          {@const item = displayedData[index]}
+          {@const isLargeSize = item?.size >= 10000}
+          {@const isHugeSize = item?.size >= 50000}
+          {@const isHighVolRatio = item?.sizeVolRatio >= 5}
+          {@const isHighAvgVolRatio = item?.sizeAvgVolRatio >= 10}
+          
+          {#if isLargeSize || isHighVolRatio || isHighAvgVolRatio}
+            {@const baseColor = $mode === 'light' 
+              ? (index % 2 === 0 ? '#ffffff' : '#F6F7F8')
+              : (index % 2 === 0 ? '#09090B' : '#121217')}
+            
+            <div 
+              class="absolute inset-0 pointer-events-none z-0"
+              style="background: {(() => {
+                if ($mode === 'light') {
+                  if (isHugeSize) {
+                    return `linear-gradient(90deg, ${baseColor} 0%, rgba(255, 140, 0, 0.1) 70%, rgba(255, 140, 0, 0.2) 100%)`;
+                  }
+                  if (isHighAvgVolRatio) {
+                    return `linear-gradient(90deg, ${baseColor} 0%, rgba(139, 92, 246, 0.08) 70%, rgba(139, 92, 246, 0.15) 100%)`;
+                  }
+                  if (isHighVolRatio || isLargeSize) {
+                    return `linear-gradient(90deg, ${baseColor} 0%, rgba(59, 130, 246, 0.05) 70%, rgba(59, 130, 246, 0.1) 100%)`;
+                  }
+                } else {
+                  // Dark mode
+                  if (isHugeSize) {
+                    return `linear-gradient(90deg, ${baseColor} 0%, rgba(255, 140, 0, 0.08) 60%, rgba(255, 140, 0, 0.15) 100%)`;
+                  }
+                  if (isHighAvgVolRatio) {
+                    return `linear-gradient(90deg, ${baseColor} 0%, rgba(139, 92, 246, 0.06) 70%, rgba(139, 92, 246, 0.12) 100%)`;
+                  }
+                  if (isHighVolRatio || isLargeSize) {
+                    return `linear-gradient(90deg, ${baseColor} 0%, rgba(59, 130, 246, 0.04) 70%, rgba(59, 130, 246, 0.08) 100%)`;
+                  }
+                }
+                return 'transparent';
+              })()}"
+            ></div>
+          {/if}
+        {/if}
         <!-- Date Column -->
-        <div class="p-2 text-center text-xs sm:text-sm whitespace-nowrap">
+        <div class="p-2 text-center text-xs sm:text-sm whitespace-nowrap relative z-10">
           {$screenWidth < 640
             ? formatToNewYorkTime(displayedData[index]?.date)?.slice(0, -3)
             : formatToNewYorkTime(displayedData[index]?.date)}
         </div>
         <!-- Symbol Column -->
-        <div class="p-2 text-center text-sm sm:text-[1rem]">
+        <div class="p-2 text-center text-sm sm:text-[1rem] relative z-10">
           <HoverStockChart
             symbol={displayedData[index]?.ticker}
             assetType={displayedData[index]?.assetType}
           />
         </div>
         <!-- Price Column -->
-        <div class="p-2 text-center text-sm sm:text-[1rem]">
+        <div class="p-2 text-center text-sm sm:text-[1rem] relative z-10">
           {displayedData[index]?.price}
         </div>
         <!-- Premium Column -->
-        <div class="p-2 text-center text-sm sm:text-[1rem]">
+        <div class="p-2 text-center text-sm sm:text-[1rem] relative z-10">
           {abbreviateNumber(displayedData[index]?.premium, true, true)}
         </div>
         <!-- Size Column -->
-        <div class="p-2 text-center text-sm sm:text-[1rem]">
+        <div class="p-2 text-center text-sm sm:text-[1rem] relative z-10">
           {new Intl.NumberFormat("en", {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
           }).format(displayedData[index]?.size)}
         </div>
         <!-- Volume Column -->
-        <div class="p-2 text-center text-sm sm:text-[1rem]">
+        <div class="p-2 text-center text-sm sm:text-[1rem] relative z-10">
           {abbreviateNumber(displayedData[index]?.volume, false, true)}
         </div>
         <!-- % Size / Vol Column -->
-        <div class="p-2 text-center text-sm sm:text-[1rem]">
+        <div class="p-2 text-center text-sm sm:text-[1rem] relative z-10">
           {displayedData[index]?.sizeVolRatio > 0.01
             ? displayedData[index]?.sizeVolRatio?.toFixed(2) + "%"
             : "< 0.01%"}
         </div>
         <!-- % Size / Avg Vol Column -->
-        <div class="p-2 text-center text-sm sm:text-[1rem]">
+        <div class="p-2 text-center text-sm sm:text-[1rem] relative z-10">
           {displayedData[index]?.sizeAvgVolRatio > 0.01
             ? displayedData[index]?.sizeAvgVolRatio?.toFixed(2) + "%"
             : "< 0.01%"}
         </div>
         <!-- Sector Column -->
-        <div class="p-2 text-center text-sm sm:text-[1rem] whitespace-nowrap">
+        <div class="p-2 text-center text-sm sm:text-[1rem] whitespace-nowrap relative z-10">
           <a
             href={sectorNavigation?.find(
               (item) => item?.title === displayedData[index]?.sector,
@@ -416,7 +459,7 @@
           </a>
         </div>
         <!-- Asset Type Column -->
-        <div class="p-2 text-center text-sm sm:text-[1rem]">
+        <div class="p-2 text-center text-sm sm:text-[1rem] relative z-10">
           {displayedData[index]?.assetType}
         </div>
       </div>
