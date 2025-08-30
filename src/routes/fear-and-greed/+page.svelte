@@ -1,7 +1,7 @@
 <script lang="ts">
     import SEO from "$lib/components/SEO.svelte";
     import ArrowLogo from "lucide-svelte/icons/move-up-right";
-
+    import { screenWidth } from "$lib/store";
     import highcharts from "$lib/highcharts.ts";
     import { mode } from "mode-watcher";
     export let data;
@@ -12,7 +12,6 @@
     let lastUpdate =
         data?.getData?.current?.last_update || new Date().toISOString();
     let historicalData = data?.getData?.historical || [];
-    let statistics = data?.getData?.statistics || {};
     let insights = data?.getData?.insights || {};
 
     // Helper function to get color based on value
@@ -87,21 +86,34 @@
             credits: { enabled: false },
             chart: {
                 type: "gauge",
-                backgroundColor: $mode === "light" ? "#ffffff" : "#09090B",
+                backgroundColor: $mode === "light" ? "#ffffff" : "#0f0f12",
                 height: 360,
                 animation: false,
             },
-            // central number — keep as HTML so we can style the number
             title: {
-                text: `<div style="text-align:center;margin-top:12px;">
-                        <div style="width:100px;height:100px;border-radius:50%;background:#ffffff;
-                                    box-shadow: 0 12px 20px rgba(0,0,0,0.12);
-                                    display:flex;align-items:center;justify-content:center;margin:0 auto;">
-                            <div style="font-size:40px;font-weight:800;color:${$mode === "light" ? "#111" : "#000"}">
-                                ${currentValue}
-                            </div>
-                        </div>
-                   </div>`,
+                text: `
+        <div class="text-center mt-3 -mb-12">
+            <!-- Circle wrapper -->
+            <div
+                class="w-[60px] h-[60px] sm:w-[100px] sm:h-[100px] rounded-full
+                       ${
+                           $mode === "light"
+                               ? "bg-white shadow-[0_12px_20px_rgba(0,0,0,0.12)]"
+                               : "bg-[#1c1c20] shadow-[0_6px_16px_rgba(0,0,0,0.4)]"
+                       }
+                       flex items-center justify-center mx-auto"
+            >
+                <div class="text-2xl sm:text-3xl font-extrabold ${$mode === "light" ? "text-[#111]" : "text-gray-100"}">
+                    ${currentValue}
+                </div>
+            </div>
+
+            <!-- Subtitle -->
+            <div class="text-sm ${$mode === "light" ? "text-gray-600" : "text-gray-400"} mt-2">
+                Fear
+            </div>
+        </div>
+        `,
                 useHTML: true,
                 verticalAlign: "middle",
                 y: 70,
@@ -110,21 +122,18 @@
                 startAngle: -90,
                 endAngle: 90,
                 background: [
-                    // outer transparent background (keeps arc clean)
                     {
                         backgroundColor: "transparent",
                         borderWidth: 0,
                         outerRadius: "100%",
                     },
-                    // inner white circle behind the title (creates the badge effect)
                     {
                         backgroundColor:
-                            $mode === "light" ? "#ffffff" : "#0B0B0B",
+                            $mode === "light" ? "#ffffff" : "#18181b",
                         borderWidth: 0,
                         innerRadius: "60%",
                         outerRadius: "60%",
                         shape: "arc",
-                        // add subtle shadow by using CSS in title; Highcharts shadows are inconsistent
                     },
                 ],
                 center: ["50%", "75%"],
@@ -138,24 +147,19 @@
                 tickLength: 0,
                 tickWidth: 0,
                 labels: {
-                    distance: -28,
+                    distance: 20,
                     style: {
-                        color: $mode === "light" ? "#8a8a8a" : "#AAA",
+                        color: $mode === "light" ? "#6b7280" : "#d1d5db", // gray-500 vs gray-300
                         fontSize: "13px",
                         fontWeight: "600",
                     },
                     formatter: function () {
-                        // show the core ticks only
-                        if (this.value === 0) return "0";
-                        if (this.value === 25) return "25";
-                        if (this.value === 50) return "50";
-                        if (this.value === 75) return "75";
-                        if (this.value === 100) return "100";
-                        return "";
+                        return [0, 25, 50, 75, 100].includes(this.value)
+                            ? this.value
+                            : "";
                     },
                 },
                 lineWidth: 0,
-                // plotBands — each band gets a fill color and possibly a border color for the active one
                 plotBands: [
                     {
                         from: 0,
@@ -168,16 +172,21 @@
                                 ? 0
                                 : 3,
                         label: {
-                            text: "EXTREME<br/>FEAR",
+                            text:
+                                $screenWidth < 640 ? null : "EXTREME<br/>FEAR",
                             useHTML: true,
                             align: "center",
                             verticalAlign: "middle",
                             x: 40,
                             y: -22,
                             style: {
-                                color: currentValue <= 25 ? "#fff" : "#999",
+                                color:
+                                    currentValue <= 25
+                                        ? "#fff"
+                                        : $mode === "light"
+                                          ? "#999"
+                                          : "#9ca3af",
                                 fontSize: "12px",
-                                fontWeight: "700",
                                 textAlign: "center",
                             },
                         },
@@ -191,7 +200,7 @@
                         borderWidth:
                             getBorderColor("fear") === "transparent" ? 0 : 3,
                         label: {
-                            text: "FEAR",
+                            text: $screenWidth < 640 ? null : "FEAR",
                             align: "center",
                             verticalAlign: "middle",
                             x: 55,
@@ -200,9 +209,10 @@
                                 color:
                                     currentValue > 25 && currentValue <= 45
                                         ? "#fff"
-                                        : "#999",
+                                        : $mode === "light"
+                                          ? "#999"
+                                          : "#9ca3af",
                                 fontSize: "12px",
-                                fontWeight: "700",
                             },
                         },
                     },
@@ -215,7 +225,7 @@
                         borderWidth:
                             getBorderColor("neutral") === "transparent" ? 0 : 3,
                         label: {
-                            text: "NEUTRAL",
+                            text: $screenWidth < 640 ? null : "NEUTRAL",
                             align: "center",
                             verticalAlign: "middle",
                             x: -200,
@@ -223,10 +233,13 @@
                             style: {
                                 color:
                                     currentValue > 45 && currentValue <= 55
-                                        ? "#333"
-                                        : "#999",
+                                        ? $mode === "light"
+                                            ? "#333"
+                                            : "#e5e7eb"
+                                        : $mode === "light"
+                                          ? "#999"
+                                          : "#9ca3af",
                                 fontSize: "12px",
-                                fontWeight: "700",
                             },
                         },
                     },
@@ -239,7 +252,7 @@
                         borderWidth:
                             getBorderColor("greed") === "transparent" ? 0 : 3,
                         label: {
-                            text: "GREED",
+                            text: $screenWidth < 640 ? null : "GREED",
                             align: "center",
                             verticalAlign: "middle",
                             x: -30,
@@ -247,10 +260,13 @@
                             style: {
                                 color:
                                     currentValue > 55 && currentValue <= 75
-                                        ? "#333"
-                                        : "#999",
+                                        ? $mode === "light"
+                                            ? "#333"
+                                            : "#e5e7eb"
+                                        : $mode === "light"
+                                          ? "#999"
+                                          : "#9ca3af",
                                 fontSize: "12px",
-                                fontWeight: "700",
                             },
                         },
                     },
@@ -265,16 +281,21 @@
                                 ? 0
                                 : 3,
                         label: {
-                            text: "EXTREME<br/>GREED",
+                            text:
+                                $screenWidth < 640 ? null : "EXTREME<br/>GREED",
                             useHTML: true,
                             align: "center",
                             verticalAlign: "middle",
                             x: -50,
                             y: -22,
                             style: {
-                                color: currentValue > 75 ? "#fff" : "#999",
+                                color:
+                                    currentValue > 75
+                                        ? "#fff"
+                                        : $mode === "light"
+                                          ? "#999"
+                                          : "#9ca3af",
                                 fontSize: "12px",
-                                fontWeight: "700",
                                 textAlign: "center",
                             },
                         },
@@ -287,19 +308,19 @@
                     data: [currentValue],
                     tooltip: { valueSuffix: "" },
                     dataLabels: { enabled: false },
-                    // needle / dial styling to match screenshot (dark needle)
                     dial: {
                         radius: "80%",
-                        backgroundColor: "#161616",
+                        backgroundColor:
+                            $mode === "light" ? "#161616" : "#facc15", // black vs golden needle
                         baseWidth: 10,
                         baseLength: "10%",
                         rearLength: "-10%",
                         topWidth: 1,
                     },
                     pivot: {
-                        backgroundColor: "#ffffff",
+                        backgroundColor: $mode === "light" ? "#fff" : "#1f2937",
                         radius: 6,
-                        borderColor: "#000000",
+                        borderColor: $mode === "light" ? "#000" : "#e5e7eb",
                         borderWidth: 1,
                     },
                 },
@@ -645,7 +666,7 @@
     let historicalConfig = null;
 
     $: {
-        if ($mode && currentValue) {
+        if ($mode && currentValue && typeof window !== "undefined") {
             gaugeConfig = createGaugeChart();
             historicalConfig = createHistoricalChart();
         }
@@ -716,37 +737,13 @@
                         Historical data shows a <strong
                             >{insights?.correlation_percent}%</strong
                         >
-                        correlation between sentiment and SPY. Extreme fear readings
-                        below 10 averaged
+                        correlation between <strong>Fear & Greed Index</strong>
+                        and <strong>SPY</strong>. Extreme fear readings below 10
+                        averaged
                         <strong>{insights?.extreme_fear_avg_return}%</strong>
                         SPY gains over 30 days vs
                         <strong>{insights?.extreme_greed_avg_return}%</strong>
                         during extreme greed periods.
-                        {#if insights?.most_fear_example}
-                            {new Date(
-                                insights.most_fear_example.date,
-                            ).toLocaleDateString("en-US", {
-                                month: "long",
-                                year: "numeric",
-                            })}'s fear reading of
-                            {insights.most_fear_example.value} occurred at SPY ${insights.most_fear_example.spy_price.toFixed(
-                                0,
-                            )}, while
-                        {/if}
-                        {#if insights?.most_greed_example}
-                            {new Date(
-                                insights.most_greed_example.date,
-                            ).toLocaleDateString("en-US", {
-                                month: "long",
-                                year: "numeric",
-                            })}'s peak greed of
-                            {insights.most_greed_example.value.toFixed(0)} hit at
-                            SPY ${insights.most_greed_example.spy_price.toFixed(
-                                0,
-                            )}
-                        {/if}
-                        - demonstrating how sentiment extremes often mark opportunity
-                        zones rather than reflect actual market levels.
                     </p>
                     <div
                         class="bg-white dark:bg-[#09090B] border border-gray-300 dark:border-gray-800 rounded-lg p-4 shadow-sm mt-4"
@@ -764,22 +761,22 @@
                         class="w-full border border-gray-300 dark:border-gray-600 rounded h-fit pb-4 mt-4 cursor-pointer sm:hover:shadow-lg dark:sm:hover:bg-secondary transition ease-out duration-100"
                     >
                         <a
-                            href="/potus-tracker"
+                            href="/market-flow"
                             class="w-auto lg:w-full p-1 flex flex-col m-auto px-2 sm:px-0"
                         >
                             <div
                                 class="w-full flex justify-between items-center p-3 mt-3"
                             >
                                 <h2 class="text-start text-xl font-bold ml-3">
-                                    POTUS Tracker
+                                    Market Flow
                                 </h2>
                                 <ArrowLogo
                                     class="w-8 h-8 mr-3 shrink-0 text-gray-400 dark:text-white"
                                 />
                             </div>
                             <span class="p-3 ml-3 mr-3"
-                                >Follow the latest executive orders of the US
-                                President</span
+                                >Realtime Market Sentiment based on Options
+                                Data.</span
                             >
                         </a>
                     </div>
@@ -788,22 +785,21 @@
                         class="w-full border border-gray-300 dark:border-gray-600 rounded h-fit pb-4 mt-4 cursor-pointer sm:hover:shadow-lg dark:sm:hover:bg-secondary transition ease-out duration-100"
                     >
                         <a
-                            href="/insider-tracker"
+                            href="/heatmap"
                             class="w-auto lg:w-full p-1 flex flex-col m-auto px-2 sm:px-0"
                         >
                             <div
                                 class="w-full flex justify-between items-center p-3 mt-3"
                             >
                                 <h2 class="text-start text-xl font-bold ml-3">
-                                    Insider Tracker
+                                    Market Heatmap
                                 </h2>
                                 <ArrowLogo
                                     class="w-8 h-8 mr-3 shrink-0 text-gray-400 dark:text-white"
                                 />
                             </div>
                             <span class="p-3 ml-3 mr-3"
-                                >Get the latest unusual insider trading in
-                                realtime</span
+                                >Realtime market performance overview.</span
                             >
                         </a>
                     </div>
