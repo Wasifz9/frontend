@@ -4,7 +4,6 @@
 
     import highcharts from "$lib/highcharts.ts";
     import { mode } from "mode-watcher";
-
     export let data;
 
     // Get data from server
@@ -319,55 +318,25 @@
             color: getColorForValue(item.value),
         }));
 
-        // Calculate 30-day moving average
-        const movingAverageData = [];
-        const period = 30;
-        for (let i = period - 1; i < historicalData.length; i++) {
-            const sum = historicalData
-                .slice(i - period + 1, i + 1)
-                .reduce((acc, item) => acc + item.value, 0);
-            const avg = sum / period;
-            movingAverageData.push({
-                x: new Date(historicalData[i].date).getTime(),
-                y: Math.round(avg * 100) / 100,
-            });
-        }
+        // Prepare SPY data for secondary axis
+        const spyData = historicalData
+            .filter((item) => item.spy_close)
+            .map((item) => ({
+                x: new Date(item.date).getTime(),
+                y: item.spy_close,
+            }));
 
         const options = {
             credits: { enabled: false },
             chart: {
                 type: "line",
                 backgroundColor: $mode === "light" ? "#ffffff" : "#09090B",
-                height: 450,
-                zoomType: "x",
-                style: {
-                    fontFamily:
-                        '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
-                },
-                marginTop: 80,
-                marginBottom: 80,
-                marginLeft: 80,
-                marginRight: 40,
+                height: 360,
             },
             title: {
                 text: null,
-                align: "left",
-                style: {
-                    color: $mode === "light" ? "#111827" : "#F9FAFB",
-                    fontSize: "24px",
-                    fontWeight: "700",
-                    marginBottom: "20px",
-                },
             },
-            subtitle: {
-                text: "Market sentiment over time with 30-day moving average",
-                align: "left",
-                style: {
-                    color: $mode === "light" ? "#6B7280" : "#9CA3AF",
-                    fontSize: "14px",
-                    fontWeight: "400",
-                },
-            },
+
             xAxis: {
                 type: "datetime",
                 gridLineWidth: 0,
@@ -392,142 +361,172 @@
                     },
                 },
             },
-            yAxis: {
-                min: 0,
-                max: 100,
-                title: {
-                    text: null,
+            yAxis: [
+                {
+                    min: 0,
+                    max: 100,
+                    title: {
+                        text: "Fear & Greed Index",
+                        style: {
+                            color: $mode === "light" ? "#374151" : "#D1D5DB",
+                            fontSize: "12px",
+                            fontWeight: "600",
+                        },
+                    },
+                    gridLineWidth: 1,
+                    gridLineColor: $mode === "light" ? "#F3F4F6" : "#1F2937",
+                    lineWidth: 1,
+                    lineColor: $mode === "light" ? "#E5E7EB" : "#374151",
+                    tickLength: 8,
+                    tickColor: $mode === "light" ? "#E5E7EB" : "#374151",
+                    labels: {
+                        style: {
+                            color: $mode === "light" ? "#374151" : "#D1D5DB",
+                            fontSize: "12px",
+                            fontWeight: "500",
+                        },
+                        distance: 15,
+                    },
+                    plotBands: [
+                        {
+                            from: 0,
+                            to: 25,
+                            color:
+                                $mode === "light"
+                                    ? "rgba(220, 38, 38, 0.08)"
+                                    : "rgba(220, 38, 38, 0.12)",
+                            label: {
+                                text: "Extreme Fear",
+                                align: "right",
+                                x: -10,
+                                style: {
+                                    color:
+                                        $mode === "light"
+                                            ? "#DC2626"
+                                            : "#EF4444",
+                                    fontSize: "11px",
+                                    fontWeight: "600",
+                                },
+                            },
+                        },
+                        {
+                            from: 25,
+                            to: 45,
+                            color:
+                                $mode === "light"
+                                    ? "rgba(251, 146, 60, 0.08)"
+                                    : "rgba(251, 146, 60, 0.12)",
+                            label: {
+                                text: "Fear",
+                                align: "right",
+                                x: -10,
+                                style: {
+                                    color:
+                                        $mode === "light"
+                                            ? "#EA580C"
+                                            : "#FB923C",
+                                    fontSize: "11px",
+                                    fontWeight: "600",
+                                },
+                            },
+                        },
+                        {
+                            from: 45,
+                            to: 55,
+                            color:
+                                $mode === "light"
+                                    ? "rgba(107, 114, 128, 0.08)"
+                                    : "rgba(107, 114, 128, 0.12)",
+                            label: {
+                                text: "Neutral",
+                                align: "right",
+                                x: -10,
+                                style: {
+                                    color:
+                                        $mode === "light"
+                                            ? "#6B7280"
+                                            : "#9CA3AF",
+                                    fontSize: "11px",
+                                    fontWeight: "600",
+                                },
+                            },
+                        },
+                        {
+                            from: 55,
+                            to: 75,
+                            color:
+                                $mode === "light"
+                                    ? "rgba(34, 197, 94, 0.08)"
+                                    : "rgba(34, 197, 94, 0.12)",
+                            label: {
+                                text: "Greed",
+                                align: "right",
+                                x: -10,
+                                style: {
+                                    color:
+                                        $mode === "light"
+                                            ? "#16A34A"
+                                            : "#22C55E",
+                                    fontSize: "11px",
+                                    fontWeight: "600",
+                                },
+                            },
+                        },
+                        {
+                            from: 75,
+                            to: 100,
+                            color:
+                                $mode === "light"
+                                    ? "rgba(21, 128, 61, 0.08)"
+                                    : "rgba(21, 128, 61, 0.12)",
+                            label: {
+                                text: "Extreme Greed",
+                                align: "right",
+                                x: -10,
+                                style: {
+                                    color:
+                                        $mode === "light"
+                                            ? "#15803D"
+                                            : "#16A34A",
+                                    fontSize: "11px",
+                                    fontWeight: "600",
+                                },
+                            },
+                        },
+                    ],
                 },
-                gridLineWidth: 1,
-                gridLineColor: $mode === "light" ? "#F3F4F6" : "#1F2937",
-                lineWidth: 2,
-                lineColor: $mode === "light" ? "#E5E7EB" : "#374151",
-                tickLength: 8,
-                tickColor: $mode === "light" ? "#E5E7EB" : "#374151",
-                labels: {
-                    style: {
-                        color: $mode === "light" ? "#374151" : "#D1D5DB",
-                        fontSize: "12px",
-                        fontWeight: "500",
+                {
+                    title: {
+                        text: "SPY Price ($)",
+                        style: {
+                            color: $mode === "light" ? "#374151" : "#D1D5DB",
+                            fontSize: "12px",
+                            fontWeight: "600",
+                        },
                     },
-                    distance: 15,
+                    labels: {
+                        style: {
+                            color: $mode === "light" ? "#374151" : "#D1D5DB",
+                            fontSize: "12px",
+                            fontWeight: "500",
+                        },
+                    },
+                    opposite: true,
+                    gridLineWidth: 0,
                 },
-                plotBands: [
-                    {
-                        from: 0,
-                        to: 25,
-                        color:
-                            $mode === "light"
-                                ? "rgba(220, 38, 38, 0.08)"
-                                : "rgba(220, 38, 38, 0.12)",
-                        label: {
-                            text: "Extreme Fear",
-                            align: "right",
-                            x: -10,
-                            style: {
-                                color:
-                                    $mode === "light" ? "#DC2626" : "#EF4444",
-                                fontSize: "11px",
-                                fontWeight: "600",
-                            },
-                        },
-                    },
-                    {
-                        from: 25,
-                        to: 45,
-                        color:
-                            $mode === "light"
-                                ? "rgba(251, 146, 60, 0.08)"
-                                : "rgba(251, 146, 60, 0.12)",
-                        label: {
-                            text: "Fear",
-                            align: "right",
-                            x: -10,
-                            style: {
-                                color:
-                                    $mode === "light" ? "#EA580C" : "#FB923C",
-                                fontSize: "11px",
-                                fontWeight: "600",
-                            },
-                        },
-                    },
-                    {
-                        from: 45,
-                        to: 55,
-                        color:
-                            $mode === "light"
-                                ? "rgba(107, 114, 128, 0.08)"
-                                : "rgba(107, 114, 128, 0.12)",
-                        label: {
-                            text: "Neutral",
-                            align: "right",
-                            x: -10,
-                            style: {
-                                color:
-                                    $mode === "light" ? "#6B7280" : "#9CA3AF",
-                                fontSize: "11px",
-                                fontWeight: "600",
-                            },
-                        },
-                    },
-                    {
-                        from: 55,
-                        to: 75,
-                        color:
-                            $mode === "light"
-                                ? "rgba(34, 197, 94, 0.08)"
-                                : "rgba(34, 197, 94, 0.12)",
-                        label: {
-                            text: "Greed",
-                            align: "right",
-                            x: -10,
-                            style: {
-                                color:
-                                    $mode === "light" ? "#16A34A" : "#22C55E",
-                                fontSize: "11px",
-                                fontWeight: "600",
-                            },
-                        },
-                    },
-                    {
-                        from: 75,
-                        to: 100,
-                        color:
-                            $mode === "light"
-                                ? "rgba(21, 128, 61, 0.08)"
-                                : "rgba(21, 128, 61, 0.12)",
-                        label: {
-                            text: "Extreme Greed",
-                            align: "right",
-                            x: -10,
-                            style: {
-                                color:
-                                    $mode === "light" ? "#15803D" : "#16A34A",
-                                fontSize: "11px",
-                                fontWeight: "600",
-                            },
-                        },
-                    },
-                ],
-            },
+            ],
             tooltip: {
-                backgroundColor: $mode === "light" ? "#ffffff" : "#1F2937",
-                borderColor: $mode === "light" ? "#E5E7EB" : "#374151",
-                borderWidth: 1,
-                borderRadius: 8,
-                shadow: {
-                    color: "rgba(0, 0, 0, 0.1)",
-                    offsetX: 0,
-                    offsetY: 4,
-                    opacity: 0.1,
-                    width: 8,
-                },
-                style: {
-                    color: $mode === "light" ? "#111827" : "#F9FAFB",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                },
+                shared: true,
                 useHTML: true,
+                backgroundColor: "rgba(0, 0, 0, 0.8)",
+                borderColor: "rgba(255, 255, 255, 0.2)",
+                borderWidth: 1,
+                style: {
+                    color: "#fff",
+                    fontSize: "16px",
+                    padding: "10px",
+                },
+                borderRadius: 4,
                 formatter: function () {
                     const date = new Date(this.x);
                     const dateStr = date.toLocaleDateString("en-US", {
@@ -535,41 +534,53 @@
                         month: "short",
                         day: "numeric",
                         year: "numeric",
+                        timeZone: "UTC",
                     });
-                    const value = this.y;
-                    let category = "Neutral";
-                    let categoryColor = "#6B7280";
 
-                    if (value <= 25) {
-                        category = "Extreme Fear";
-                        categoryColor = "#DC2626";
-                    } else if (value <= 45) {
-                        category = "Fear";
-                        categoryColor = "#EA580C";
-                    } else if (value <= 55) {
-                        category = "Neutral";
-                        categoryColor = "#6B7280";
-                    } else if (value <= 75) {
-                        category = "Greed";
-                        categoryColor = "#16A34A";
-                    } else {
-                        category = "Extreme Greed";
-                        categoryColor = "#15803D";
-                    }
+                    let tooltipContent = `
+                        <span class="m-auto text-[1rem] font-[501]">${dateStr}</span> <br>`;
 
-                    return `<div style="padding: 8px;">
-                                <div style="font-weight: 600; margin-bottom: 6px; color: ${$mode === "light" ? "#111827" : "#F9FAFB"};">${dateStr}</div>
-                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                                    <div style="width: 12px; height: 12px; border-radius: 50%; background-color: ${categoryColor};"></div>
-                                    <span style="font-weight: 600; font-size: 16px;">${value}</span>
-                                </div>
-                                <div style="color: ${categoryColor}; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">${category}</div>
+                    this.points.forEach((point) => {
+                        if (point.series.name === "Fear & Greed Index") {
+                            const value = point.y;
+                            let category = "Neutral";
+                            let categoryColor = "#6B7280";
+
+                            if (value <= 25) {
+                                category = "Extreme Fear";
+                                categoryColor = "#DC2626";
+                            } else if (value <= 45) {
+                                category = "Fear";
+                                categoryColor = "#EA580C";
+                            } else if (value <= 55) {
+                                category = "Neutral";
+                                categoryColor = "#6B7280";
+                            } else if (value <= 75) {
+                                category = "Greed";
+                                categoryColor = "#16A34A";
+                            } else {
+                                category = "Extreme Greed";
+                                categoryColor = "#15803D";
+                            }
+
+                            tooltipContent += `<div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                                <div style="width: 12px; height: 12px; border-radius: 50%; background-color: ${categoryColor};"></div>
+                                <span class="font-semibold text-sm">Fear & Greed: ${value}</span>
                             </div>`;
+                        } else if (point.series.name === "SPY Price") {
+                            tooltipContent += `<div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 12px; height: 12px; border-radius: 50%; background-color: ${$mode === "light" ? "#000000" : "#FFFFFF"};"></div>
+                                <span class="font-semibold text-sm">SPY: $${point.y.toFixed(2)}</span>
+                            </div>`;
+                        }
+                    });
+
+                    tooltipContent += `</div>`;
+                    return tooltipContent;
                 },
             },
             plotOptions: {
                 line: {
-                    lineWidth: 3,
                     marker: {
                         enabled: false,
                         radius: 4,
@@ -585,7 +596,7 @@
                     },
                     states: {
                         hover: {
-                            lineWidth: 4,
+                            lineWidth: 2,
                         },
                     },
                     animation: false,
@@ -595,9 +606,10 @@
                 {
                     name: "Fear & Greed Index",
                     data: chartData,
+                    yAxis: 0,
                     zIndex: 2,
                     zones: [
-                        { value: 25, color: "#DC2626" },
+                        { value: 25, color: "#DC2626", opacity: 0.1 },
                         { value: 45, color: "#EA580C" },
                         { value: 55, color: "#6B7280" },
                         { value: 75, color: "#16A34A" },
@@ -605,22 +617,19 @@
                     ],
                 },
                 {
-                    name: "30-Day Moving Average",
-                    data: movingAverageData,
+                    name: "SPY Price",
+                    data: spyData,
+                    yAxis: 1,
                     type: "line",
-                    color: $mode === "light" ? "#6366F1" : "#818CF8",
-                    lineWidth: 2,
-                    dashStyle: "ShortDash",
+                    color: $mode === "light" ? "#000000" : "#FFFFFF",
+                    lineWidth: 1,
                     zIndex: 1,
                     marker: {
                         enabled: false,
                     },
-                    enableMouseTracking: true,
                     tooltip: {
-                        headerFormat:
-                            '<span style="font-size: 12px; font-weight: 600;">{point.key}</span><br/>',
                         pointFormat:
-                            '<span style="color: {series.color};">●</span> 30-Day Average: <b>{point.y:.2f}</b><br/>',
+                            '<span style="color: {series.color};">●</span> SPY: <b>${point.y:.2f}</b><br/>',
                     },
                 },
             ],
@@ -640,8 +649,6 @@
             historicalConfig = createHistoricalChart();
         }
     }
-
-    let distribution = statistics?.category_distribution || {};
 </script>
 
 <SEO
@@ -698,6 +705,11 @@
                     </div>
 
                     <!-- Historical Chart -->
+                    <div class="mb-3 mt-10">
+                        <h1 class="mb-1 text-2xl sm:text-3xl font-bold">
+                            Historical Chart
+                        </h1>
+                    </div>
                     <div
                         class="bg-white dark:bg-[#09090B] border border-gray-300 dark:border-gray-800 rounded-lg p-4 shadow-sm mt-4"
                     >
