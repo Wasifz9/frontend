@@ -109,8 +109,8 @@
             </div>
 
             <!-- Subtitle -->
-            <div class="text-sm ${$mode === "light" ? "text-gray-600" : "text-gray-400"} mt-2">
-                Fear
+            <div class="text-sm sm:hidden capitalize ${$mode === "light" ? "text-gray-800" : "text-gray-100"} mt-2">
+                ${currentCategory}
             </div>
         </div>
         `,
@@ -388,7 +388,7 @@
                     min: 0,
                     max: 100,
                     title: {
-                        text: "Fear & Greed Index",
+                        text: $screenWidth < 640 ? null : "Fear & Greed Index",
                         style: {
                             color: $mode === "light" ? "#374151" : "#D1D5DB",
                             fontSize: "12px",
@@ -519,7 +519,7 @@
                 },
                 {
                     title: {
-                        text: "SPY Price ($)",
+                        text: $screenWidth < 640 ? null : "SPY Price",
                         style: {
                             color: $mode === "light" ? "#374151" : "#D1D5DB",
                             fontSize: "12px",
@@ -529,7 +529,7 @@
                     labels: {
                         style: {
                             color: $mode === "light" ? "#374151" : "#D1D5DB",
-                            fontSize: "12px",
+                            fontSize: $screenWidth < 640 ? "0px" : "12px",
                             fontWeight: "500",
                         },
                     },
@@ -704,7 +704,10 @@
                     </div>
 
                     <p class="mb-5">
-                        Market sentiment indicator showing {currentCategory} at
+                        Market sentiment indicator showing <strong
+                            class="capitalize">{currentCategory}</strong
+                        >
+                        at
                         <strong>{currentValue}</strong> as of
                         <strong
                             >{new Date(lastUpdate).toLocaleDateString("en-US", {
