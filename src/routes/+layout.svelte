@@ -440,7 +440,7 @@
                             <a
                               href="/fear-and-greed"
                               class="text-start w-full text-[1rem] text-muted dark:text-white ml-4 mt-4"
-                              >Fear & Greed</a
+                              >Fear & Greed Index</a
                             >
                           </Button>
 
@@ -1216,7 +1216,7 @@
                           <a
                             href="/fear-and-greed"
                             class="text-[1rem] text-muted dark:text-white ml-4 mt-4"
-                            >Fear & Greed</a
+                            >Fear & Greed Index</a
                           >
 
                           <a

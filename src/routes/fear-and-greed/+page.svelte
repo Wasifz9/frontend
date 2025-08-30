@@ -9,8 +9,7 @@
     // Get data from server
     let currentValue = data?.getData?.current?.value || 50;
     let currentCategory = data?.getData?.current?.category || "Neutral";
-    let lastUpdate =
-        data?.getData?.current?.last_update || new Date().toISOString();
+    let lastUpdate = data?.getData?.current?.last_update;
     let historicalData = data?.getData?.historical || [];
     let insights = data?.getData?.insights || {};
 
@@ -723,8 +722,10 @@
                     <div
                         class="bg-white dark:bg-[#09090B] border border-gray-300 dark:border-gray-800 rounded-lg p-4 shadow-sm"
                     >
-                        <h2 class="text-xl font-bold mb-4 text-center">
-                            Current Fear &amp; Greed Index
+                        <h2
+                            class="text-[1rem] sm:text-xl font-bold mb-4 text-center"
+                        >
+                            Current Status
                         </h2>
                         <div use:highcharts={gaugeConfig}></div>
                     </div>
