@@ -26,6 +26,7 @@
   export let isStreaming = false;
   export let index;
   export let editable;
+  export let isEditMode = false;
   export let isLatestSystemMessage = false;
   export let allMessages = [];
   export let onExportPDF = null;
@@ -35,12 +36,11 @@
   let typewriterInterval = null;
   let targetContent = "";
 
-  let editMode = false;
   let editedContent = "";
   let textareaElement;
 
   // Auto-resize textarea when edit mode changes or content changes
-  $: if (editMode && textareaElement && editedContent) {
+  $: if (isEditMode && textareaElement && editedContent) {
     setTimeout(() => {
       if (
         textareaElement &&
@@ -205,8 +205,7 @@
 >
   <div class="flex flex-col sm:flex-row items-start w-full">
     <img
-      class="mr-auto mb-2 sm:mb-0 sm:mr-3 w-10 h-10 rounded-full {message.role ===
-      'user'
+      class="mr-auto sm:mr-3 w-10 h-10 rounded-full {message.role === 'user'
         ? 'hidden'
         : ''}"
       src="/pwa-192x192.png"
@@ -239,7 +238,7 @@
         </div>
       {:else}
         <div class="w-full">
-          {#if message?.role === "user" && editMode}
+          {#if message?.role === "user" && isEditMode}
             <div
               class="p-3 border border-gray-200 dark:border-gray-800 rounded-[5px] bg-gray-200 dark:bg-table"
             >
@@ -254,7 +253,7 @@
               <div class="flex justify-end gap-2 mt-2">
                 <button
                   on:click={() => {
-                    editMode = false;
+                    dispatch("cancel-edit");
                     editedContent = "";
                   }}
                   class="cursor-pointer px-2.5 py-1.5 rounded text-sm relative bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
@@ -267,7 +266,6 @@
                         index,
                         content: editedContent.trim(),
                       });
-                      editMode = false;
                     }
                   }}
                   class="cursor-pointer px-3.5 py-1.5 rounded text-sm relative bg-black text-white dark:text-black sm:hove:bg-default dark:bg-white dark:sm:hover:bg-gray-100"
@@ -474,7 +472,7 @@
               {#if editable}
                 <button
                   on:click={() => {
-                    editMode = true;
+                    dispatch("start-edit", { index });
                     editedContent = message?.content || "";
                     // Force resize after a short delay to ensure the textarea is rendered
                     setTimeout(() => {

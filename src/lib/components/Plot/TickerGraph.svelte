@@ -511,7 +511,7 @@
           {#each visibleTickerList as ticker}
             {@const quote = stockQuotes[ticker]}
             {#if quote}
-              <div class="font-mono">
+              <div class="">
                 <div class="flex justify-between items-center mb-4">
                   <h3 class=" font-medium text-lg">
                     {ticker?.toUpperCase()}
@@ -519,18 +519,12 @@
                 </div>
                 <div class="grid grid-cols-3 gap-x-6 gap-y-2 text-sm">
                   <div class="flex justify-between items-center gap-4">
-                    <span
-                      class="text-gray-600 dark:text-gray-300 whitespace-nowrap"
-                      >Prev Close</span
-                    >
+                    <span class=" whitespace-nowrap">Prev Close</span>
                     <span>{quote?.previousClose?.toFixed(2) || "n/a"}</span>
                   </div>
 
                   <div class="flex justify-between items-center gap-4">
-                    <span
-                      class="text-gray-600 dark:text-gray-300 whitespace-nowrap"
-                      >Day Range</span
-                    >
+                    <span class=" whitespace-nowrap">Day Range</span>
                     <span
                       >{quote?.dayLow?.toFixed(2)} - {quote?.dayHigh?.toFixed(
                         2,
@@ -539,26 +533,17 @@
                   </div>
 
                   <div class="flex justify-between items-center gap-4">
-                    <span
-                      class="text-gray-600 dark:text-gray-300 whitespace-nowrap"
-                      >P/E Ratio</span
-                    >
+                    <span class=" whitespace-nowrap">P/E Ratio</span>
                     <span>{quote?.pe?.toFixed(2) || "n/a"}</span>
                   </div>
 
                   <div class="flex justify-between items-center gap-4">
-                    <span
-                      class="text-gray-600 dark:text-gray-300 whitespace-nowrap"
-                      >Open</span
-                    >
+                    <span class=" whitespace-nowrap">Open</span>
                     <span>{quote?.open?.toFixed(2) || "n/a"}</span>
                   </div>
 
                   <div class="flex justify-between items-center gap-4">
-                    <span
-                      class="text-gray-600 dark:text-gray-300 whitespace-nowrap"
-                      >52W Range</span
-                    >
+                    <span class=" whitespace-nowrap">52W Range</span>
                     <span
                       >{quote?.yearLow?.toFixed(2)} - {quote?.yearHigh?.toFixed(
                         2,
@@ -567,10 +552,7 @@
                   </div>
 
                   <div class="flex justify-between items-center gap-4">
-                    <span
-                      class="text-gray-600 dark:text-gray-300 whitespace-nowrap"
-                      >Dividend Yield</span
-                    >
+                    <span class=" whitespace-nowrap">Dividend Yield</span>
                     <span
                       >{quote?.dividendYield
                         ? `${(quote.dividendYield * 100).toFixed(3)}%`
@@ -578,26 +560,17 @@
                     >
                   </div>
                   <div class="flex justify-between items-center gap-4">
-                    <span
-                      class="text-gray-600 dark:text-gray-300 whitespace-nowrap"
-                      >Volume</span
-                    >
+                    <span class=" whitespace-nowrap">Volume</span>
                     <span>{abbreviateNumber(quote?.volume) || "n/a"}</span>
                   </div>
 
                   <div class="flex justify-between items-center gap-4">
-                    <span
-                      class="text-gray-600 dark:text-gray-300 whitespace-nowrap"
-                      >Market Cap</span
-                    >
+                    <span class=" whitespace-nowrap">Market Cap</span>
                     <span>{abbreviateNumber(quote?.marketCap)}</span>
                   </div>
 
                   <div class="flex justify-between items-center gap-4">
-                    <span
-                      class="text-gray-600 dark:text-gray-300 whitespace-nowrap"
-                      >EPS</span
-                    >
+                    <span class=" whitespace-nowrap">EPS</span>
                     <span>{quote?.eps?.toFixed(2) || "n/a"}</span>
                   </div>
                 </div>

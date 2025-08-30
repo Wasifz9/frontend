@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { screenWidth } from "$lib/store";
+
   export let sources: Array<{
     name: string;
     description?: string;
@@ -10,7 +12,7 @@
   }> = [];
 
   // Unique tickers with their URLs
-  const tickersWithUrls = Array.from(
+  const tickersWithUrls = Array?.from(
     new Set(sources?.map((s) => s.ticker).filter(Boolean)),
   )?.map((ticker) => {
     // Find the first source with this ticker to get its URL
@@ -23,20 +25,20 @@
 
   // State for expand/collapse
   let isExpanded = false;
-  const INITIAL_DISPLAY_COUNT = 6;
+  const INITIAL_DISPLAY_COUNT = $screenWidth < 640 ? 3 : 6;
 
   // Determine which sources to display
   $: displayedSources = isExpanded
     ? sources
-    : sources.slice(0, INITIAL_DISPLAY_COUNT);
-  $: hasMoreSources = sources.length > INITIAL_DISPLAY_COUNT;
+    : sources?.slice(0, INITIAL_DISPLAY_COUNT);
+  $: hasMoreSources = sources?.length > INITIAL_DISPLAY_COUNT;
 </script>
 
 {#if sources && sources?.length > 0}
   <div class="w-full mt-6 pt-4 border-t border-gray-300 dark:border-gray-600">
     <div class="flex items-center gap-2 mb-4">
       <h3 class="text-[1rem] sm:text-lg font-semibold">Sources</h3>
-      <span class="text-sm">({sources.length})</span>
+      <span class="text-sm">({sources?.length})</span>
     </div>
 
     <!-- Row 1: Tickers side-by-side -->

@@ -33,6 +33,9 @@
   let chatContainer: HTMLDivElement;
   let bottomEl: HTMLDivElement;
 
+  // Track which message is being edited
+  let editingMessageIndex: number | null = null;
+
   // Auto-scrolling - Modified to track streaming state
   let isStreaming = false; // New variable to track streaming state
   let saveTimeout = null; // Timeout for periodic saves during streaming
@@ -472,6 +475,10 @@
       const index = dispatchData?.detail ?? null;
 
       if (index < 1 || index > messages?.length) return;
+
+      // Close any open edit field before rewriting
+      editingMessageIndex = null;
+
       const userMessage = messages?.[index - 1]?.content;
       //messages = [...messages?.splice(index - 1, 1)]; // Remove the message at that index
       messages = messages?.slice(0, index);
@@ -485,6 +492,9 @@
 
       if (index < 0 || index >= messages?.length) return;
 
+      // Clear editing state when saving
+      editingMessageIndex = null;
+
       // Update the message content at the specified index
       messages[index].content = content;
 
@@ -497,6 +507,15 @@
       // Trigger chat regeneration with the edited message (pass the content directly)
       await llmChat(content);
     }
+  }
+
+  function handleStartEdit(event) {
+    const { index } = event.detail;
+    editingMessageIndex = index;
+  }
+
+  function handleCancelEdit() {
+    editingMessageIndex = null;
   }
 
   async function saveChat() {
@@ -737,11 +756,14 @@
               isLoading={true}
               {isStreaming}
               {editable}
+              isEditMode={editingMessageIndex === index}
               isLatestSystemMessage={index === messages.length - 1}
               allMessages={messages}
               onExportPDF={exportToPDF}
               on:rewrite={rewriteResponse}
               on:edit={editMessage}
+              on:start-edit={handleStartEdit}
+              on:cancel-edit={handleCancelEdit}
               on:related-question={handleMessageRelatedQuestion}
             />
           {:else}
@@ -753,11 +775,14 @@
                 message.role === "system" &&
                 isStreaming}
               {editable}
+              isEditMode={editingMessageIndex === index}
               isLatestSystemMessage={index === messages.length - 1}
               allMessages={messages}
               onExportPDF={exportToPDF}
               on:rewrite={rewriteResponse}
               on:edit={editMessage}
+              on:start-edit={handleStartEdit}
+              on:cancel-edit={handleCancelEdit}
               on:related-question={handleMessageRelatedQuestion}
             />
           {/if}
@@ -770,7 +795,7 @@
       <!-- Export button moved to ChatMessage component -->
 
       <div
-        class="bg-gray-50 dark:bg-[#2A2E39] fixed absolute bottom-10 sm:bottom-20 left-1/2 transform -translate-x-1/2 block p-3 min-w-[90vw] sm:min-w-0 sm:w-full sm:max-w-3xl border border-gray-300 dark:border-gray-600 shadow rounded-[8px] overflow-hidden"
+        class="bg-gray-50 dark:bg-[#2A2E39] fixed absolute bottom-10 sm:bottom-20 left-1/2 transform -translate-x-1/2 block p-3 min-w-[90vw] sm:min-w-0 sm:w-full sm:max-w-xl md:max-w-3xl border border-gray-300 dark:border-gray-600 shadow rounded-[8px] overflow-hidden"
       >
         <div
           bind:this={editorDiv}
