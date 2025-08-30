@@ -22,8 +22,6 @@
         return "#006400"; // Extreme Greed - Dark Green
     }
 
-    // Gauge Chart Configuration - CNN Style
-    // Gauge Chart Configuration - CNN Style (updated)
     function createGaugeChart() {
         // Keep your existing helper (slightly extended to return border color as well)
         const inactiveColor = $mode === "light" ? "#EFEFEF" : "#2E2E2E";
@@ -85,34 +83,52 @@
             credits: { enabled: false },
             chart: {
                 type: "gauge",
-                backgroundColor: $mode === "light" ? "#ffffff" : "#0f0f12",
+                backgroundColor: $mode === "light" ? "#fff" : "#0f0f12",
                 height: 360,
-                animation: false,
+                animation: false, // disable chart-level animation
             },
+
+            // Disable animations globally for series/gauge and disable hover states
+            plotOptions: {
+                series: {
+                    animation: false,
+                    states: {
+                        hover: { enabled: false },
+                        inactive: { enabled: false },
+                    },
+                    dataLabels: {
+                        animation: false,
+                    },
+                },
+                gauge: {
+                    animation: false,
+                },
+            },
+
             title: {
                 text: `
-        <div class="text-center mt-3 -mb-12">
-            <!-- Circle wrapper -->
-            <div
-                class="w-[60px] h-[60px] sm:w-[100px] sm:h-[100px] rounded-full
-                       ${
-                           $mode === "light"
-                               ? "bg-white shadow-[0_12px_20px_rgba(0,0,0,0.12)]"
-                               : "bg-[#1c1c20] shadow-[0_6px_16px_rgba(0,0,0,0.4)]"
-                       }
-                       flex items-center justify-center mx-auto"
-            >
-                <div class="text-2xl sm:text-3xl font-extrabold ${$mode === "light" ? "text-[#111]" : "text-gray-100"}">
-                    ${currentValue}
-                </div>
-            </div>
-
-            <!-- Subtitle -->
-            <div class="text-sm sm:hidden capitalize ${$mode === "light" ? "text-gray-800" : "text-gray-100"} mt-2">
-                ${currentCategory}
+    <div class="text-center mt-3 -mb-12">
+        <!-- Circle wrapper -->
+        <div
+            class="w-[60px] h-[60px] sm:w-[100px] sm:h-[100px] rounded-full
+                   ${
+                       $mode === "light"
+                           ? "bg-black shadow-[0_12px_20px_rgba(0,0,0,0.12)]"
+                           : "bg-[#1c1c20] shadow-[0_6px_16px_rgba(0,0,0,0.4)]"
+                   }
+                   flex items-center justify-center mx-auto"
+        >
+            <div class="text-2xl sm:text-3xl font-extrabold ${$mode === "light" ? "text-white" : "text-gray-100"}">
+                ${currentValue}
             </div>
         </div>
-        `,
+
+        <!-- Subtitle -->
+        <div class="text-sm sm:hidden capitalize ${$mode === "light" ? "text-gray-800" : "text-gray-100"} mt-2">
+            ${currentCategory}
+        </div>
+    </div>
+    `,
                 useHTML: true,
                 verticalAlign: "middle",
                 y: 70,
@@ -148,7 +164,7 @@
                 labels: {
                     distance: 20,
                     style: {
-                        color: $mode === "light" ? "#6b7280" : "#d1d5db", // gray-500 vs gray-300
+                        color: $mode === "light" ? "#6b7280" : "#d1d5db",
                         fontSize: "13px",
                         fontWeight: "600",
                     },
@@ -183,9 +199,10 @@
                                     currentValue <= 25
                                         ? "#fff"
                                         : $mode === "light"
-                                          ? "#999"
+                                          ? "#000"
                                           : "#9ca3af",
-                                fontSize: "12px",
+                                fontSize: "16px",
+                                fontWeight: "600",
                                 textAlign: "center",
                             },
                         },
@@ -209,9 +226,10 @@
                                     currentValue > 25 && currentValue <= 45
                                         ? "#fff"
                                         : $mode === "light"
-                                          ? "#999"
+                                          ? "#000"
                                           : "#9ca3af",
-                                fontSize: "12px",
+                                fontSize: "16px",
+                                fontWeight: "600",
                             },
                         },
                     },
@@ -236,9 +254,10 @@
                                             ? "#333"
                                             : "#e5e7eb"
                                         : $mode === "light"
-                                          ? "#999"
+                                          ? "#000"
                                           : "#9ca3af",
-                                fontSize: "12px",
+                                fontSize: "16px",
+                                fontWeight: "600",
                             },
                         },
                     },
@@ -263,9 +282,10 @@
                                             ? "#333"
                                             : "#e5e7eb"
                                         : $mode === "light"
-                                          ? "#999"
+                                          ? "#000"
                                           : "#9ca3af",
-                                fontSize: "12px",
+                                fontSize: "16px",
+                                fontWeight: "600",
                             },
                         },
                     },
@@ -292,9 +312,10 @@
                                     currentValue > 75
                                         ? "#fff"
                                         : $mode === "light"
-                                          ? "#999"
+                                          ? "#000"
                                           : "#9ca3af",
-                                fontSize: "12px",
+                                fontSize: "16px",
+                                fontWeight: "600",
                                 textAlign: "center",
                             },
                         },
@@ -305,8 +326,9 @@
                 {
                     name: "Fear & Greed",
                     data: [currentValue],
+                    animation: false, // disable series-level animation
                     tooltip: { valueSuffix: "" },
-                    dataLabels: { enabled: false },
+                    dataLabels: { enabled: false, animation: false },
                     dial: {
                         radius: "80%",
                         backgroundColor:
@@ -321,6 +343,9 @@
                         radius: 6,
                         borderColor: $mode === "light" ? "#000" : "#e5e7eb",
                         borderWidth: 1,
+                    },
+                    states: {
+                        hover: { enabled: false },
                     },
                 },
             ],
@@ -673,13 +698,13 @@
 </script>
 
 <SEO
-    title="Fear & Greed Index - Market Sentiment Indicator | Stocknear"
+    title="Fear & Greed Index - Market Sentiment Indicator"
     description="Track the Fear & Greed Index in real-time. Monitor market sentiment with our comprehensive gauge showing extreme fear to extreme greed levels, historical trends, and detailed analytics."
     keywords="fear and greed index, market sentiment, investor sentiment, market psychology, CNN fear greed, stock market sentiment, market indicators, fear gauge, greed indicator"
     structuredData={{
         "@context": "https://schema.org",
         "@type": "FinancialProduct",
-        name: "Fear & Greed Index - Stocknear",
+        name: "Fear & Greed Index",
         description: "Real-time Fear & Greed Index tracking market sentiment",
         provider: {
             "@type": "Organization",
@@ -720,13 +745,8 @@
                     </p>
 
                     <div
-                        class="bg-white dark:bg-[#09090B] border border-gray-300 dark:border-gray-800 rounded-lg p-4 shadow-sm"
+                        class="border border-gray-300 dark:border-gray-800 rounded shadow"
                     >
-                        <h2
-                            class="text-[1rem] sm:text-xl font-bold mb-4 text-center"
-                        >
-                            Current Status
-                        </h2>
                         <div use:highcharts={gaugeConfig}></div>
                     </div>
 
