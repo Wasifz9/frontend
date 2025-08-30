@@ -13,6 +13,7 @@
         data?.getData?.current?.last_update || new Date().toISOString();
     let historicalData = data?.getData?.historical || [];
     let statistics = data?.getData?.statistics || {};
+    let insights = data?.getData?.insights || {};
 
     // Helper function to get color based on value
     function getColorForValue(value) {
@@ -681,7 +682,7 @@
                         </h1>
                     </div>
 
-                    <p class="mb-5 text-gray-600 dark:text-gray-400">
+                    <p class="mb-5">
                         Market sentiment indicator showing {currentCategory} at
                         <strong>{currentValue}</strong> as of
                         <strong
@@ -710,6 +711,43 @@
                             Historical Chart
                         </h1>
                     </div>
+
+                    <p class="mb-5">
+                        Historical data shows a <strong
+                            >{insights?.correlation_percent}%</strong
+                        >
+                        correlation between sentiment and SPY. Extreme fear readings
+                        below 10 averaged
+                        <strong>{insights?.extreme_fear_avg_return}%</strong>
+                        SPY gains over 30 days vs
+                        <strong>{insights?.extreme_greed_avg_return}%</strong>
+                        during extreme greed periods.
+                        {#if insights?.most_fear_example}
+                            {new Date(
+                                insights.most_fear_example.date,
+                            ).toLocaleDateString("en-US", {
+                                month: "long",
+                                year: "numeric",
+                            })}'s fear reading of
+                            {insights.most_fear_example.value} occurred at SPY ${insights.most_fear_example.spy_price.toFixed(
+                                0,
+                            )}, while
+                        {/if}
+                        {#if insights?.most_greed_example}
+                            {new Date(
+                                insights.most_greed_example.date,
+                            ).toLocaleDateString("en-US", {
+                                month: "long",
+                                year: "numeric",
+                            })}'s peak greed of
+                            {insights.most_greed_example.value.toFixed(0)} hit at
+                            SPY ${insights.most_greed_example.spy_price.toFixed(
+                                0,
+                            )}
+                        {/if}
+                        - demonstrating how sentiment extremes often mark opportunity
+                        zones rather than reflect actual market levels.
+                    </p>
                     <div
                         class="bg-white dark:bg-[#09090B] border border-gray-300 dark:border-gray-800 rounded-lg p-4 shadow-sm mt-4"
                     >
