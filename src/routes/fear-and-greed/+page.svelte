@@ -114,11 +114,11 @@
                    ${
                        $mode === "light"
                            ? "bg-black shadow-[0_12px_20px_rgba(0,0,0,0.12)]"
-                           : "bg-[#1c1c20] shadow-[0_6px_16px_rgba(0,0,0,0.4)]"
+                           : "bg-[#fff] shadow-[0_6px_16px_rgba(0,0,0,0.4)]"
                    }
                    flex items-center justify-center mx-auto"
         >
-            <div class="text-2xl sm:text-3xl font-extrabold ${$mode === "light" ? "text-white" : "text-gray-100"}">
+            <div class="text-2xl sm:text-3xl font-extrabold ${$mode === "light" ? "text-white" : "text-black"}">
                 ${currentValue}
             </div>
         </div>
@@ -366,21 +366,29 @@
 
         // Prepare SPY data for secondary axis
         const spyData = historicalData
-            .filter((item) => item.spy_close)
-            .map((item) => ({
+            ?.filter((item) => item.spy_close)
+            ?.map((item) => ({
                 x: new Date(item.date).getTime(),
                 y: item.spy_close,
             }));
 
         const options = {
-            credits: { enabled: false },
+            credits: {
+                enabled: false,
+            },
             chart: {
-                type: "line",
-                backgroundColor: $mode === "light" ? "#ffffff" : "#09090B",
+                backgroundColor: $mode === "light" ? "#fff" : "#09090B",
+                plotBackgroundColor: $mode === "light" ? "#fff" : "#09090B",
                 height: 360,
+                animation: false,
             },
             title: {
                 text: null,
+                style: {
+                    color: $mode === "light" ? "black" : "white",
+                    // Using inline CSS for margin-top and margin-bottom
+                },
+                useHTML: true, // Enable HTML to apply custom class styling
             },
 
             xAxis: {
@@ -428,7 +436,7 @@
                     labels: {
                         style: {
                             color: $mode === "light" ? "#374151" : "#D1D5DB",
-                            fontSize: "12px",
+                            fontSize: $screenWidth < 640 ? "0px" : "12px",
                             fontWeight: "500",
                         },
                         distance: 15,
@@ -576,7 +584,6 @@
                 formatter: function () {
                     const date = new Date(this.x);
                     const dateStr = date.toLocaleDateString("en-US", {
-                        weekday: "short",
                         month: "short",
                         day: "numeric",
                         year: "numeric",
@@ -629,21 +636,9 @@
                 line: {
                     marker: {
                         enabled: false,
-                        radius: 4,
+                        radius: 2,
                         fillColor: "#ffffff",
                         lineWidth: 2,
-                        states: {
-                            hover: {
-                                enabled: true,
-                                radius: 6,
-                                lineWidth: 3,
-                            },
-                        },
-                    },
-                    states: {
-                        hover: {
-                            lineWidth: 2,
-                        },
                     },
                     animation: false,
                 },
@@ -680,7 +675,18 @@
                 },
             ],
             legend: {
-                enabled: false,
+                enabled: true,
+                align: "center", // left side
+                verticalAlign: "top", // top edge
+                layout: "horizontal",
+                squareSymbol: false, // use our rectangle shape
+                symbolWidth: 20,
+                symbolHeight: 12,
+                symbolRadius: 0,
+
+                itemStyle: {
+                    color: $mode === "light" ? "black" : "white",
+                },
             },
         };
         return options;
@@ -744,9 +750,7 @@
                         market panic and potential buying opportunities.
                     </p>
 
-                    <div
-                        class="border border-gray-300 dark:border-gray-800 rounded shadow"
-                    >
+                    <div class="">
                         <div use:highcharts={gaugeConfig}></div>
                     </div>
 
@@ -769,9 +773,7 @@
                         <strong>{insights?.extreme_greed_avg_return}%</strong>
                         during extreme greed periods.
                     </p>
-                    <div
-                        class="bg-white dark:bg-[#09090B] border border-gray-300 dark:border-gray-800 rounded-lg p-4 shadow-sm mt-4"
-                    >
+                    <div class="mt-4">
                         <div use:highcharts={historicalConfig}></div>
                     </div>
 
