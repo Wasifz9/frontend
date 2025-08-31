@@ -21,7 +21,13 @@ export const load = async ({ locals, params }) => {
 
     const output = await response.json();
 
-    return output;
+    const filteredData = output?.filter(item => {
+      const year = new Date(item?.date)?.getFullYear();
+      return year >= 2010;
+    });
+
+
+    return filteredData;
   };
 
   // Make sure to return a promise
