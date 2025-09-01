@@ -1,5 +1,6 @@
 <script lang="ts">
   import { abbreviateNumber } from "$lib/utils";
+  import { screenWidth } from "$lib/store";
   import InfoModal from "$lib/components/InfoModal.svelte";
 
   import { mode } from "mode-watcher";
@@ -9,14 +10,54 @@
 
   export let data;
   let config;
+  let configBarChart;
   let configOI;
   let configOIPutCall;
   let configVolume;
   let configVolumePutCall;
   let marketTideData = data?.getData?.marketTide || {};
+  let sectorFlow = data?.getData?.sectorFlow || [];
   let overview = data?.getData?.overview || {};
 
   let isPro = data?.user?.tier === "Pro";
+
+  const totalPremium = (sectorFlow || []).reduce(
+    (sum, s) => sum + (s?.totalPremium || 0),
+    0,
+  );
+
+  const totalCallPrem = (sectorFlow || []).reduce(
+    (sum, s) => sum + (s?.callPrem || 0),
+    0,
+  );
+
+  const totalPutPrem = (sectorFlow || []).reduce(
+    (sum, s) => sum + (s?.putPrem || 0),
+    0,
+  );
+
+  const sortedByPremium = [...(sectorFlow || [])].sort(
+    (a, b) => (b?.totalPremium || 0) - (a?.totalPremium || 0),
+  );
+
+  const top3 = sortedByPremium.slice(0, 3);
+
+  const callShare = totalPremium ? (totalCallPrem / totalPremium) * 100 : 0;
+  const putShare = totalPremium ? (totalPutPrem / totalPremium) * 100 : 0;
+
+  function formatNumber(n) {
+    return n?.toLocaleString("en-US") || "n/a";
+  }
+
+  function unlockLink() {
+    return `
+      <a href="/pricing" class="sm:hover:text-default dark:sm:hover:text-blue-400">
+        Unlock Pro <svg class="w-4 h-4 mb-1 inline-block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M17 9V7c0-2.8-2.2-5-5-5S7 4.2 7 7v2c-1.7 0-3 1.3-3 3v7c0 1.7 1.3 3 3 3h10c1.7 0 3-1.3 3-3v-7c0-1.7-1.3-3-3-3M9 7c0-1.7 1.3-3 3-3s3 1.3 3 3v2H9z"/>
+        </svg>
+      </a>
+    `;
+  }
 
   function findLastNonNull(dataArray, key) {
     for (let i = dataArray.length - 1; i >= 0; i--) {
@@ -256,6 +297,148 @@
               enabled: false, // Disable hover effect globally
             },
           },
+        },
+      },
+    };
+
+    return options;
+  }
+
+  function plotBarChart() {
+    const categories = sectorFlow?.map((item) => item?.sector);
+
+    // Prepare callPrem and putPrem data separately
+    const callData = sectorFlow?.map((item) => ({
+      y: item.callPrem,
+      originalData: item,
+      color: "#34d399", // green
+    }));
+
+    const putData = sectorFlow?.map((item) => ({
+      y: item.putPrem,
+      originalData: item,
+      color: "#f87171", // red
+    }));
+
+    const options = {
+      credits: { enabled: false },
+
+      chart: {
+        backgroundColor: $mode === "light" ? "#fff" : "#09090B",
+        plotBackgroundColor: $mode === "light" ? "#fff" : "#09090B",
+        type: "bar",
+        height: 360,
+        animation: false,
+      },
+      title: { text: null },
+      xAxis: {
+        categories,
+        labels: {
+          style: {
+            color: $mode === "light" ? "#09090B" : "white",
+            fontSize: "12px",
+            fontWeight: "400",
+            whiteSpace: "nowrap",
+            textOverflow: "ellipsis",
+            overflow: "hidden",
+          },
+          useHTML: true,
+        },
+        lineWidth: 0,
+        tickLength: 0,
+      },
+      yAxis: {
+        min: 0,
+        title: null,
+        labels: {
+          style: { color: $mode === "light" ? "#545454" : "white" },
+        },
+        gridLineWidth: 0,
+        lineWidth: 0,
+        tickLength: 0,
+      },
+      plotOptions: {
+        series: { pointWidth: 10 },
+        legendSymbol: "rectangle",
+        bar: {
+          stacking: "normal", // <-- enables stacking
+          dataLabels: {
+            enabled: true,
+            inside: false,
+            align: "right",
+            style: {
+              color: "#000",
+              fontSize: "12.5px",
+              fontWeight: "550",
+              textOutline: "none",
+            },
+            formatter: function () {
+              if (this.series.name === "Total") {
+                return this.y?.toLocaleString("en-US");
+              }
+              return null;
+            },
+          },
+          borderWidth: 0,
+          pointPadding: $screenWidth < 640 ? 0.02 : 0.18,
+          groupPadding: $screenWidth < 640 ? 0.4 : -0.1,
+          animation: false,
+          states: {
+            hover: { enabled: false },
+            inactive: { enabled: false },
+          },
+        },
+      },
+      tooltip: {
+        shared: true, // now makes sense for stacked
+        useHTML: true,
+        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        borderColor: "rgba(255, 255, 255, 0.2)",
+        borderWidth: 1,
+        style: { color: "#fff", fontSize: "14px", padding: "8px" },
+        borderRadius: 4,
+        formatter: function () {
+          const sector = this.x;
+          const call =
+            this.points.find((p) => p.series.name === "Call Prem")?.y || 0;
+          const put =
+            this.points.find((p) => p.series.name === "Put Prem")?.y || 0;
+          const total = call + put;
+
+          return `
+          <span class="m-auto text-xs font-semibold">${sector}</span><br>
+          <span class="text-green-400">Call Prem: ${call.toLocaleString("en-US")}</span><br>
+          <span class="text-red-400">Put Prem: ${put.toLocaleString("en-US")}</span><br>
+          <span class="text-white font-bold">Total Prem: ${total.toLocaleString("en-US")}</span>
+        `;
+        },
+      },
+      series: [
+        {
+          name: "Call Prem",
+          data: callData,
+          color: "#34d399",
+          animation: false,
+        },
+        {
+          name: "Put Prem",
+          data: putData,
+          color: "#f87171", // red
+          animation: false,
+        },
+      ],
+      legend: {
+        enabled: true,
+        align: "center", // left side
+        verticalAlign: "top", // top edge
+        layout: "horizontal",
+        squareSymbol: false, // use our rectangle shape
+        symbolWidth: 20,
+        symbolHeight: 12,
+        symbolRadius: 0,
+
+        itemStyle: {
+          color: $mode === "light" ? "black" : "white",
         },
       },
     };
@@ -727,7 +910,7 @@
   $: {
     if ($mode) {
       config = marketTideData ? plotDataFlow() : null;
-
+      configBarChart = sectorFlow?.length > 0 ? plotBarChart() : null;
       const { optionsOI, optionsOIPutCall } = plotOI();
       const { optionsVolume, optionsVolumePutCall } = plotVolume();
 
@@ -786,13 +969,7 @@
             {#if config !== null}
               <p class="mb-10">
                 Overview for all option chains of <strong>S&P500</strong>. As of
-                <strong
-                  >{new Date(overview?.date).toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}</strong
-                >, the total volume is
+                <strong>{data?.getData?.date}</strong>, the total volume is
                 <strong>
                   {#if isPro}
                     {(overview?.putVol + overview?.callVol)?.toLocaleString(
@@ -1107,6 +1284,92 @@
                       ? 'blur-[3px]'
                       : ''}  border border-gray-300 dark:border-gray-800 rounded"
                     use:highcharts={config}
+                  ></div>
+                  <!-- Overlay with "Upgrade to Pro" -->
+                  {#if !["Pro"]?.includes(data?.user?.tier)}
+                    <div
+                      class="font-bold text-lg sm:text-xl absolute top-0 bottom-0 left-0 right-0 flex items-center justify-center text-muted dark:text-white"
+                    >
+                      <a
+                        href="/pricing"
+                        class="sm:hover:text-blue-800 dark:sm:hover:text-white dark:text-white flex flex-row items-center"
+                      >
+                        <span>Upgrade to Pro</span>
+                        <svg
+                          class="ml-1 w-5 h-5 sm:w-6 sm:h-6 inline-block"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          ><path
+                            fill="currentColor"
+                            d="M17 9V7c0-2.8-2.2-5-5-5S7 4.2 7 7v2c-1.7 0-3 1.3-3 3v7c0 1.7 1.3 3 3 3h10c1.7 0 3-1.3 3-3v-7c0-1.7-1.3-3-3-3M9 7c0-1.7 1.3-3 3-3s3 1.3 3 3v2H9z"
+                          /></svg
+                        >
+                      </a>
+                    </div>
+                  {/if}
+                </div>
+              </div>
+
+              <h2 class="mb-2 mt-5 text-xl sm:text-2xl font-bold w-fit">
+                Sector Flow
+              </h2>
+
+              {#if sectorFlow && configBarChart}
+                <p class="mb-10">
+                  Sector-level option premium across <strong>S&P500</strong> as
+                  of
+                  <strong>
+                    {data?.getData?.date}
+                  </strong>
+                  shows a combined premium of
+                  <strong>
+                    {#if isPro}
+                      {formatNumber(totalPremium)}
+                    {:else}
+                      {@html unlockLink()}
+                    {/if}
+                  </strong>
+                  contracts, with calls accounting for
+                  <strong>
+                    {#if isPro}
+                      {callShare.toFixed(1)}%
+                    {:else}
+                      {@html unlockLink()}
+                    {/if}
+                  </strong>
+                  and puts for
+                  <strong>
+                    {#if isPro}
+                      {putShare.toFixed(1)}%
+                    {:else}
+                      {@html unlockLink()}
+                    {/if}
+                  </strong>
+                  of total premium. The top sectors by premium are
+                  <strong>
+                    {#if isPro}
+                      {#each top3 as s, i}
+                        {s.sector} ({(
+                          (s.totalPremium / totalPremium) *
+                          100
+                        )?.toFixed(1)}%{#if i < top3?.length}), {" "}
+                        {/if}
+                      {/each}
+                    {:else}
+                      {@html unlockLink()}
+                    {/if}
+                  </strong>.
+                </p>
+              {/if}
+
+              <div class="grow mt-5">
+                <div class="relative">
+                  <!-- Apply the blur class to the chart -->
+                  <div
+                    class="{!['Pro']?.includes(data?.user?.tier)
+                      ? 'blur-[3px]'
+                      : ''}  border border-gray-300 dark:border-gray-800 rounded"
+                    use:highcharts={configBarChart}
                   ></div>
                   <!-- Overlay with "Upgrade to Pro" -->
                   {#if !["Pro"]?.includes(data?.user?.tier)}

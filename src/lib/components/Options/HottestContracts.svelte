@@ -110,24 +110,6 @@
     return otmPercentage; // Return the percentage rounded to two decimal places
   }
 
-  function getScroll() {
-    const scrollThreshold = container.scrollHeight * 0.8; // 80% of the container height
-
-    // Check if the user has scrolled to the bottom based on the threshold
-    const isBottom =
-      container.scrollTop + container.clientHeight >= scrollThreshold;
-
-    // Only load more data if at the bottom and there is still data to load
-    if (isBottom && optionHistoryList?.length !== rawDataHistory?.length) {
-      const nextIndex = optionHistoryList.length; // Ensure optionHistoryList is defined
-      const filteredNewResults = rawDataHistory.slice(
-        nextIndex,
-        nextIndex + 25,
-      ); // Ensure rawData is defined
-      optionHistoryList = [...optionHistoryList, ...filteredNewResults];
-    }
-  }
-
   const currentTime = new Date(
     new Date().toLocaleString("en-US", { timeZone: "UTC" }),
   )?.getTime();
