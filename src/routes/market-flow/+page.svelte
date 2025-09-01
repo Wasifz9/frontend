@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { abbreviateNumber } from "$lib/utils";
+  import { abbreviateNumber, sectorNavigation } from "$lib/utils";
   import { screenWidth } from "$lib/store";
   import InfoModal from "$lib/components/InfoModal.svelte";
 
@@ -1167,9 +1167,7 @@
                 sentiment in the market.
               </p>
 
-              <div
-                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"
-              >
+              <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div
                   class="net-volume-driver shadow bg-gray-100 dark:bg-[#1C1E22] rounded p-4"
                 >
@@ -1274,6 +1272,45 @@
                     {/if}
                   </div>
                 </div>
+
+                <div class=" shadow bg-gray-100 dark:bg-[#1C1E22] rounded p-4">
+                  <div
+                    class="dark:text-[#c3c6d0] text-sm mb-2 flex items-center"
+                  >
+                    <span>Most Active Sector</span>
+                  </div>
+                  <div class="flex items-baseline">
+                    {#if data?.user?.tier === "Pro"}
+                      <a
+                        href={sectorNavigation?.find(
+                          (listItem) =>
+                            listItem?.title === sectorFlow?.at(0)?.sector,
+                        )?.link}
+                        class="text-xl font-bold text-blue-800 sm:hover:text-muted dark:text-blue-400 dark:sm:hover:text-white"
+                      >
+                        {sectorFlow?.length > 0
+                          ? sectorFlow?.at(0)?.sector
+                          : "n/a"}
+                      </a>
+                    {:else}
+                      <a href="/pricing" class="flex mt-2">
+                        <svg
+                          class="size-5 text-muted dark:text-[#fff]"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          style="max-width: 40px;"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                            clip-rule="evenodd"
+                          >
+                          </path>
+                        </svg>
+                      </a>
+                    {/if}
+                  </div>
+                </div>
               </div>
 
               <div class="grow chart-driver">
@@ -1315,7 +1352,7 @@
               </h2>
 
               {#if sectorFlow && configBarChart}
-                <p class="mb-10">
+                <p class="mb-5">
                   Sector-level option premium across <strong>S&P500</strong> as
                   of
                   <strong>
@@ -1324,7 +1361,7 @@
                   shows a combined premium of
                   <strong>
                     {#if isPro}
-                      {formatNumber(totalPremium)}
+                      ${abbreviateNumber(totalPremium)}
                     {:else}
                       {@html unlockLink()}
                     {/if}
