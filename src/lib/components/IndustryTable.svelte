@@ -137,19 +137,23 @@
           </td>
 
           <td
-            class="{item?.avgChange1D >= 0
+            class="{item?.avgChange1D && item?.avgChange1D > 0
               ? "before:content-['+'] text-green-800 dark:text-[#00FC50]"
-              : 'text-red-800 dark:text-[#FF2F1F]'} text-end text-sm sm:text-[1rem] whitespace-nowrap"
+              : item?.avgChange1D && item?.avgChange1D < 0
+                ? 'text-red-800 dark:text-[#FF2F1F]'
+                : ''} text-end text-sm sm:text-[1rem] whitespace-nowrap"
           >
-            {item?.avgChange1D?.toFixed(2) ?? "n/a"}%
+            {item?.avgChange1D ? item?.avgChange1D?.toFixed(2) + "%" : "n/a"}
           </td>
 
           <td
-            class="{item?.avgChange1Y >= 0
+            class="{item?.avgChange1Y && item?.avgChange1Y > 0
               ? "before:content-['+'] text-green-800 dark:text-[#00FC50]"
-              : 'text-red-800 dark:text-[#FF2F1F]'} text-end text-sm sm:text-[1rem] whitespace-nowrap"
+              : item?.avgChange1Y && item?.avgChange1Y < 0
+                ? 'text-red-800 dark:text-[#FF2F1F]'
+                : ''} text-end text-sm sm:text-[1rem] whitespace-nowrap"
           >
-            {item?.avgChange1Y?.toFixed(2) ?? "n/a"}%
+            {item?.avgChange1Y ? item?.avgChange1Y?.toFixed(2) + "%" : "n/a"}
           </td>
         </tr>
       {/each}
