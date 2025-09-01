@@ -331,8 +331,7 @@
                     dataLabels: { enabled: false, animation: false },
                     dial: {
                         radius: "80%",
-                        backgroundColor:
-                            $mode === "light" ? "#161616" : "#facc15", // black vs golden needle
+                        backgroundColor: $mode === "light" ? "#161616" : "#fff", // black vs golden needle
                         baseWidth: 10,
                         baseLength: "10%",
                         rearLength: "-10%",

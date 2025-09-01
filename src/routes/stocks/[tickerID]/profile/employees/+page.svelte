@@ -4,7 +4,6 @@
   import DownloadData from "$lib/components/DownloadData.svelte";
 
   import { Button } from "$lib/components/shadcn/button/index.js";
-  import { goto } from "$app/navigation";
   import { mode } from "mode-watcher";
 
   import highcharts from "$lib/highcharts.ts";
