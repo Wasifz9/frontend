@@ -44,6 +44,15 @@
       });
     }
 
+    // Reddit Pixel conversion tracking
+    if (typeof window !== "undefined" && window.rdt && value) {
+      window.rdt("track", "Purchase", {
+        value: value,
+        currency: "USD",
+        transactionId: data?.user?.id || "unknown",
+      });
+    }
+
     function randomInRange(min, max) {
       return Math.random() * (max - min) + min;
     }
