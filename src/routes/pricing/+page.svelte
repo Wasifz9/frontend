@@ -210,7 +210,7 @@
     >
       <div
         style="opacity: 1; transform: translateY(20px);"
-        class="hidden sm:block rounded-xl transform transition-all duration-300 sm:hover:-translate-y-1 lg:flex flex-col relative bg-white dark:bg-zinc-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-[3px] overflow-visible border border-gray-400 dark:border-zinc-600 p-6 isolate"
+        class="hidden sm:block rounded lg:flex flex-col relative bg-white dark:bg-zinc-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-[3px] overflow-visible border border-gray-400 dark:border-zinc-600 p-6 isolate"
       >
         <h3 class="text-3xl font-bold">Basic</h3>
         <p class="text-muted dark:text-zinc-300 text-sm mt-1">Get Started</p>
@@ -872,7 +872,7 @@
 
       <div
         style="opacity: 1; transform: translateY(20px);"
-        class="rounded-xl transform transition-all duration-300 sm:hover:-translate-y-1 relative flex flex-col relative bg-white dark:bg-zinc-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-[3px] overflow-visible border border-gray-400 dark:border-zinc-600 p-6 isolate"
+        class="rounded relative flex flex-col relative bg-white dark:bg-zinc-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-[3px] overflow-visible border border-gray-400 dark:border-zinc-600 p-6 isolate"
       >
         <h3 class="text-3xl font-bold">Plus</h3>
         <p class="text-muted dark:text-zinc-300 text-sm mt-1">Most Popular</p>
@@ -1274,7 +1274,7 @@
       </div>
       <div
         style="opacity: 1; transform: translateY(20px);"
-        class=" rounded-xl text-white transform transition-all duration-300 sm:hover:-translate-y-1 flex flex-col relative bg-[#18181B] dark:bg-zinc-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-[3px] overflow-visible border border-gray-400 dark:border-zinc-600 p-6 isolate"
+        class=" rounded text-white flex flex-col relative bg-[#18181B] dark:bg-zinc-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-[3px] overflow-visible border border-gray-400 dark:border-zinc-600 p-6 isolate"
       >
         <!--
         <div
@@ -1446,7 +1446,7 @@
           >
         </div>
       </div>
-
+      <!--
       <div
         class="relative text-left w-full col-span-1 lg:col-span-3 text-white bg-[#18181B] dark:bg-zinc-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-[3px] overflow-visible border border-zinc-200 dark:border-zinc-600 p-6 isolate translate-y-5 opacity-100"
       >
@@ -1487,6 +1487,9 @@
           </label>
         </div>
       </div>
+
+
+    -->
     </div>
 
     <!--Start FAQ-->
