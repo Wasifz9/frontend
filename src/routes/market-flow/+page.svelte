@@ -75,7 +75,7 @@
     // Determine the base date (using the first data point, or fallback to today)
     const baseDate =
       marketTideData && marketTideData.length
-        ? new Date(marketTideData[0].time)
+        ? new Date(marketTideData[0]?.time)
         : new Date();
 
     // Set the fixed start and end times (9:30 and 16:10)
@@ -134,15 +134,16 @@
 
       legend: {
         enabled: true,
-        align: "center", // Positions legend at the left edge
-        verticalAlign: "top", // Positions legend at the top
-        layout: "horizontal", // Align items horizontally (use 'vertical' if preferred)
+        align: "center", // left side
+        verticalAlign: "top", // top edge
+        layout: "horizontal",
+        squareSymbol: false, // use our rectangle shape
+        symbolWidth: 20,
+        symbolHeight: 12,
+        symbolRadius: 0,
         itemStyle: {
           color: $mode === "light" ? "black" : "white",
         },
-        symbolWidth: 14, // Controls the width of the legend symbol
-        symbolRadius: 1, // Creates circular symbols (adjust radius as needed)
-        squareSymbol: true, // Ensures symbols are circular, not square
       },
       credits: {
         enabled: false,
@@ -239,11 +240,11 @@
 
       series: [
         {
-          name: "Price",
+          name: "SPY Price",
           type: "spline",
           data: priceSeries,
           yAxis: 0,
-          color: $mode === "light" ? "#2C6288" : "#fff",
+          color: $mode === "light" ? "#000" : "#fff",
           marker: {
             enabled: false,
             states: {
@@ -289,6 +290,7 @@
       ],
 
       plotOptions: {
+        legendSymbol: "rectangle",
         series: {
           color: "white",
           animation: false, // Disable series animation
