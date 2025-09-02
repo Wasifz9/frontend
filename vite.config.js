@@ -17,7 +17,7 @@ const config = {
     watch: {
       usePolling: false, // Use native FS events for better performance
     },
-    //allowedHosts: ["rnaja-78-94-200-246.a.free.pinggy.link"], //dev mode only for testing lemonsqueezy
+   // allowedHosts: ["rnxuv-78-94-200-246.a.free.pinggy.link"], //dev mode only for testing lemonsqueezy
   },
 
   build: {

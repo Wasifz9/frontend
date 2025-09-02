@@ -55,13 +55,7 @@ export const actions = {
       await locals.pb.collection("users").update(newUser?.id, {
         'credits': 10,
       });
-      /*
-await locals.pb?.collection('users').update(
-				newUser?.id, {
-					'freeTrial' : true,
-					'tier': 'Pro', //Give new users a free trial for the Pro Subscription
-			});
-*/
+
 
       await locals.pb.collection("users").requestVerification(formData.email);
     } catch (err) {

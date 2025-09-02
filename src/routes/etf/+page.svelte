@@ -106,14 +106,17 @@
 </script>
 
 <SEO
-  title="Complete ETF Directory - All {rawData?.length || 0} Exchange-Traded Funds with Real-Time Analysis"
-  description="Comprehensive ETF database featuring {rawData?.length || 0} exchange-traded funds with real-time quotes, expense ratios, AUM, and holdings analysis. Compare ETF performance, track popular funds like SPY, QQQ, and IWM with advanced portfolio diversification tools."
+  title="Complete ETF Directory - All {rawData?.length ||
+    0} Exchange-Traded Funds with Real-Time Analysis"
+  description="Comprehensive ETF database featuring {rawData?.length ||
+    0} exchange-traded funds with real-time quotes, expense ratios, AUM, and holdings analysis. Compare ETF performance, track popular funds like SPY, QQQ, and IWM with advanced portfolio diversification tools."
   keywords="ETF directory, exchange-traded funds list, ETF analysis, ETF expense ratios, ETF holdings, portfolio diversification, passive investing, index funds, ETF screener, fund comparison, asset allocation, SPY ETF, QQQ ETF, sector ETFs, bond ETFs"
   structuredData={{
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: "Complete ETF Directory",
-    description: "Comprehensive database of {rawData?.length || 0} exchange-traded funds with analysis tools and real-time data",
+    description:
+      "Comprehensive database of {rawData?.length || 0} exchange-traded funds with analysis tools and real-time data",
     url: "https://stocknear.com/etf",
     breadcrumb: {
       "@type": "BreadcrumbList",
@@ -135,15 +138,17 @@
     mainEntity: {
       "@type": "ItemList",
       name: "Exchange-Traded Funds Directory",
-      description: "Complete catalog of ETF ticker symbols with expense ratios, assets under management, and performance metrics",
+      description:
+        "Complete catalog of ETF ticker symbols with expense ratios, assets under management, and performance metrics",
       numberOfItems: rawData?.length || 0,
     },
     about: {
       "@type": "FinancialProduct",
       name: "Exchange-Traded Funds",
-      description: "Investment funds traded on stock exchanges like individual stocks, offering diversified exposure to various asset classes",
-      category: "Investment Fund"
-    }
+      description:
+        "Investment funds traded on stock exchanges like individual stocks, offering diversified exposure to various asset classes",
+      category: "Investment Fund",
+    },
   }}
 />
 
@@ -230,7 +235,7 @@
         </main>
 
         <aside class="hidden lg:block relative fixed w-1/4 ml-4">
-          {#if !["Pro", "Plus"]?.includes(data?.user?.tier) || data?.user?.freeTrial}
+          {#if !["Pro", "Plus"]?.includes(data?.user?.tier)}
             <div
               class="w-full border border-gray-300 dark:border-gray-600 rounded h-fit pb-4 mt-4 cursor-pointer sm:hover:shadow-lg dark:sm:hover:bg-secondary transition ease-out duration-100"
             >

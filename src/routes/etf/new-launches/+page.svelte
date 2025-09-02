@@ -88,26 +88,28 @@
 
 <SEO
   title="New ETF Launches - Recently Listed Exchange-Traded Funds Directory"
-  description="Complete directory of {etfData?.length || 100} newest ETFs launched on US markets, sorted by inception date. Discover emerging investment themes, innovative fund structures, and latest ETF innovations from leading providers. Track new fund launches for early investment opportunities."
+  description="Complete directory of {etfData?.length ||
+    100} newest ETFs launched on US markets, sorted by inception date. Discover emerging investment themes, innovative fund structures, and latest ETF innovations from leading providers. Track new fund launches for early investment opportunities."
   keywords="new ETF launches, recent ETFs, newest exchange-traded funds, ETF innovations, new fund launches, emerging ETFs, latest ETFs, ETF inception dates, new investment opportunities"
   structuredData={{
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: "New ETF Launches Directory",
-    description: "Recently launched exchange-traded funds sorted by inception date",
+    description:
+      "Recently launched exchange-traded funds sorted by inception date",
     url: "https://stocknear.com/etf/new-launches",
     mainEntity: {
       "@type": "ItemList",
       name: "Recent ETF Launches",
       description: "Newest exchange-traded funds available for trading",
-      numberOfItems: etfData?.length || 0
+      numberOfItems: etfData?.length || 0,
     },
     about: {
       "@type": "FinancialProduct",
       name: "Exchange-Traded Funds",
       description: "Investment funds providing diversified market exposure",
-      category: "Investment Fund"
-    }
+      category: "Investment Fund",
+    },
   }}
 />
 
@@ -207,7 +209,7 @@
         </main>
 
         <aside class="inline-block relative w-full lg:w-1/4 mt-3">
-          {#if !["Pro", "Plus"]?.includes(data?.user?.tier) || data?.user?.freeTrial}
+          {#if !["Pro", "Plus"]?.includes(data?.user?.tier)}
             <div
               class="w-full border border-gray-300 dark:border-gray-600 rounded h-fit pb-4 mt-4 cursor-pointer sm:hover:shadow-lg dark:sm:hover:bg-secondary transition ease-out duration-100"
             >

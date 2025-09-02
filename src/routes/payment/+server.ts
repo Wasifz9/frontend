@@ -96,6 +96,7 @@ export const POST = async ({ request, locals }) => {
     const { status, refunded } = payload?.data?.attributes || {};
     const productName = payload?.data?.attributes?.first_order_item?.product_name;
 
+   
     
     if (!userId || status === undefined) {
       console.error("Missing userId or status in payload:", payload);
@@ -119,12 +120,20 @@ export const POST = async ({ request, locals }) => {
       if (tier === "Pro") credits = 1000;
 
       try {
+       // Get the current user data first
+        const user = await locals.pb.collection("users").getOne(userId);
+
+        // Decide the new freeTrial value
+        const freeTrial =
+          user.freeTrial === true ? true : status === "on_trial";
+        // Update user
         await locals.pb.collection("users").update(userId, {
           tier,
-          freeTrial: false,
+          freeTrial,
           credits,
           lifetime: productName?.includes("Life Time"),
         });
+
 
         const paymentData = { user: userId, data: payload };
         await locals.pb.collection("payments").create(paymentData);
@@ -154,10 +163,16 @@ export const POST = async ({ request, locals }) => {
     // Update the user and log the payment
 
     try {
-      
+
+        const user = await locals.pb.collection("users").getOne(userId);
+
+        // Decide the new freeTrial value
+        const freeTrial =
+          user.freeTrial === true ? true : status === "on_trial";
+
       await locals.pb.collection("users").update(userId, {
         tier,
-        freeTrial: false,
+         freeTrial,
         //credits: tier === 'Pro' ? 1000 : tier === 'Plus' ? 500 : 10,
         credits: tier === 'Free' ? 10 : userId?.credits,
         lifetime: productName?.includes("Life Time"),

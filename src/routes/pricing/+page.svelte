@@ -210,7 +210,7 @@
     >
       <div
         style="opacity: 1; transform: translateY(20px);"
-        class=" rounded-xl transform transition-all duration-300 sm:hover:-translate-y-1 lg:flex flex-col relative bg-white dark:bg-zinc-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-[3px] overflow-visible border border-gray-400 dark:border-zinc-600 p-6 isolate"
+        class="hidden sm:block rounded-xl transform transition-all duration-300 sm:hover:-translate-y-1 lg:flex flex-col relative bg-white dark:bg-zinc-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-[3px] overflow-visible border border-gray-400 dark:border-zinc-600 p-6 isolate"
       >
         <h3 class="text-3xl font-bold">Basic</h3>
         <p class="text-muted dark:text-zinc-300 text-sm mt-1">Get Started</p>
@@ -1256,7 +1256,7 @@
             for={!data?.user ? "userLogin" : ""}
             on:click={() => purchasePlan("plus")}
             class="text-white cursor-pointer w-full py-3 px-4 bg-black dark:bg-white rounded-[3px] font-semibold sm:hover:bg-default dark:sm:hover:bg-gray-100 text-white dark:text-black transition duration-100 flex items-center justify-center"
-            >Unlock Plus Access Now<svg
+            >Start Free 7 Day Trial<svg
               class="w-5 h-5 ml-2"
               fill="none"
               stroke="currentColor"
@@ -1416,7 +1416,7 @@
           </li>
         </ul>
         <!--
-        {#if !["Pro", "Plus"]?.includes(data?.user?.tier) || data?.user?.freeTrial === true}
+        {#if !["Pro", "Plus"]?.includes(data?.user?.tier)  === true}
           <div class="mt-3 items-center text-[1rem] font-medium mb-5">
             Promo Code: <strong>EASTERSALE</strong>
             <br class="mb-2" />
@@ -1430,7 +1430,7 @@
             for={!data?.user ? "userLogin" : ""}
             on:click={() => purchasePlan("pro")}
             class="cursor-pointer w-full py-3 px-4 bg-white rounded-[3px] font-semibold sm:hover:bg-gray-100 dark:sm:hover:bg-gray-100 text-black transition duration-100 flex items-center justify-center"
-            >Unlock Pro Access Now<svg
+            >Start Free 7 Day Trial<svg
               class="w-5 h-5 ml-2"
               fill="none"
               stroke="currentColor"
@@ -1559,6 +1559,26 @@
                     institutional players, live dark pool activity, instant
                     earnings updates, market-moving news, and much more — all
                     designed to keep you ahead of the market.
+                  </p>
+                </div>
+              </details>
+            </li>
+
+            <li class="border-b border-gray-300 dark:border-gray-800">
+              <details class="collapse collapse-arrow">
+                <summary
+                  class="font-semibold collapse-title text-[1rem] sm:text-xl flex items-center justify-between w-full text-left py-5"
+                >
+                  How does the 7 day trial work?
+                </summary>
+                <div class="collapse-content">
+                  <p
+                    class="text-sm sm:text-[1rem] pb-5 dark:text-gray-200 transition-all duration-300 ease-in-out"
+                  >
+                    You are entitled to one FREE 7 day trial. You can cancel
+                    anytime within your trial period with no obligations. If you
+                    go past 7 days without cancelling, your account will be
+                    automatically billed.
                   </p>
                 </div>
               </details>

@@ -201,17 +201,20 @@
         style: `border-radius: 5px; background: #fff; color: #000; border-color: ${$mode === "light" ? "#F9FAFB" : "#4B5563"}; font-size: 15px;`,
       });
     } catch (error) {
-      console.error('Error unsubscribing:', error);
-      toast.error("Failed to deactivate push notifications. Please try again.", {
-        style: `border-radius: 5px; background: #fff; color: #000; border-color: ${$mode === "light" ? "#F9FAFB" : "#4B5563"}; font-size: 15px;`,
-      });
+      console.error("Error unsubscribing:", error);
+      toast.error(
+        "Failed to deactivate push notifications. Please try again.",
+        {
+          style: `border-radius: 5px; background: #fff; color: #000; border-color: ${$mode === "light" ? "#F9FAFB" : "#4B5563"}; font-size: 15px;`,
+        },
+      );
     }
     loading = false;
   }
 
   async function handlePushSubscribe() {
     loading = true;
-    
+
     try {
       // First check if notifications are allowed
       const permission = await requestNotificationPermission();
@@ -222,34 +225,37 @@
         loading = false;
         return;
       }
-      
+
       // Try to subscribe with retry logic
       let output = await subscribeUser();
-      
+
       // If failed, wait a bit and retry once (service worker might be initializing)
       if (!output?.success) {
-        console.log('First attempt failed, retrying in 2 seconds...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log("First attempt failed, retrying in 2 seconds...");
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         output = await subscribeUser();
       }
-      
+
       if (output?.success === true) {
         isPushSubscribed = true;
         toast.success("Push notification activated successfully!", {
           style: `border-radius: 5px; background: #fff; color: #000; border-color: ${$mode === "light" ? "#F9FAFB" : "#4B5563"}; font-size: 15px;`,
         });
       } else {
-        toast.error("Failed to activate push notifications. Please try again or check if your browser supports push notifications.", {
-          style: `border-radius: 5px; background: #fff; color: #000; border-color: ${$mode === "light" ? "#F9FAFB" : "#4B5563"}; font-size: 15px;`,
-        });
+        toast.error(
+          "Failed to activate push notifications. Please try again or check if your browser supports push notifications.",
+          {
+            style: `border-radius: 5px; background: #fff; color: #000; border-color: ${$mode === "light" ? "#F9FAFB" : "#4B5563"}; font-size: 15px;`,
+          },
+        );
       }
     } catch (error) {
-      console.error('Error subscribing to push notifications:', error);
+      console.error("Error subscribing to push notifications:", error);
       toast.error("An error occurred. Please try again.", {
         style: `border-radius: 5px; background: #fff; color: #000; border-color: ${$mode === "light" ? "#F9FAFB" : "#4B5563"}; font-size: 15px;`,
       });
     }
-    
+
     loading = false;
   }
 
@@ -521,11 +527,31 @@
                         <button
                           class="cursor-not-allowed shadow-xs border border-gray-300 dark:border-gray-600 w-fit px-5 py-1.5 bg-white/60 text-black text-sm font-semibold rounded transition ease-out duration-100"
                           disabled
-                          >
+                        >
                           <div class="flex flex-row m-auto items-center">
-                            <svg class="mr-2 w-4 h-4 animate-spin" viewBox="0 0 20 20">
-                              <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-dasharray="25.132741228718345" stroke-dashoffset="25.132741228718345">
-                                <animateTransform attributeName="transform" type="rotate" from="0 10 10" to="360 10 10" dur="1s" repeatCount="indefinite"/>
+                            <svg
+                              class="mr-2 w-4 h-4 animate-spin"
+                              viewBox="0 0 20 20"
+                            >
+                              <circle
+                                cx="10"
+                                cy="10"
+                                r="8"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                fill="none"
+                                stroke-linecap="round"
+                                stroke-dasharray="25.132741228718345"
+                                stroke-dashoffset="25.132741228718345"
+                              >
+                                <animateTransform
+                                  attributeName="transform"
+                                  type="rotate"
+                                  from="0 10 10"
+                                  to="360 10 10"
+                                  dur="1s"
+                                  repeatCount="indefinite"
+                                />
                               </circle>
                             </svg>
                             Processing...
@@ -600,15 +626,14 @@
                       ?.lifetime ||
                     subscriptionData?.status_formatted === 'Active' ||
                     subscriptionData?.status_formatted === 'Paid' ||
-                    subscriptionData?.status_formatted === 'On Trial' ||
-                    data?.user?.freeTrial === true
+                    subscriptionData?.status_formatted === 'On Trial'
                       ? 'bg-[#00FC50]'
                       : 'bg-[#FF3131]'}"
                   ></span>
                 </span>
 
                 <span class="ml-2 text-[1rem] dark:text-slate-200">
-                  {#if data?.user?.freeTrial === true || data?.user?.lifetime === true}
+                  {#if data?.user?.lifetime === true}
                     Active
                   {:else}
                     {subscriptionData?.status_formatted ??
@@ -626,6 +651,17 @@
                     day: "numeric",
                     month: "long",
                     year: "numeric",
+                  })}
+                </span>
+              {:else if subscriptionData?.status_formatted === "On Trial"}
+                <span class=" text-sm pr-5">
+                  Your subscription will automatically billed on {new Date(
+                    subscriptionData?.trial_ends_at,
+                  )?.toLocaleDateString("en-GB", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                    timeZone: "UTC",
                   })}
                 </span>
               {:else if subscriptionData?.status_formatted === "Cancelled"}
@@ -646,10 +682,8 @@
               <span class="text-[1rem]">
                 {#if data?.user?.lifetime}
                   Lifetime Access
-                {:else if data?.user?.freeTrial === true}
-                  Pro Subscription (Free Trial)
                 {:else}
-                  {["Active", "Paid", "Cancelled"]?.includes(
+                  {["Active", "Paid", "Cancelled", "On Trial"]?.includes(
                     subscriptionData?.status_formatted,
                   )
                     ? subscriptionData?.product_name || "Processing..."
@@ -684,6 +718,17 @@
                       Upgrade to Pro (Annual Plan)
                     </label>
                   {/if}
+                </div>
+              {:else if subscriptionData?.status_formatted === "On Trial"}
+                <div
+                  class="flex flex-col items-start sm:flex-row sm:items-center"
+                >
+                  <label
+                    for="cancelSubscriptionModal"
+                    class="cursor-pointer border border-gray-300 dark:border-gray-300 dark:border-gray-600 transition-all text-white bg-default sm:hover:bg-primary dark:bg-default dark:sm:hover:bg-primary text-sm sm:text-[1rem] px-4 py-2 rounded"
+                  >
+                    Cancel Subscription
+                  </label>
                 </div>
               {:else if subscriptionData?.status_formatted === "Cancelled"}
                 <label

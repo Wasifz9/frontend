@@ -1037,7 +1037,17 @@
           </div>
           <NotificationBell {data} {hasUnreadElement} />
 
-          <div class="ml-4">
+          {#if !["Pro", "Plus"]?.includes(data?.user?.tier) && !data?.user}
+            <div class="ml-4 sm:-mr-2">
+              <a
+                href="/pricing"
+                class="inline-flex items-center whitespace-nowrap justify-center rounded bg-black sm:hover:bg-default dark:bg-[#fff] text-white dark:text-black px-4 py-2 text-sm font-semibold shadow-xs transition-all duration-150 sm:hover:bg-blue-600 dark:sm:hover:bg-gray-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600"
+              >
+                Start Trial
+              </a>
+            </div>
+          {/if}
+          <div class="ml-4 hidden sm:block">
             {#if data?.user}
               <DropdownMenu.Root>
                 <DropdownMenu.Trigger asChild let:builder>
