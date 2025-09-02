@@ -1047,7 +1047,7 @@
               </a>
             </div>
           {/if}
-          <div class="ml-4 hidden sm:block">
+          <div class="ml-4 {!data?.user ? 'hidden sm:block' : ''}">
             {#if data?.user}
               <DropdownMenu.Root>
                 <DropdownMenu.Trigger asChild let:builder>
