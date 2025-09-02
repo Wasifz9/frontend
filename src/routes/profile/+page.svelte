@@ -686,7 +686,9 @@
                   {["Active", "Paid", "Cancelled", "On Trial"]?.includes(
                     subscriptionData?.status_formatted,
                   )
-                    ? subscriptionData?.product_name || "Processing..."
+                    ? subscriptionData?.product_name ||
+                      subscriptionData?.first_order_item?.product_name ||
+                      "Processing..."
                     : "Free Subscription"}
                 {/if}
               </span>

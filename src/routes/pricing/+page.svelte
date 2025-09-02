@@ -1659,7 +1659,7 @@
                   <p
                     class="text-sm sm:text-[1rem] pb-5 dark:text-gray-200 overflow-hidden transition-all duration-300 ease-in-out"
                   >
-                    We support Credit Card & Paypal payments.
+                    We support only Credit Card payments.
                   </p>
                 </div>
               </details>
