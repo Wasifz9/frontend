@@ -45,10 +45,6 @@
   const callShare = totalPremium ? (totalCallPrem / totalPremium) * 100 : 0;
   const putShare = totalPremium ? (totalPutPrem / totalPremium) * 100 : 0;
 
-  function formatNumber(n) {
-    return n?.toLocaleString("en-US") || "n/a";
-  }
-
   function unlockLink() {
     return `
       <a href="/pricing" class="sm:hover:text-default dark:sm:hover:text-blue-400">
@@ -95,7 +91,6 @@
     ).getTime();
 
     // Create series arrays with x (timestamp) and y values.
-    // This removes the need for xAxis.categories.
     const priceSeries =
       marketTideData?.map((item) => ({
         x: new Date(item.time).getTime(),
@@ -114,12 +109,70 @@
         y: item.net_put_premium,
       })) || [];
 
+    // Function to detect crossing points between two series
+    function findCrossingPoints(series1, series2, priceSeries) {
+      const crossingPoints = [];
+
+      for (let i = 1; i < series1.length && i < series2.length; i++) {
+        const prev1 = series1[i - 1]?.y;
+        const curr1 = series1[i]?.y;
+        const prev2 = series2[i - 1]?.y;
+        const curr2 = series2[i]?.y;
+
+        // Check if lines crossed
+        const prevDiff = prev1 - prev2;
+        const currDiff = curr1 - curr2;
+
+        // If the sign changed, there was a crossing
+        if (prevDiff * currDiff < 0 || currDiff === 0) {
+          // Calculate the intersection point using linear interpolation
+          let intersectionY;
+          if (currDiff === 0) {
+            // Lines meet exactly at this point
+            intersectionY = curr1;
+          } else {
+            // Interpolate to find the exact crossing point
+            const t =
+              Math.abs(prevDiff) / (Math.abs(prevDiff) + Math.abs(currDiff));
+            intersectionY = prev1 + t * (curr1 - prev1);
+          }
+
+          // Find corresponding price at this time for the tooltip
+          const pricePoint = priceSeries.find((p) => p.x === series1[i].x);
+
+          crossingPoints.push({
+            x: series1[i].x,
+            y: intersectionY, // Use the actual intersection point
+            z: Math.abs(intersectionY), // Use crossing level for bubble size
+            crossType: curr1 > curr2 ? "bullish" : "bearish", // Bullish if calls cross above puts
+            callValue: curr1,
+            putValue: curr2,
+            spyPrice: pricePoint?.y || 0, // Store SPY price for tooltip
+          });
+        }
+      }
+
+      return crossingPoints;
+    }
+
+    // Find crossing points
+    const crossingBubbles = findCrossingPoints(
+      netCallPremSeries,
+      netPutPremSeries,
+      priceSeries,
+    );
+
+    // Calculate min/max for bubble sizing based on crossing levels
+    const crossingLevels = crossingBubbles.map((p) => p.z);
+    const maxCrossingLevel = Math.max(...crossingLevels, 1);
+    const minCrossingLevel = Math.min(...crossingLevels, 0);
+
     const options = {
       chart: {
         type: "column",
         backgroundColor: $mode === "light" ? "#fff" : "#09090B",
         plotBackgroundColor: $mode === "light" ? "#fff" : "#09090B",
-        height: 360, // Set the maximum height for the chart
+        height: 360,
         animation: false,
       },
 
@@ -127,17 +180,16 @@
         text: `<h3 class="mt-3 -mb-2">S&P500 Flow</h3>`,
         style: {
           color: $mode === "light" ? "black" : "white",
-          // Using inline CSS for margin-top and margin-bottom
         },
-        useHTML: true, // Enable HTML to apply custom class styling
+        useHTML: true,
       },
 
       legend: {
         enabled: true,
-        align: "center", // left side
-        verticalAlign: "top", // top edge
+        align: "center",
+        verticalAlign: "top",
         layout: "horizontal",
-        squareSymbol: false, // use our rectangle shape
+        squareSymbol: false,
         symbolWidth: 20,
         symbolHeight: 12,
         symbolRadius: 0,
@@ -145,14 +197,16 @@
           color: $mode === "light" ? "black" : "white",
         },
       },
+
       credits: {
         enabled: false,
       },
+
       tooltip: {
-        shared: true,
+        shared: false,
         useHTML: true,
-        backgroundColor: "rgba(0, 0, 0, 0.8)", // Semi-transparent black
-        borderColor: "rgba(255, 255, 255, 0.2)", // Slightly visible white border
+        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        borderColor: "rgba(255, 255, 255, 0.2)",
         borderWidth: 1,
         style: {
           color: "#fff",
@@ -161,7 +215,6 @@
         },
         borderRadius: 4,
         formatter: function () {
-          // Format the x value to display time in a custom format
           let tooltipContent = `<span class="m-auto text-[1rem] font-[501]">${new Date(
             this?.x,
           )?.toLocaleTimeString("en-US", {
@@ -169,13 +222,21 @@
             minute: "2-digit",
           })}</span><br>`;
 
-          // Loop through each point in the shared tooltip
-          this.points.forEach((point) => {
+          // Handle bubble series differently
+          if (this.series.type === "bubble") {
+            const point = this.point;
+            tooltipContent += `<span class="text-white text-sm font-[501]">Crossing Level: ${abbreviateNumber(point.y)}</span><br>`;
+            tooltipContent += `<span class="text-white text-sm font-[501]">SPY Price: ${point.spyPrice?.toFixed(2)}</span><br>`;
+            tooltipContent += `<span class="text-white text-sm font-[501]">Type: ${point.crossType === "bullish" ? "🟢 Bullish" : "🔴 Bearish"}</span><br>`;
+            tooltipContent += `<span class="text-white text-sm font-[400]">Call Prem: ${abbreviateNumber(point.callValue)}</span><br>`;
+            tooltipContent += `<span class="text-white text-sm font-[400]">Put Prem: ${abbreviateNumber(point.putValue)}</span>`;
+          } else {
+            // Regular series tooltip
             tooltipContent += `
-        <span style="display:inline-block; width:10px; height:10px; background-color:${point.color}; border-radius:50%; margin-right:5px;"></span>
-        <span class="font-semibold text-sm">${point.series.name}:</span> 
-        <span class="font-normal text-sm">${abbreviateNumber(point.y)}</span><br>`;
-          });
+              <span style="display:inline-block; width:10px; height:10px; background-color:${this.color}; border-radius:50%; margin-right:5px;"></span>
+              <span class="font-semibold text-sm">${this.series.name}:</span> 
+              <span class="font-normal text-sm">${this.series.name === "SPY Price" ? "$" + this.y?.toFixed(2) : abbreviateNumber(this.y)}</span>`;
+          }
 
           return tooltipContent;
         },
@@ -183,16 +244,16 @@
 
       xAxis: {
         type: "datetime",
-        min: startTime, // Force start at 9:30
-        max: endTime, // Force end at 16:10
+        min: startTime,
+        max: endTime,
         crosshair: {
-          color: $mode === "light" ? "black" : "white", // Set the color of the crosshair line
-          width: 1, // Adjust the line width as needed
+          color: $mode === "light" ? "black" : "white",
+          width: 1,
           dashStyle: "Solid",
         },
         labels: {
           style: { color: $mode === "light" ? "#545454" : "white" },
-          distance: 10, // Increases space between label and axis
+          distance: 10,
           formatter: function () {
             const date = new Date(this?.value);
             const timeString = date?.toLocaleTimeString("en-US", {
@@ -203,10 +264,9 @@
           },
         },
         tickPositioner: function () {
-          // Create custom tick positions with wider spacing
           const positions = [];
           const info = this.getExtremes();
-          const tickCount = 5; // Reduce number of ticks displayed
+          const tickCount = 5;
           const interval = (info.max - info.min) / tickCount;
 
           for (let i = 0; i <= tickCount; i++) {
@@ -238,6 +298,47 @@
         },
       ],
 
+      plotOptions: {
+        series: {
+          legendSymbol: "rectangle",
+          animation: false,
+          states: {
+            hover: {
+              enabled: false,
+            },
+          },
+        },
+        spline: {
+          marker: {
+            enabled: false,
+            states: {
+              hover: {
+                enabled: false,
+              },
+            },
+          },
+        },
+        bubble: {
+          minSize: 5,
+          maxSize: 20,
+          opacity: 0.85,
+          marker: {
+            enabled: true,
+            fillOpacity: 0.85,
+            lineWidth: 2,
+            lineColor:
+              $mode === "light" ? "rgba(0,0,0,0.3)" : "rgba(255,255,255,0.3)",
+          },
+          dataLabels: {
+            enabled: false,
+          },
+          sizeBy: "z",
+          zMin: minCrossingLevel,
+          zMax: maxCrossingLevel,
+          sizeByAbsoluteValue: false,
+        },
+      },
+
       series: [
         {
           name: "SPY Price",
@@ -245,32 +346,15 @@
           data: priceSeries,
           yAxis: 0,
           color: $mode === "light" ? "#000" : "#fff",
-          marker: {
-            enabled: false,
-            states: {
-              hover: {
-                enabled: false,
-              },
-            },
-          },
           lineWidth: 2,
           zIndex: 10,
         },
-
         {
           name: "Net Call Prem",
           type: "spline",
           data: netCallPremSeries,
           yAxis: 1,
           color: $mode === "light" ? "#208646" : "#90EE90",
-          marker: {
-            enabled: false,
-            states: {
-              hover: {
-                enabled: false,
-              },
-            },
-          },
         },
         {
           name: "Net Put Prem",
@@ -278,34 +362,40 @@
           data: netPutPremSeries,
           yAxis: 1,
           color: $mode === "light" ? "#DC2626" : "#FF6B6B",
-          marker: {
-            enabled: false,
-            states: {
-              hover: {
-                enabled: false,
-              },
+        },
+        {
+          name: "Premium Crossings",
+          type: "bubble",
+          data: crossingBubbles.map((point) => ({
+            x: point.x,
+            y: point.y,
+            z: point.z,
+            crossType: point.crossType,
+            callValue: point.callValue,
+            putValue: point.putValue,
+            spyPrice: point.spyPrice,
+            marker: {
+              fillColor:
+                point.crossType === "bullish"
+                  ? $mode === "light"
+                    ? "#10b981"
+                    : "#34d399"
+                  : $mode === "light"
+                    ? "#ef4444"
+                    : "#f87171",
             },
-          },
+          })),
+          color: $mode === "light" ? "#6366f1" : "#818cf8",
+          yAxis: 1, // Place bubbles on the premium axis
+          animation: false,
+          zIndex: 15, // Highest z-index to appear on top
+          showInLegend: false,
         },
       ],
-
-      plotOptions: {
-        legendSymbol: "rectangle",
-        series: {
-          color: "white",
-          animation: false, // Disable series animation
-          states: {
-            hover: {
-              enabled: false, // Disable hover effect globally
-            },
-          },
-        },
-      },
     };
 
     return options;
   }
-
   function plotBarChart() {
     const categories = sectorFlow?.map((item) => item?.sector);
 
