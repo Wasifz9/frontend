@@ -1446,13 +1446,13 @@
           >
         </div>
       </div>
-      <!--
+
       <div
         class="relative text-left w-full col-span-1 lg:col-span-3 text-white bg-[#18181B] dark:bg-zinc-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-[3px] overflow-visible border border-zinc-200 dark:border-zinc-600 p-6 isolate translate-y-5 opacity-100"
       >
         <div class="flex flex-row items-center justify-between">
           <h3 class="text-2xl md:text-3xl font-bold">
-            Lifetime ({data?.getLTDCount} left)
+            Lifetime (Super Limited)
           </h3>
           <div>
             <span class="text-3xl md:text-4xl font-bold">$449</span>
@@ -1487,7 +1487,6 @@
           </label>
         </div>
       </div>
-      -->
     </div>
 
     <!--Start FAQ-->
