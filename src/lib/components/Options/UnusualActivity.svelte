@@ -364,7 +364,7 @@
 
   $: columns = [
     { key: "optionType", label: "Type", align: "left" },
-    { key: "date", label: "Transaction Date", align: "left" },
+    { key: "date", label: "Transaction Date", align: "right" },
     { key: "dte", label: "DTE", align: "right" },
     { key: "unusualType", label: "Type", align: "right" },
     { key: "executionEst", label: "Exec", align: "right" },
@@ -458,11 +458,13 @@
     displayList = sortedData?.slice(0, currentDisplayCount);
   };
 
+  /*
   $: {
     if ($mode) {
       config = plotData() || null;
     }
   }
+    */
 </script>
 
 <section class="w-full overflow-hidden min-h-screen pb-40">
@@ -574,19 +576,21 @@
           {/if}
         </p>
 
-        <div>
-          <div class="grow mt-5">
-            <div class="relative">
-              <!-- Apply the blur class to the chart -->
-              <div
-                class="mt-5 shadow-xs sm:mt-0 sm:border sm:border-gray-300 dark:border-gray-800 rounded"
-                use:highcharts={config}
-              ></div>
+        {#if config}
+          <div>
+            <div class="grow mt-5">
+              <div class="relative">
+                <!-- Apply the blur class to the chart -->
+                <div
+                  class="mt-5 shadow-xs sm:mt-0 sm:border sm:border-gray-300 dark:border-gray-800 rounded"
+                  use:highcharts={config}
+                ></div>
+              </div>
             </div>
           </div>
-        </div>
+        {/if}
 
-        <div class="w-full overflow-x-auto">
+        <div class="w-full overflow-x-auto mt-5">
           <table
             class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto mt-4"
           >
@@ -617,7 +621,7 @@
                   </td>
 
                   <td
-                    class=" text-sm sm:text-[1rem] text-start whitespace-nowrap"
+                    class=" text-sm sm:text-[1rem] text-end whitespace-nowrap"
                   >
                     {formatDate(item?.date)}
                   </td>
@@ -637,7 +641,7 @@
                   <td
                     class=" text-sm sm:text-[1rem] text-end whitespace-nowrap"
                   >
-                    {item?.executionEst}
+                    {item?.executionEst?.replace("At Midpoint", "Midpoint")}
                   </td>
 
                   <td
