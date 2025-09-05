@@ -61,35 +61,53 @@
   }
 
   function plotData(label, key) {
+    // Sort by fiscalYear
     const rawData = [...data]?.sort((a, b) => a?.fiscalYear - b?.fiscalYear);
-    const dateList = rawData?.map((item) =>
+
+    // Filter out entries with undefined/null values
+    const filteredData = rawData.filter(
+      (item) => item?.[key] !== undefined && item?.[key] !== null,
+    );
+
+    const dateList = filteredData.map((item) =>
       item?.period === "FY"
         ? item?.fiscalYear
         : `${item?.period} FY ${item?.fiscalYear}`,
     );
 
-    const valueList = rawData?.map((item) => item[key]);
+    const valueList = filteredData.map((item) => item[key]);
 
     // Calculate highest and lowest value
-    highestValue = Math.max(...valueList);
-    lowestValue = Math.min(...valueList);
-    let highestValueIndex = valueList.indexOf(highestValue);
-    let lowestValueIndex = valueList.indexOf(lowestValue);
+    let highestValue = null;
+    let lowestValue = null;
+    let highestValueDate = null;
+    let lowestValueDate = null;
 
-    highestValueDate = dateList[highestValueIndex] || null;
-    lowestValueDate = dateList[lowestValueIndex] || null;
+    if (valueList.length > 0) {
+      highestValue = Math.max(...valueList);
+      lowestValue = Math.min(...valueList);
+
+      const highestValueIndex = valueList.indexOf(highestValue);
+      const lowestValueIndex = valueList.indexOf(lowestValue);
+
+      highestValueDate = dateList[highestValueIndex] || null;
+      lowestValueDate = dateList[lowestValueIndex] || null;
+    }
 
     // Calculate last 5 years growth
-    fiveYearsGrowth = null;
+    let fiveYearsGrowth = null;
     if (valueList?.length >= 5) {
-      let firstValue = valueList[valueList.length - 5];
-      let lastValue = valueList[valueList.length - 1];
-      fiveYearsGrowth = ((lastValue - firstValue) / Math.abs(firstValue)) * 100;
+      const firstValue = valueList[valueList.length - 5];
+      const lastValue = valueList[valueList.length - 1];
+      if (firstValue !== 0) {
+        fiveYearsGrowth =
+          ((lastValue - firstValue) / Math.abs(firstValue)) * 100;
+      }
     }
 
     const options = {
       chart: {
-        type: chartMode === "bar" ? "column" : "spline", // Changed this line
+        type: chartMode === "bar" ? "column" : "spline",
         backgroundColor: $mode === "light" ? "#fff" : "#2A2E39",
         plotBackgroundColor: $mode === "light" ? "#fff" : "#2A2E39",
         height: 360,
@@ -104,10 +122,7 @@
           dataLabels: {
             enabled: false,
             color: "white",
-            style: {
-              fontSize: "13px",
-              fontWeight: "bold",
-            },
+            style: { fontSize: "13px", fontWeight: "bold" },
             formatter: function () {
               return abbreviateNumber(this?.y);
             },
@@ -120,7 +135,6 @@
         style: { color: $mode === "light" ? "black" : "white" },
       },
       xAxis: {
-        endOnTick: false,
         categories: dateList,
         crosshair: {
           color: $mode === "light" ? "black" : "white",
@@ -128,9 +142,7 @@
           dashStyle: "Solid",
         },
         labels: {
-          style: {
-            color: $mode === "light" ? "#545454" : "white",
-          },
+          style: { color: $mode === "light" ? "#545454" : "white" },
           rotation: -45,
           distance: 10,
         },
@@ -153,14 +165,10 @@
         backgroundColor: "rgba(0, 0, 0, 0.8)",
         borderColor: "rgba(255, 255, 255, 0.2)",
         borderWidth: 1,
-        style: {
-          color: "#fff",
-          fontSize: "16px",
-          padding: "10px",
-        },
+        style: { color: "#fff", fontSize: "16px", padding: "10px" },
         borderRadius: 4,
         formatter: function () {
-          let tooltipContent = `<span class="text-white m-auto text-black text-[1rem] font-[501]">${this?.x}</span><br>`;
+          let tooltipContent = `<span class="text-white text-[1rem] font-[501]">${this?.x}</span><br>`;
           this.points.forEach((point) => {
             tooltipContent += `<span class="text-white font-semibold text-sm">${point.series.name}:</span>
           <span class="text-white font-normal text-sm">${abbreviateNumber(
@@ -181,6 +189,7 @@
         },
       ],
     };
+
     return options;
   }
 
