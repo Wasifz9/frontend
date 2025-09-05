@@ -576,18 +576,6 @@
             : maxExposureStrike?.strike < currentPrice
               ? `providing potential support ${(((currentPrice - maxExposureStrike?.strike) / currentPrice) * 100).toFixed(1)}% below current price`
               : "right at the current price level, creating a strong pinning effect"}.
-          Strikes within 5% of current price carry
-          <strong>{nearbyNetExposure?.toLocaleString("en-US")}</strong>
-          net GEX,
-          {nearbyNetExposure > 0
-            ? "suggesting reduced volatility as market makers hedge by selling rallies and buying dips"
-            : nearbyNetExposure < 0
-              ? "indicating potential for increased volatility from negative gamma effects where market makers amplify moves"
-              : "showing balanced positioning"}.
-          {resistanceStrikes.length > 0 &&
-            ` Key resistance levels from positive gamma are at ${resistanceStrikes.map((s) => `$${s.strike.toFixed(2)}`).join(", ")}.`}
-          {supportStrikes.length > 0 &&
-            ` Support zones with positive gamma cushioning are at ${supportStrikes.map((s) => `$${s.strike.toFixed(2)}`).join(", ")}.`}
         {:else}
           <strong>{ticker}</strong> is currently trading at
           <strong>${currentPrice}</strong>
@@ -623,19 +611,6 @@
               : maxExposureStrike?.strike === currentPrice
                 ? "creating significant hedging pressure at the current level"
                 : "creating a key inflection point for hedging flows"}.
-          Near-term strikes carry
-          <strong>{abbreviateNumber(Math.abs(nearbyNetExposure))}</strong>
-          net delta exposure,
-          {nearbyNetExposure > 0
-            ? "with market makers needing to short shares on rallies, potentially creating resistance"
-            : nearbyNetExposure < 0
-              ? "requiring market makers to buy shares on declines, potentially providing support"
-              : "showing relatively neutral positioning"}.
-          {totalNetExposure > 0
-            ? ` The overall positive delta of ${abbreviateNumber(totalNetExposure)} suggests upward hedging pressure that could limit rallies.`
-            : totalNetExposure < 0
-              ? ` The overall negative delta of ${abbreviateNumber(Math.abs(totalNetExposure))} indicates downward hedging flows that could accelerate declines.`
-              : " The balanced delta profile suggests neutral market maker positioning."}
         {/if}
       </p>
     {:else}

@@ -487,24 +487,7 @@
           ? "showing a shift between positive and negative gamma regimes"
           : maxExposure > 0 && minExposure > 0
             ? "maintaining consistently positive gamma throughout"
-            : "remaining in negative gamma territory"}. The exposure has been
-        <strong>{recentTrend}</strong>
-        recently,
-        {recentTrend === "increasing" && currentExposure > 0
-          ? "suggesting growing dealer hedging that could dampen volatility"
-          : recentTrend === "decreasing" && currentExposure < 0
-            ? "indicating reduced hedging flows that may amplify price swings"
-            : recentTrend === "stable"
-              ? "indicating steady positioning"
-              : "signaling a shift in market maker hedging dynamics"}. Today's
-        put-call gamma ratio of
-        <strong>{currentPutCallRatio?.toFixed(2)}</strong>
-        {currentPutCallRatio > averagePutCallRatio
-          ? `is elevated versus the recent average of ${averagePutCallRatio.toFixed(2)}, suggesting increased put hedging`
-          : `is below the recent average of ${averagePutCallRatio.toFixed(2)}, indicating call-heavy positioning`}.
-        {exposureVolatility > Math.abs(averageExposure) * 0.5
-          ? ` High GEX volatility (±${abbreviateNumber(exposureVolatility)}) suggests frequent repositioning and potential regime changes.`
-          : ` Stable GEX patterns (±${abbreviateNumber(exposureVolatility)}) indicate consistent market maker positioning.`}
+            : "remaining in negative gamma territory"}.
       {:else}
         <strong>{ticker}</strong>'s current Delta Exposure (DEX) is
         <strong>{abbreviateNumber(currentExposure)}</strong> shares, which is
@@ -522,26 +505,6 @@
           : maxExposure > 0 && minExposure >= 0
             ? "with dealers maintaining net short exposure requiring continuous hedging"
             : "with dealers consistently net long, providing natural buying support"}.
-        Delta exposure has been <strong>{recentTrend}</strong> recently,
-        {recentTrend === "increasing" && currentExposure > 0
-          ? "forcing increased dealer shorting that could cap rallies"
-          : recentTrend === "decreasing" && currentExposure < 0
-            ? "reducing dealer buying pressure that supported recent moves"
-            : recentTrend === "stable"
-              ? "maintaining steady hedging requirements"
-              : "shifting the directional hedging pressure"}. The current
-        put-call delta ratio of
-        <strong>{currentPutCallRatio?.toFixed(2)}</strong>
-        {currentPutCallRatio > 1.2
-          ? "signals heavy put positioning that could accelerate downside moves"
-          : currentPutCallRatio < 0.8
-            ? "shows bullish call positioning but leaves the market vulnerable to pullbacks"
-            : "reflects balanced options positioning"}.
-        {Math.abs(currentExposure) > Math.abs(maxExposure) * 0.8
-          ? ` Near extreme DEX levels suggest potential for mean reversion as positions unwind.`
-          : Math.abs(currentExposure) < Math.abs(averageExposure) * 0.5
-            ? ` Relatively low DEX indicates reduced hedging flows and potential for increased volatility.`
-            : ` Moderate DEX levels suggest normal market maker hedging activity.`}
       {/if}
     </p>
   </div>

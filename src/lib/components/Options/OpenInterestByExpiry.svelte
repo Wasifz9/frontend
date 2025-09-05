@@ -309,38 +309,13 @@
         0,
       )}
       {@const totalOI = totalCallOI + totalPutOI}
-      {@const overallPCRatio = totalCallOI > 0 ? totalPutOI / totalCallOI : 0}
-      {@const nearestExpiry = rawData.sort(
-        (a, b) => new Date(a.expiry) - new Date(b.expiry),
-      )[0]}
-      {@const farthestExpiry = rawData.sort(
-        (a, b) => new Date(b.expiry) - new Date(a.expiry),
-      )[0]}
+
       <br />
       Total open interest across all expiries is
       <strong>{totalOI.toLocaleString("en-US")}</strong>
       contracts, with <strong>{totalCallOI.toLocaleString("en-US")}</strong>
       call contracts and
-      <strong>{totalPutOI.toLocaleString("en-US")}</strong> put contracts. The
-      overall put-call open interest ratio is
-      <strong>{overallPCRatio.toFixed(2)}</strong>, indicating a
-      <strong>{overallPCRatio > 1 ? "bearish" : "bullish"}</strong>
-      bias in positioning. Options expire from
-      <strong
-        >{new Date(nearestExpiry.expiry).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })}</strong
-      >
-      to
-      <strong
-        >{new Date(farthestExpiry.expiry).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })}</strong
-      >.
+      <strong>{totalPutOI.toLocaleString("en-US")}</strong> put contracts.
     {:else}
       No active option expiration dates found with future expiry dates.
     {/if}

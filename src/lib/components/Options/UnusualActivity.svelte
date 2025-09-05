@@ -51,7 +51,7 @@
     let formatter = new Intl.DateTimeFormat("en-US", options);
     return formatter.format(date);
   }
-
+  /*
   function plotData() {
     let dates = [];
     let priceList = [];
@@ -343,7 +343,7 @@
 
     return options;
   }
-
+*/
   async function handleScroll() {
     const scrollThreshold = document.body.offsetHeight * 0.8; // 80% of the website height
     const isBottom = window.innerHeight + window.scrollY >= scrollThreshold;
@@ -509,7 +509,7 @@
             {@const largestPremium = Math.max(
               ...rawData.map((item) => item.premium || 0),
             )}
-            {@const sweepCount = rawData.filter(
+            {@const sweepCount = rawData?.filter(
               (item) => item.unusualType === "Sweep",
             ).length}
 
@@ -545,34 +545,7 @@
               ? ", indicating <strong>strong bullish conviction</strong>"
               : bearishCount > bullishCount * 1.5
                 ? ", indicating <strong>strong bearish conviction</strong>"
-                : ", showing <strong>mixed market sentiment</strong>"}. The
-            average days to expiration is <strong>{avgDTE} days</strong>
-            {@html avgDTE < 7
-              ? ", suggesting <strong>near-term catalysts expected</strong>"
-              : avgDTE > 30
-                ? ", indicating <strong>longer-term positioning</strong>"
-                : ", reflecting <strong>intermediate-term outlook</strong>"}.
-            {@html recentActivity > 0 &&
-              `In the past week alone, <strong>${recentActivity}</strong> 
-        ${recentActivity === 1 ? "trade has" : "trades have"} been executed
-        ${
-          recentActivity > rawData.length * 0.5
-            ? ", showing <strong>accelerating institutional interest</strong>."
-            : ","
-        }`}
-            {@html sweepCount > 0 &&
-              ` <strong>${sweepCount}</strong> ${sweepCount === 1 ? "order was" : "orders were"} 
-        executed as ${sweepCount === 1 ? "a sweep" : "sweeps"}, 
-        ${
-          sweepCount > rawData.length * 0.3
-            ? "indicating <strong>urgent positioning</strong>"
-            : "suggesting <strong>aggressive execution</strong>"
-        }.`}
-            The largest single premium was
-            <strong>${largestPremium.toLocaleString("en-US")}</strong>
-            {largestPremium > totalPremium * 0.2
-              ? ", representing a <strong>significant institutional bet</strong>"
-              : ""}.
+                : ", showing <strong>mixed market sentiment</strong>"}.
           {/if}
         </p>
 

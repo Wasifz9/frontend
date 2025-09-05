@@ -401,20 +401,7 @@
           : overallPutCallRatio !== "n/a" &&
               parseFloat(overallPutCallRatio) < 0.5
             ? "shows call-heavy positioning, potentially creating volatility as market makers hedge by selling into strength and buying weakness"
-            : "reflects balanced positioning between puts and calls"}. The
-        highest gamma concentration is at the
-        <strong>{formatDate(highestExposureExpiry?.expiry)}</strong>
-        expiration with
-        <strong
-          >{highestExposureExpiry?.net_gex?.toLocaleString("en-US")}</strong
-        >
-        net GEX, which may act as a {highestExposureExpiry?.net_gex > 0
-          ? "magnet"
-          : "pivot"} point for price action. Near-term exposure for
-        <strong>{nearestExpiry}</strong>
-        suggests {rawData?.[0]?.net_gex > 0
-          ? "potential support from positive gamma hedging flows"
-          : "possible volatility from negative gamma effects"}.
+            : "reflects balanced positioning between puts and calls"}.
       {:else}
         The total Delta Exposure (DEX) for <strong>{ticker}</strong> across all
         expirations shows
@@ -430,21 +417,7 @@
           : overallPutCallRatio !== "n/a" &&
               parseFloat(overallPutCallRatio) < 0.5
             ? "shows bullish positioning with call dominance, potentially providing upward momentum but leaving the market vulnerable to sharp pullbacks"
-            : "suggests neutral market maker positioning"}. The largest delta
-        concentration at
-        <strong>{formatDate(highestExposureExpiry?.expiry)}</strong>
-        with
-        <strong
-          >{highestExposureExpiry?.net_dex?.toLocaleString("en-US")}</strong
-        >
-        net DEX represents significant hedging pressure that {highestExposureExpiry?.net_dex >
-        0
-          ? "may cap upside moves"
-          : "could fuel downside acceleration"}. The nearest expiration on
-        <strong>{nearestExpiry}</strong>
-        carries {rawData?.[0]?.net_dex > 0
-          ? "positive delta requiring market makers to short shares, potentially creating resistance"
-          : "negative delta forcing market makers to buy shares, potentially providing support"}.
+            : "suggests neutral market maker positioning"}.
       {/if}
     </p>
   </div>
