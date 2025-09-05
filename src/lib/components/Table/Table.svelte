@@ -246,6 +246,10 @@
     // Trigger reactivity by creating a new reference
     rawData = [...updatedRawData];
     stockList = rawData?.slice(0, 100);
+    
+    // Validate and clean rules after updating data
+    validateAndCleanRules();
+    
     columns = generateColumns(rawData);
     sortOrders = generateSortOrders(rawData);
   };
@@ -256,6 +260,26 @@
       tickerList: rawData?.map((item) => item?.symbol),
     });
   };
+
+  function validateAndCleanRules() {
+    if (!rawData || rawData.length === 0) return;
+    
+    // Get available keys from the first item in rawData
+    const availableKeys = new Set(Object.keys(rawData[0]));
+    
+    // Filter ruleOfList to only include rules that exist in rawData
+    const validRules = ruleOfList.filter(rule => availableKeys.has(rule.rule));
+    
+    // Update ruleOfList if any rules were removed
+    if (validRules.length !== ruleOfList.length) {
+      ruleOfList = validRules;
+      checkedItems = new Set(ruleOfList.map(item => item.name));
+      allRows = sortIndicatorCheckMarks(allRows);
+      saveRules();
+      return true; // Indicates that cleanup was performed
+    }
+    return false; // No cleanup needed
+  }
 
   function saveRules() {
     try {
@@ -442,6 +466,15 @@
 
   $: stockList = [...stockList];
 
+  // Reactive statement to validate and clean rules when rawData changes
+  $: if (rawData && rawData.length > 0) {
+    const wasCleanedUp = validateAndCleanRules();
+    if (wasCleanedUp) {
+      columns = generateColumns(rawData);
+      sortOrders = generateSortOrders(rawData);
+    }
+  }
+
   $: if ($isOpen) {
     websocketRealtimeData();
     console.log("WebSocket restarted");
@@ -490,6 +523,9 @@
         localStorage?.setItem(pagePathName, JSON.stringify(ruleOfList));
       }
 
+      // Validate and clean rules before updating checked items
+      validateAndCleanRules();
+      
       // Update checked items and sort the indicators
       checkedItems = new Set(ruleOfList.map((item) => item.name));
       allRows = sortIndicatorCheckMarks(allRows);
@@ -568,6 +604,8 @@
 
   // Function to generate columns based on keys in rawData
   function generateColumns(data) {
+    if (!data || data.length === 0) return [];
+    
     const leftAlignKeys = new Set(["rank", "symbol", "name"]);
 
     // Custom labels for specific keys
@@ -587,19 +625,22 @@
       allRows?.map((row) => [row.rule, { name: row.name, type: row.type }]),
     );
 
-    // Separate preferred keys and other keys, excluding "type"
-    const keys = Object?.keys(data[0])?.filter((key) => key !== "type");
+    // Get available keys from the data
+    const availableKeys = Object?.keys(data[0])?.filter((key) => key !== "type");
 
-    // Merge the preferred order with the default list order
+    // Filter ruleOfList to only include rules that exist in availableKeys
+    const validRulesList = ruleOfList.filter(item => availableKeys.includes(item.rule));
+
+    // Merge the preferred order with the valid rules list
     const orderedKeys = [
-      ...preferredOrder?.filter((key) => keys?.includes(key)),
-      ...defaultList
+      ...preferredOrder?.filter((key) => availableKeys?.includes(key)),
+      ...validRulesList
         ?.map((item) => item.rule)
-        .filter((key) => keys?.includes(key)),
-      ...keys?.filter(
+        .filter((key) => availableKeys?.includes(key)),
+      ...availableKeys?.filter(
         (key) =>
           !preferredOrder?.includes(key) &&
-          !defaultList?.some((item) => item.rule === key),
+          !validRulesList?.some((item) => item.rule === key),
       ),
     ];
 
