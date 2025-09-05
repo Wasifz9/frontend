@@ -16,7 +16,6 @@
   const excludedRules = new Set([
     "price",
     "changesPercentage",
-    "count",
     "sentiment",
     "marketCap",
   ]);
@@ -25,17 +24,14 @@
     { name: "Market Cap", rule: "marketCap" },
     { name: "Price", rule: "price" },
     { name: "% Change", rule: "changesPercentage" },
-    { name: "Mentions", rule: "count" },
     { name: "Sentiment", rule: "sentiment" },
   ];
 
   const specificRows = [
-    { name: "Mentions", rule: "count", type: "int" },
     { name: "Sentiment", rule: "sentiment", type: "rating" },
   ];
 
   let configPieChart = null;
-  let configBarChart = null;
 
   let activeIdx = 0;
 
@@ -99,7 +95,7 @@
         backgroundColor: $mode === "light" ? "#fff" : "#09090B",
         plotBackgroundColor: $mode === "light" ? "#fff" : "#09090B",
         type: "pie",
-        height: 330,
+        height: $screenWidth < 640 ? 300 : 360,
         animation: false,
       },
       title: {
@@ -111,10 +107,10 @@
           cursor: "pointer",
           dataLabels: {
             enabled: true,
-            distance: 30,
+            distance: $screenWidth < 640 ? 10 : 30,
             style: {
               color: $mode === "light" ? "#333" : "#fff",
-              fontSize: "14px",
+              fontSize: $screenWidth < 640 ? "12px" : "14px",
               fontWeight: "500",
               textOutline: "none",
             },
@@ -156,113 +152,10 @@
     return options;
   }
 
-  function plotBarChart() {
-    // Sector allocation data
-    const stockData = data?.getRedditTracker[timePeriod]?.slice(0, 12);
-
-    // Transform data for Highcharts horizontal bar chart
-    const categories = stockData?.map((item) => item?.symbol);
-    const values = stockData?.map((item) => item?.weightPercentage);
-
-    // Highcharts configuration options
-    const options = {
-      credits: {
-        enabled: false,
-      },
-      chart: {
-        backgroundColor: $mode === "light" ? "#fff" : "#09090B",
-        plotBackgroundColor: $mode === "light" ? "#fff" : "#09090B",
-        type: "bar",
-        height: 500,
-        animation: false,
-      },
-      title: {
-        text: null,
-      },
-      xAxis: {
-        categories: categories,
-        title: {
-          text: null,
-        },
-        labels: {
-          style: {
-            color: $mode === "light" ? "#333" : "#fff",
-            fontSize: "14px",
-            fontWeight: "400",
-          },
-        },
-        lineWidth: 0,
-        tickLength: 0,
-      },
-      yAxis: {
-        min: 0,
-        max: 35,
-        title: {
-          text: null,
-        },
-        labels: {
-          enabled: false,
-        },
-        gridLineWidth: 0,
-        lineWidth: 0,
-        tickLength: 0,
-      },
-      plotOptions: {
-        bar: {
-          dataLabels: {
-            enabled: true,
-            inside: true,
-            align: "left",
-            x: 5,
-            style: {
-              color: $mode === "light" ? "#333" : "#fff",
-              fontSize: "14px",
-              fontWeight: "600",
-              textOutline: "none",
-            },
-            formatter: function () {
-              return this.y.toFixed(2) + "%";
-            },
-          },
-          color: "#4A90A4",
-          borderWidth: 0,
-          pointPadding: 0.1,
-          groupPadding: 0.1,
-          animation: false,
-          enableMouseTracking: false,
-          states: {
-            hover: {
-              enabled: false,
-            },
-            inactive: {
-              enabled: false,
-            },
-          },
-        },
-      },
-      tooltip: {
-        enabled: false,
-      },
-      series: [
-        {
-          name: "Percentage",
-          data: values,
-          animation: false,
-        },
-      ],
-      legend: {
-        enabled: false,
-      },
-    };
-
-    return options;
-  }
-
   $: {
     if ($mode && typeof window !== "undefined" && timePeriod) {
       configPieChart = plotPieChart() || null;
-      configBarChart = plotBarChart() || null;
-      rawData = data?.getRedditTracker[timePeriod] || [];
+      rawData = data?.getRedditTracker[timePeriod];
     }
   }
 </script>
@@ -353,39 +246,13 @@
                   : "3-month"}</strong
             >
             period. As of today, the most discussed stock is
-            <strong>{rawData?.[0]?.symbol || "n/a"}</strong>
-            with
-            <strong
-              >{rawData?.[0]?.count?.toLocaleString("en-US") || "n/a"}</strong
-            >
-            mentions, representing
+            <strong>{rawData?.[0]?.symbol || "n/a"}</strong>, representing
             <strong
               >{rawData?.[0]?.weightPercentage
                 ? rawData[0].weightPercentage.toFixed(1) + "%"
                 : "n/a"}</strong
             >
-            of total discussion volume. The overall sentiment is
-            <strong
-              >{rawData?.[0]?.sentiment > 0.6
-                ? "bullish"
-                : rawData?.[0]?.sentiment < 0.4
-                  ? "bearish"
-                  : "neutral"}</strong
-            >. Total tracked mentions across all stocks amount to
-            <strong
-              >{rawData
-                ?.reduce((sum, item) => sum + (item.count || 0), 0)
-                ?.toLocaleString("en-US") || "n/a"}</strong
-            >
-            discussions, indicating
-            <strong
-              >{rawData?.length > 10
-                ? "high"
-                : rawData?.length > 5
-                  ? "moderate"
-                  : "low"}</strong
-            >
-            community engagement levels.
+            of total discussion volume.
           </p>
 
           {#if data?.getRedditTracker[timePeriod]?.length > 0}
@@ -398,9 +265,7 @@
 
                   <div
                     class=" sm:p-3 shadow-xs border border-gray-300 dark:border-gray-800 rounded"
-                    use:highcharts={$screenWidth < 640
-                      ? configBarChart
-                      : configPieChart}
+                    use:highcharts={configPieChart}
                   ></div>
                 </div>
               </div>
