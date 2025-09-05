@@ -139,7 +139,7 @@
       },
       plotOptions: {
         series: {
-          color: $mode === "light" ? "black" : "white",
+          legendSymbol: "rectangle",
           animation: false,
           states: {
             hover: {
@@ -147,23 +147,15 @@
             },
           },
         },
-        bubble: {
-          minSize: 8, // Minimum bubble size
-          maxSize: 35, // Maximum bubble size
-          opacity: 0.8,
+        spline: {
           marker: {
-            enabled: true,
-            fillOpacity: 0.8,
-            lineWidth: 2,
-            lineColor: $mode === "light" ? "#dc2626" : "#ef4444",
-          },
-          dataLabels: {
             enabled: false,
+            states: {
+              hover: {
+                enabled: false,
+              },
+            },
           },
-          sizeBy: "z",
-          zMin: minFTD,
-          zMax: maxFTD,
-          sizeByAbsoluteValue: false,
         },
       },
       legend: {
@@ -180,46 +172,35 @@
         },
       },
       tooltip: {
-        shared: false, // Changed to false for better bubble handling
+        shared: true,
         useHTML: true,
         backgroundColor: "rgba(0, 0, 0, 0.8)",
         borderColor: "rgba(255, 255, 255, 0.2)",
         borderWidth: 1,
-        style: {
-          color: "#fff",
-          fontSize: "16px",
-          padding: "10px",
-        },
         borderRadius: 4,
+        style: { color: "#fff", fontSize: "14px", padding: "10px" },
+
         formatter: function () {
-          let tooltipContent = `<span class="m-auto text-[1rem] font-[501]">${new Date(
-            dates[this.x] || this.x,
-          ).toLocaleDateString("en-US", {
+          const dateVal = dates?.[this.x] ?? this.x;
+          const dateStr = new Date(dateVal).toLocaleDateString("en-US", {
             year: "numeric",
             month: "short",
             day: "numeric",
             timeZone: "UTC",
-          })}</span><br>`;
+          });
 
-          // Handle bubble series differently
-          if (this.series.type === "bubble") {
-            tooltipContent += `<span class="font-semibold text-sm">${this.series.name}</span><br>`;
-            tooltipContent += `<span class="font-normal text-sm">Price: $${this.point.y?.toFixed(2)}</span><br>`;
-            tooltipContent += `<span class="font-normal text-sm">FTD Shares: ${abbreviateNumber(this.point.z)}</span><br>`;
-            tooltipContent += `<span class="font-normal text-xs">Impact: ${
-              this.point.z === maxFTD
-                ? "Highest"
-                : this.point.z > avgFTD * 2
-                  ? "High"
-                  : "Medium"
-            }</span>`;
-          } else if (this.series.type === "line") {
-            tooltipContent += `<span class="font-semibold text-sm">Stock Price: $${this.y?.toFixed(2)}</span><br>`;
-          } else if (this.series.type === "area") {
-            tooltipContent += `<span class="font-semibold text-sm">FTD Shares: ${abbreviateNumber(this.y)}</span>`;
-          }
+          let html = `<div class="text-[1rem] font-[501] mb-1">${dateStr}</div>`;
 
-          return tooltipContent;
+          // `this.points` is an array of point objects (one per visible series at x)
+          this.points.forEach((p) => {
+            if (p.series.type === "line") {
+              html += `<div class="text-sm">Stock Price: <strong>$${(p.y ?? 0).toFixed(2)}</strong></div>`;
+            } else {
+              html += `<div class="text-sm">${p.series.name}: <strong>${p.y?.toLocaleString("en-US") ?? 0}</strong></div>`;
+            }
+          });
+
+          return `<div class="p-1">${html}</div>`;
         },
       },
       xAxis: {
@@ -292,6 +273,7 @@
           fillOpacity: 1,
           yAxis: 1,
           color: "#E11D48",
+          borderColor: "#E11D48",
           marker: {
             enabled: false,
             states: {
@@ -301,17 +283,6 @@
             },
           },
           zIndex: 1, // Lowest z-index
-        },
-        {
-          // FTD impact bubbles drawn on top
-          name: "High FTD Impact",
-          type: "bubble",
-          data: ftdImpactPoints,
-          color: "#E11D48",
-          yAxis: 0, // Use the price axis for y-positioning
-          animation: false,
-          zIndex: 3, // Highest z-index to appear on top
-          showInLegend: true,
         },
       ],
     };
@@ -362,27 +333,11 @@
         <strong
           >{data?.getStockQuote?.avgVolume?.toLocaleString("en-US")}</strong
         >
-        shares. Over the past year, the monthly average FTD is
-        <strong>{avgFailToDeliver?.toLocaleString("en-US")}</strong>
-        shares, with the current level {@html rawData?.slice(-1)?.at(0)
-          ?.failToDeliver > avgFailToDeliver
-          ? `<strong>${((rawData?.slice(-1)?.at(0)?.failToDeliver / avgFailToDeliver - 1) * 100).toFixed(0)}% above</strong>`
-          : `<strong>${((1 - rawData?.slice(-1)?.at(0)?.failToDeliver / avgFailToDeliver) * 100).toFixed(0)}% below</strong>`}
-        the historical average, indicating
-        <strong
-          >{rawData?.slice(-1)?.at(0)?.failToDeliver > avgFailToDeliver * 1.5
-            ? "elevated"
-            : rawData?.slice(-1)?.at(0)?.failToDeliver < avgFailToDeliver * 0.5
-              ? "low"
-              : "moderate"}</strong
-        >
-        settlement pressure. {weightedFTD > 1
-          ? `The weighted FTD ratio above 1% suggests potential liquidity constraints or heightened short-selling activity.`
-          : `The weighted FTD ratio below 1% suggests normal market making activity with adequate liquidity.`}
+        shares.
       </div>
 
       <div
-        class="chart-driver shadow-xs mt-5 sm:mt-0 border border-gray-300 dark:border-gray-800 rounded"
+        class="chart-driver shadow-xs mt-5 border border-gray-300 dark:border-gray-800 rounded"
         use:highcharts={config}
       ></div>
 
@@ -400,45 +355,25 @@
             class="timeframe-toggle-driver bg-default text-white dark:bg-secondary w-full min-w-24 sm:w-fit relative flex flex-wrap items-center justify-center rounded p-1"
           >
             {#each tabs as item, i}
-              {#if !["Pro", "Plus"]?.includes(data?.user?.tier) && i > 0}
-                <button
-                  on:click={() => goto("/pricing")}
-                  class="cursor-pointer group relative z-1 rounded-full w-1/2 min-w-24 md:w-auto px-5 py-1"
-                >
-                  <span class="relative text-sm block font-semibold">
-                    {item.title}
-                    <svg
-                      class="inline-block ml-0.5 -mt-1 w-3.5 h-3.5"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      ><path
-                        fill="currentColor"
-                        d="M17 9V7c0-2.8-2.2-5-5-5S7 4.2 7 7v2c-1.7 0-3 1.3-3 3v7c0 1.7 1.3 3 3 3h10c1.7 0 3-1.3 3-3v-7c0-1.7-1.3-3-3-3M9 7c0-1.7 1.3-3 3-3s3 1.3 3 3v2H9z"
-                      /></svg
-                    >
-                  </span>
-                </button>
-              {:else}
-                <button
-                  on:click={() => changeTimePeriod(i)}
-                  class="cursor-pointer group relative z-1 rounded-full w-1/2 min-w-24 md:w-auto px-5 py-1 {activeIdx ===
+              <button
+                on:click={() => changeTimePeriod(i)}
+                class="cursor-pointer group relative z-1 rounded-full w-1/2 min-w-24 md:w-auto px-5 py-1 {activeIdx ===
+                i
+                  ? 'z-0'
+                  : ''} "
+              >
+                {#if activeIdx === i}
+                  <div class="absolute inset-0 rounded bg-[#fff]"></div>
+                {/if}
+                <span
+                  class="relative text-sm block font-semibold whitespace-nowrap {activeIdx ===
                   i
-                    ? 'z-0'
-                    : ''} "
+                    ? 'text-black'
+                    : ''}"
                 >
-                  {#if activeIdx === i}
-                    <div class="absolute inset-0 rounded bg-[#fff]"></div>
-                  {/if}
-                  <span
-                    class="relative text-sm block font-semibold whitespace-nowrap {activeIdx ===
-                    i
-                      ? 'text-black'
-                      : ''}"
-                  >
-                    {item.title}
-                  </span>
-                </button>
-              {/if}
+                  {item.title}
+                </span>
+              </button>
             {/each}
           </div>
         </div>
@@ -487,7 +422,7 @@
                 <td
                   class=" text-sm sm:text-[1rem] text-right whitespace-nowrap"
                 >
-                  {abbreviateNumber(item?.failToDeliver)}
+                  {item?.failToDeliver?.toLocaleString("en-US")}
                 </td>
 
                 <td class=" text-sm sm:text-[1rem] whitespace-nowrap text-end">

@@ -234,6 +234,12 @@
             <Tutorial {steps} />
           </div>
 
+          <div class="mb-5 mt-5 w-full">
+            <Infobox
+              text="This table provides an overview of how a stock's price historically reacted around earnings reports. It displays key metrics like price changes over specific timeframes and Relative Strength Index (RSI)."
+            />
+          </div>
+
           {#if rawData?.length > 0}
             <div
               class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
@@ -330,20 +336,14 @@
               </div>
             </div>
 
-            <div class="mb-5 mt-5 w-full">
-              <Infobox
-                text="This table provides an overview of how a stock's price historically reacted around earnings reports. It displays key metrics like price changes over specific timeframes and Relative Strength Index (RSI)."
-              />
-            </div>
-
             <div class=" w-full overflow-x-auto no-scrollbar">
               <table
-                class="table-fixed leading-3 border-separate border-spacing-0 font-sans tabular-nums w-full"
+                class="table-fixed leading-3 border-separate border-spacing-0 border-b border-gray-300 dark:border-gray-800 font-sans tabular-nums w-full"
               >
                 <thead class="historical-data-driver"
                   ><tr class=" text-sm sm:text-[1rem]"
                     ><th
-                      class="w-44 whitespace-nowrap font-normal h-5 text-left px-1"
+                      class="w-36 whitespace-nowrap font-normal h-5 text-left px-1"
                       >Report Date</th
                     ><th
                       class="px-4 last:pr-11 w-20 last:w-24.5 whitespace-nowrap font-normal h-5 text-right p-0"
@@ -390,10 +390,10 @@
                   <tbody class="">
                     <tr class="group"
                       ><td
-                        class="whitespace-nowrap border-l border-t border-gray-300 dark:border-primary py-0.5 rounded-tl-md px-1"
-                        ><div class="flex flex-col items-start w-full">
+                        class="whitespace-nowrap border-l border-t border-gray-300 dark:border-gray-800 py-0.5 rounded-tl-md px-1"
+                        ><div class="flex flex-col items-start w-fit">
                           <div
-                            class="pr-0.5 mt-2 flex flex-row items-center w-full text-sm"
+                            class="pr-0.5 mt-2 flex flex-row items-center w-fit text-sm"
                           >
                             <div class="">
                               {item?.date !== undefined
@@ -404,13 +404,11 @@
                                       day: "numeric",
                                       year: "numeric",
                                       daySuffix: "2-digit",
+                                      timeZone: "UTC",
                                     },
                                   )
                                 : "-"}
                               ({item?.quarter})
-                            </div>
-                            <div class="ml-1 text-end w-full">
-                              {checkTime(item?.time)}
                             </div>
                           </div>
 
@@ -420,74 +418,74 @@
                           </div>
                         </div></td
                       ><td
-                        class="border-gray-300 dark:border-primary px-3.5 py-0.5 border-t border-l px-4 last:pr-11 w-17 last:w-24.5 px-1 text-right"
+                        class="border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-t border-l px-4 last:pr-11 w-17 last:w-24.5 px-1 text-right"
                         ><span class=" text-sm sm:text-[1rem]"
                           >{item?.backward_2_days_close?.toFixed(2)}</span
                         ></td
                       ><td
-                        class="border-gray-300 dark:border-primary px-3.5 py-0.5 border-t border-l px-4 last:pr-11 w-17 last:w-24.5 px-1 text-right"
+                        class="border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-t border-l px-4 last:pr-11 w-17 last:w-24.5 px-1 text-right"
                         ><span class=" text-sm sm:text-[1rem]"
                           >{item?.backward_1_days_close?.toFixed(2)}</span
                         ></td
                       ><td
-                        class="border-gray-300 dark:border-primary px-3.5 py-0.5 border-t border-l rounded-tr-md px-4 last:pr-11 w-17 last:w-24.5 border-r px-1 text-right"
+                        class="border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-t border-l rounded-tr-md px-4 last:pr-11 w-17 last:w-24.5 border-r px-1 text-right"
                         ><span class=" text-sm sm:text-[1rem]"
                           >{item?.forward_0_days_close?.toFixed(2)}</span
                         ></td
                       ><td
-                        class="border-gray-300 dark:border-primary px-3.5 py-0.5 px-4 last:pr-11 w-17 last:w-24.5 px-1"
+                        class="border-gray-300 dark:border-gray-800 px-3.5 py-0.5 px-4 last:pr-11 w-17 last:w-24.5 px-1"
                       ></td><td
-                        class="border-gray-300 dark:border-primary px-3.5 py-0.5 border-t border-l px-4 last:pr-11 w-17 last:w-24.5 dark:border-l-gray-800 px-1 text-right"
+                        class="border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-t border-l px-4 last:pr-11 w-17 last:w-24.5 dark:border-l-gray-800 px-1 text-center"
                         ><span class=" text-sm sm:text-[1rem]"
                           >{item?.open ? item?.open?.toFixed(2) : "-"}</span
                         ></td
                       ><td
-                        class="border-gray-300 dark:border-primary px-3.5 py-0.5 border-t border-l border-r px-4 last:pr-11 w-17 last:w-24.5 px-1 text-right"
+                        class="border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-t border-l border-r px-4 last:pr-11 w-17 last:w-24.5 px-1 text-center"
                         ><span class=" text-sm sm:text-[1rem]"
                           >{item?.high ? item?.high?.toFixed(2) : "-"}</span
                         ></td
                       ><td
-                        class="border-gray-300 dark:border-primary px-3.5 py-0.5 border-t border-l border-r px-4 last:pr-11 w-17 last:w-24.5 px-1 text-right"
+                        class="border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-t border-l border-r px-4 last:pr-11 w-17 last:w-24.5 px-1 text-center"
                         ><span class=" text-sm sm:text-[1rem]"
                           >{item?.low ? item?.low?.toFixed(2) : "-"}</span
                         ></td
                       ><td
-                        class="border-gray-300 dark:border-primary px-3.5 py-0.5 border-t border-r dark:border-r-gray-800 px-4 last:pr-11 w-17 last:w-24.5 px-1 text-right"
+                        class="border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-t border-r dark:border-r-gray-800 px-4 last:pr-11 w-17 last:w-24.5 px-1 text-center"
                         ><span class=" text-sm sm:text-[1rem]"
                           >{item?.close ? item?.close?.toFixed(2) : "-"}</span
                         ></td
                       ><td
-                        class="border-gray-300 dark:border-primary px-3.5 py-0.5 px-4 last:pr-11 w-17 last:w-24.5 px-1"
+                        class="border-gray-300 dark:border-gray-800 px-3.5 py-0.5 px-4 last:pr-11 w-17 last:w-24.5 px-1"
                       ></td><td
-                        class="border-gray-300 dark:border-primary px-3.5 py-0.5 border-t border-l rounded-tl-md px-4 last:pr-11 w-17 last:w-24.5 border-l px-1 text-right"
+                        class="border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-t border-l rounded-tl-md px-4 last:pr-11 w-17 last:w-24.5 border-l px-1 text-center"
                         ><span class=" text-sm sm:text-[1rem]"
                           >{item?.forward_2_days_close !== undefined
                             ? item?.forward_2_days_close?.toFixed(2)
                             : "-"}</span
                         ></td
                       ><td
-                        class="border-gray-300 dark:border-primary px-3.5 py-0.5 border-t border-l px-4 last:pr-11 w-17 last:w-24.5 px-1 text-right"
+                        class="border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-t border-l px-4 last:pr-11 w-17 last:w-24.5 px-1 text-center"
                         ><span class=" text-sm sm:text-[1rem]"
                           >{item?.forward_3_days_close !== undefined
                             ? item?.forward_3_days_close?.toFixed(2)
                             : "-"}</span
                         ></td
                       ><td
-                        class="border-gray-300 dark:border-primary border-t border-l border-r px-3.5 py-0.5 px-4 last:pr-11 w-17 last:w-24.5 px-1 text-right"
+                        class="border-gray-300 dark:border-gray-800 border-t border-l border-r px-3.5 py-0.5 px-4 last:pr-11 w-17 last:w-24.5 px-1 text-center"
                         ><span class=" text-sm sm:text-[1rem]"
                           >{item?.forward_4_days_close !== undefined
                             ? item?.forward_4_days_close?.toFixed(2)
                             : "-"}</span
                         ></td
                       ><td
-                        class="border-gray-300 dark:border-primary px-3.5 py-0.5 border-t border-r px-4 last:pr-11 w-17 last:w-24.5 px-1 text-right"
+                        class="border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-t border-r px-4 last:pr-11 w-17 last:w-24.5 px-1 text-center"
                         ><span class=" text-sm sm:text-[1rem]"
                           >{item?.forward_6_days_close !== undefined
                             ? item?.forward_6_days_close?.toFixed(2)
                             : "-"}</span
                         ></td
                       ><td
-                        class="border-gray-300 dark:border-primary px-3.5 py-0.5 border-t border-r px-4 last:pr-11 w-17 last:w-24.5 px-1 text-right"
+                        class="border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-t border-r px-4 last:pr-11 w-17 last:w-24.5 px-1 text-center"
                         ><span class=" text-sm sm:text-[1rem]"
                           >{item?.backward_4_days_close
                             ? item?.backward_4_days_close?.toFixed(2)
@@ -502,8 +500,8 @@
                         ? 'opacity-[0.1]'
                         : ''}"
                       ><td
-                        class="border-l border-gray-300 dark:border-primary pl-1 text-muted dark:text-gray-200 text-sm px-1"
-                        ><div class="flex w-full justify-between">
+                        class="border-l border-gray-300 dark:border-gray-800 pl-1 text-muted dark:text-gray-200 text-sm px-1"
+                        ><div class="flex w-full justify-start">
                           <div class="flex items-center">
                             <div class="mr-1 font-semibold">IV:</div>
                             <div
@@ -513,7 +511,7 @@
                             </div>
                           </div>
 
-                          <div class="flex items-center">
+                          <div class="ml-3 flex items-center">
                             <div class="mr-1 font-semibold">RSI:</div>
                             <div
                               class="leading-3 w-full whitespace-nowrap font-semibold"
@@ -521,11 +519,9 @@
                               {item?.rsi ?? "-"}
                             </div>
                           </div>
-
-                          <div>% Change</div>
                         </div></td
                       ><td
-                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-primary px-3.5 py-0.5 border-l px-1 text-right"
+                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-l px-1 text-right"
                         ><span
                           class="w-full text-sm sm:text-[1rem] items-baseline justify-end whitespace-nowrap {item?.backward_2_days_change_percent >=
                           0
@@ -536,7 +532,7 @@
                           ></span></span
                         ></td
                       ><td
-                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-primary px-3.5 py-0.5 border-l border-r px-1 text-right"
+                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-l border-r px-1 text-right"
                         ><span
                           class="w-full text-sm sm:text-[1rem] items-baseline justify-end whitespace-nowrap {item?.backward_1_days_change_percent >=
                           0
@@ -547,7 +543,7 @@
                           )}%<span class="w-0 text-center"></span></span
                         ></td
                       ><td
-                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-primary px-3.5 py-0.5 border-l border-r px-1 text-right"
+                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-l border-r px-1 text-right"
                         ><span
                           class="w-full text-sm sm:text-[1rem] items-baseline justify-end whitespace-nowrap {item?.backward_1_days_change_percent >=
                           0
@@ -558,9 +554,9 @@
                           )}%<span class="w-0 text-center"></span></span
                         ></td
                       ><td
-                        class="px-4 last:pr-11 w-17 last:w-24.5 border border-gray-300 dark:border-primary px-3.5 py-0.5 px-1 text-right"
+                        class="px-4 last:pr-11 w-17 last:w-24.5 border border-gray-300 dark:border-gray-800 px-3.5 py-0.5 px-1 text-center"
                       ></td><td
-                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-primary px-3.5 py-0.5 dark:border-l-gray-800 px-1 text-right"
+                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-gray-800 px-3.5 py-0.5 dark:border-l-gray-800 px-1 text-center"
                         ><div
                           class="text-center w-full whitespace-nowrap rounded text-sm sm:text-[1rem] {item?.open_change_percent &&
                           item?.open_change_percent >= 0
@@ -574,7 +570,7 @@
                             : "-"}
                         </div></td
                       ><td
-                        class="px-4 last:pr-11 w-17 last:w-24.5 px-3.5 py-0.5 px-1 text-right border-l border-r border-gray-300 dark:border-primary"
+                        class="px-4 last:pr-11 w-17 last:w-24.5 px-3.5 py-0.5 px-1 text-center border-l border-r border-gray-300 dark:border-gray-800"
                         ><div
                           class="text-center w-full whitespace-nowrap rounded text-sm sm:text-[1rem] {item?.high_change_percent &&
                           item?.high_change_percent >= 0
@@ -588,7 +584,7 @@
                             : "-"}
                         </div></td
                       ><td
-                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 px-3.5 py-0.5 px-1 text-right border-l border-r border-gray-300 dark:border-primary"
+                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 px-3.5 py-0.5 px-1 text-center border-l border-r border-gray-300 dark:border-gray-800"
                         ><div
                           class="text-center w-full whitespace-nowrap rounded text-sm sm:text-[1rem] {item?.low_change_percent &&
                           item?.low_change_percent >= 0
@@ -602,7 +598,7 @@
                             : "-"}
                         </div></td
                       ><td
-                        class="px-4 last:pr-11 w-17 last:w-24.5 border-r border-gray-300 dark:border-gray-800 px-3.5 py-0.5 px-1 text-right"
+                        class="px-4 last:pr-11 w-17 last:w-24.5 border-r border-gray-300 dark:border-gray-800 px-3.5 py-0.5 px-1 text-center"
                         ><div
                           class="text-center w-full whitespace-nowrap rounded text-sm sm:text-[1rem] {item?.close_change_percent &&
                           item?.close_change_percent >= 0
@@ -616,9 +612,9 @@
                             : "-"}
                         </div></td
                       ><td
-                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-primary px-3.5 py-0.5 px-1 text-right"
+                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-gray-800 px-3.5 py-0.5 px-1 text-center"
                       ></td><td
-                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-primary px-3.5 py-0.5 border-l border-r px-1 text-right"
+                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-l border-r px-1 text-center"
                         ><span
                           class="w-full text-sm sm:text-[1rem] items-baseline justify-end whitespace-nowrap {item?.forward_2_days_change_percent >=
                           0
@@ -631,7 +627,7 @@
                             : "-"}<span class="w-0 text-center"></span></span
                         ></td
                       ><td
-                        class="px-4 last:pr-11 w-17 last:w-24.5 border-l border-r border-gray-300 dark:border-primary px-3.5 py-0.5 px-1 text-right"
+                        class="px-4 last:pr-11 w-17 last:w-24.5 border-l border-r border-gray-300 dark:border-gray-800 px-3.5 py-0.5 px-1 text-center"
                         ><span
                           class="w-full text-sm sm:text-[1rem] items-baseline justify-end whitespace-nowrap {item?.forward_3_days_change_percent >=
                           0
@@ -644,7 +640,7 @@
                             : "-"}<span class="w-0 text-center"></span></span
                         ></td
                       ><td
-                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-primary px-3.5 py-0.5 px-1 text-right"
+                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-gray-800 px-3.5 py-0.5 px-1 text-center"
                         ><span
                           class="w-full text-sm sm:text-[1rem] items-baseline justify-end whitespace-nowrap {item?.forward_4_days_change_percent >=
                           0
@@ -657,7 +653,7 @@
                             : "-"}<span class="w-0 text-center"></span></span
                         ></td
                       ><td
-                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-primary px-3.5 py-0.5 border-l px-1 text-right"
+                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-l px-1 text-center"
                         ><span
                           class="w-full text-sm sm:text-[1rem] items-baseline justify-end whitespace-nowrap {item?.forward_6_days_change_percent >=
                           0
@@ -670,7 +666,7 @@
                             : "-"}<span class="w-0 text-center"></span></span
                         ></td
                       ><td
-                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-primary px-3.5 py-0.5 border-l border-r px-1 text-right"
+                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-l border-r px-1 text-center"
                         ><span
                           class="w-full text-sm sm:text-[1rem] items-baseline justify-end whitespace-nowrap {item?.backward_4_days_change_percent >=
                           0
@@ -684,14 +680,6 @@
                     >
                   </tbody>
                 {/each}
-                <tfoot
-                  ><tr
-                    ><td colspan="15" class="pt-3 px-1 leading-tight text-sm"
-                      >Daily change and RSI 14 are based on the report date for
-                      BMO releases and the following day for AMC releases.</td
-                    ></tr
-                  ></tfoot
-                >
               </table>
             </div>
             <UpgradeToPro {data} />
