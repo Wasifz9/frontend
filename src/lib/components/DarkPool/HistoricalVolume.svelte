@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { displayCompanyName, stockTicker, etfTicker } from "$lib/store";
+  import { displayCompanyName } from "$lib/store";
   import InfoModal from "$lib/components/InfoModal.svelte";
   import { abbreviateNumber, removeCompanyStrings } from "$lib/utils";
   import UpgradeToPro from "$lib/components/UpgradeToPro.svelte";
@@ -14,21 +14,29 @@
 
   function addChangesPercentage(data) {
     if (!data || data.length === 0) return data;
-    
+
     // Sort in place for better memory efficiency
-    const sorted = [...data].sort((a, b) => new Date(b?.date) - new Date(a?.date));
-    
+    const sorted = [...data].sort(
+      (a, b) => new Date(b?.date) - new Date(a?.date),
+    );
+
     // Process in place to avoid creating new objects
     for (let i = 0; i < sorted.length; i++) {
       if (i === sorted.length - 1) {
         sorted[i] = { ...sorted[i], changesPercentage: null };
       } else {
         const nextValue = sorted[i + 1]?.shortVolume;
-        const pctChange = nextValue !== 0 ? ((sorted[i].shortVolume - nextValue) / nextValue) * 100 : 0;
-        sorted[i] = { ...sorted[i], changesPercentage: Math.round(pctChange * 100) / 100 };
+        const pctChange =
+          nextValue !== 0
+            ? ((sorted[i].shortVolume - nextValue) / nextValue) * 100
+            : 0;
+        sorted[i] = {
+          ...sorted[i],
+          changesPercentage: Math.round(pctChange * 100) / 100,
+        };
       }
     }
-    
+
     return sorted;
   }
 
@@ -106,14 +114,14 @@
     const sortedChartData = [...rawData]?.sort(
       (a, b) => new Date(a?.date).getTime() - new Date(b?.date).getTime(),
     );
-    
+
     // Single pass to extract all needed data
     const dates = [];
     const totalVolumeList = [];
     const shortVolumeList = [];
     let totalVolSum = 0;
     let shortVolSum = 0;
-    
+
     for (let i = 0; i < sortedChartData.length; i++) {
       const item = sortedChartData[i];
       dates.push(item?.date);
@@ -227,21 +235,23 @@
             month: "short",
             day: "numeric",
           });
-          
+
           // Use array join instead of string concatenation for better performance
-          const tooltipParts = [`<span class="m-auto text-[1rem] font-[501]">${formattedDate}</span><br>`];
-          
+          const tooltipParts = [
+            `<span class="m-auto text-[1rem] font-[501]">${formattedDate}</span><br>`,
+          ];
+
           // Process points more efficiently
           for (let i = 0; i < this.points.length; i++) {
             const point = this.points[i];
             tooltipParts.push(
               `<span style="display:inline-block; width:10px; height:10px; background-color:${point.color}; border-radius:50%; margin-right:5px;"></span>`,
               `<span class="font-semibold text-sm">${point.series.name}:</span> `,
-              `<span class="font-normal text-sm">${abbreviateNumber(point.y)}</span><br>`
+              `<span class="font-normal text-sm">${abbreviateNumber(point.y)}</span><br>`,
             );
           }
-          
-          return tooltipParts.join('');
+
+          return tooltipParts.join("");
         },
       },
       plotOptions: {
@@ -424,7 +434,7 @@
     prevMode = $mode;
     config = getPlotOptions() || null;
   }
-  
+
   // Initialize config on component mount
   if (!config) {
     config = getPlotOptions() || null;
@@ -448,21 +458,7 @@
     </div>
 
     {#if rawData?.length !== 0}
-      <div class="w-full flex flex-col items-start">
-        <div class=" text-[1rem] mt-2 mb-2 w-full">
-          Over the past 12 months, {removeCompanyStrings($displayCompanyName)} has
-          experienced an average dark pool trading volume of
-          <span class="font-semibold">{abbreviateNumber(avgVolume)}</span>
-          shares. Out of this total, an average of
-          <span class="font-semibold">{abbreviateNumber(avgShortVolume)}</span>
-          shares, constituting approximately
-          <span class="font-semibold"
-            >{((avgShortVolume / avgVolume) * 100)?.toFixed(2)}%</span
-          >, were short volume.
-        </div>
-      </div>
-
-      <div>
+      <div class="mt-5">
         <div class="grow">
           <div class="relative">
             <!-- Apply the blur class to the chart -->
@@ -502,7 +498,7 @@
         class="mt-5 flex flex-col sm:flex-row items-start sm:items-center w-full justify-between sm:border-y border-gray-300 dark:border-gray-800 sm:pt-2 sm:pb-2"
       >
         <h3 class="text-xl sm:text-2xl font-bold mb-2 sm:mb-0">
-          Dark Pool Table
+          Historical Table
         </h3>
 
         <div

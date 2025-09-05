@@ -171,77 +171,16 @@
     {#if rawData?.length !== 0 && Object?.keys(metrics)?.length > 0}
       <div class="w-full flex flex-col items-start">
         <p class="text-[1rem] mt-2 w-full sm:mb-4">
-          {removeCompanyStrings($displayCompanyName)} dark pool activity shows an
-          average trade size of
+          {removeCompanyStrings($displayCompanyName)} dark pool activity today shows
+          an average trade size of
           <strong>
-            {#if isPro}
-              {Math.floor(metrics?.avgTradeSize)?.toLocaleString("en-US")}
-            {:else}
-              <a
-                href="/pricing"
-                class="sm:hover:text-default dark:sm:hover:text-blue-400"
-              >
-                Unlock Pro <svg
-                  class="w-4 h-4 mb-1 inline-block"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    fill="currentColor"
-                    d="M17 9V7c0-2.8-2.2-5-5-5S7 4.2 7 7v2c-1.7 0-3 1.3-3 3v7c0 1.7 1.3 3 3 3h10c1.7 0 3-1.3 3-3v-7c0-1.7-1.3-3-3-3M9 7c0-1.7 1.3-3 3-3s3 1.3 3 3v2H9z"
-                  />
-                </svg>
-              </a>
-            {/if}
+            {Math.floor(metrics?.avgTradeSize)?.toLocaleString("en-US")}
           </strong>
           with
           <strong>
-            {#if isPro}
-              ${abbreviateNumber(metrics?.avgPremTrade)}
-            {:else}
-              <a
-                href="/pricing"
-                class="sm:hover:text-default dark:sm:hover:text-blue-400"
-              >
-                Unlock Pro <svg
-                  class="w-4 h-4 mb-1 inline-block"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    fill="currentColor"
-                    d="M17 9V7c0-2.8-2.2-5-5-5S7 4.2 7 7v2c-1.7 0-3 1.3-3 3v7c0 1.7 1.3 3 3 3h10c1.7 0 3-1.3 3-3v-7c0-1.7-1.3-3-3-3M9 7c0-1.7 1.3-3 3-3s3 1.3 3 3v2H9z"
-                  />
-                </svg>
-              </a>
-            {/if}
+            ${abbreviateNumber(metrics?.avgPremTrade)}
           </strong>
           average premium per trade.
-          <strong>Large trade sizes</strong> indicate institutional positioning,
-          while
-          <strong>elevated premiums</strong> suggest urgent execution needs,
-          often signaling significant market moves ahead. Total premium of
-          <strong>
-            {#if isPro}
-              ${abbreviateNumber(metrics?.totalPrem)}
-            {:else}
-              <a
-                href="/pricing"
-                class="sm:hover:text-default dark:sm:hover:text-blue-400"
-              >
-                Unlock Pro <svg
-                  class="w-4 h-4 mb-1 inline-block"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    fill="currentColor"
-                    d="M17 9V7c0-2.8-2.2-5-5-5S7 4.2 7 7v2c-1.7 0-3 1.3-3 3v7c0 1.7 1.3 3 3 3h10c1.7 0 3-1.3 3-3v-7c0-1.7-1.3-3-3-3M9 7c0-1.7 1.3-3 3-3s3 1.3 3 3v2H9z"
-                  />
-                </svg>
-              </a>
-            {/if}
-          </strong> reflects the scale of institutional interest in this security.
         </p>
       </div>
 

@@ -1,5 +1,7 @@
 <script lang="ts">
   import InfoModal from "$lib/components/InfoModal.svelte";
+  import Infobox from "$lib/components/Infobox.svelte";
+
   import TableHeader from "$lib/components/Table/TableHeader.svelte";
 
   import { abbreviateNumber } from "$lib/utils";
@@ -8,7 +10,18 @@
   export let rawData = [];
   export let ticker;
 
-  let stockList = rawData || [];
+  // show only first N items by default (toggle shows full list)
+  const DEFAULT_VISIBLE = 5;
+  let showFullHistory = false;
+
+  // Keep the slice used for sorting / display (limit sorting pool to 50 like before)
+  $: stockList = (rawData || []).slice(0, 50);
+
+  // This is what the template will iterate over — either first DEFAULT_VISIBLE or the full stockList
+  $: displayedStockList = (stockList || []).slice(
+    0,
+    showFullHistory ? stockList.length : DEFAULT_VISIBLE,
+  );
 
   function formatToNewYorkTime(isoString) {
     const date = new Date(isoString);
@@ -21,11 +34,10 @@
       hour: "numeric",
       minute: "numeric",
       second: "numeric",
-      timeZone: "America/New_York", // Correct IANA time zone
-      hour12: true, // Enable AM/PM format
+      timeZone: "America/New_York",
+      hour12: true,
     };
 
-    // Format date for New York timezone
     const formatter = new Intl.DateTimeFormat("en-US", options);
     const parts = formatter.formatToParts(date);
 
@@ -73,16 +85,18 @@
 
     // Cycle through 'none', 'asc', 'desc' for the clicked key
     const orderCycle = ["none", "asc", "desc"];
-    let originalData = rawData;
 
     const currentOrderIndex = orderCycle.indexOf(sortOrders[key].order);
     sortOrders[key].order =
       orderCycle[(currentOrderIndex + 1) % orderCycle.length];
     const sortOrder = sortOrders[key].order;
 
+    const originalData = rawData || [];
+
     // Reset to original data when 'none' and stop further sorting
     if (sortOrder === "none") {
-      stockList = originalData?.slice(0, 50); // Reset displayed data
+      // Rebuild the stockList from original un-sorted rawData (limited to 50)
+      stockList = originalData.slice(0, 50);
       return;
     }
 
@@ -97,15 +111,15 @@
           valueB = new Date(b[key]);
           break;
         case "string":
-          valueA = a[key].toUpperCase();
-          valueB = b[key].toUpperCase();
+          valueA = (a[key] || "").toUpperCase();
+          valueB = (b[key] || "").toUpperCase();
           return sortOrder === "asc"
             ? valueA.localeCompare(valueB)
             : valueB.localeCompare(valueA);
         case "number":
         default:
-          valueA = parseFloat(a[key]);
-          valueB = parseFloat(b[key]);
+          valueA = parseFloat(a[key]) || 0;
+          valueB = parseFloat(b[key]) || 0;
           break;
       }
 
@@ -116,8 +130,8 @@
       }
     };
 
-    // Sort using the generic comparison function
-    stockList = [...originalData].sort(compareValues)?.slice(0, 50);
+    // Sort using the generic comparison function and keep the top 50 for performance
+    stockList = [...originalData].sort(compareValues).slice(0, 50);
   };
 </script>
 
@@ -128,32 +142,19 @@
         for="hottestDPTrade"
         class="mr-1 cursor-pointer flex flex-row items-center text-xl sm:text-2xl font-bold"
       >
-        Hottest Trades
+        Hottest Trades Today
       </label>
       <InfoModal
-        title={"Hottest Trades"}
+        title={"Hottest Trades Today"}
         content={"Real-time hottest trades highlight significant premium flows, revealing where big players are active and hinting at market trends or sentiment."}
         id={"hottestDPTrade"}
       />
     </div>
 
     {#if rawData?.length !== 0}
-      <div class="w-full flex flex-col items-start sm:mt-3 mb-3">
-        <div
-          class="flex flex-row items-end justify-between w-full mt-2 sm:mt-0 mb-2"
-        >
-          <p class="text-[1rem]">
-            Real-time institutional trades ranked by premium paid and size
-            relative to average volume.
-            <strong>High premiums</strong> indicate urgent positioning by large
-            players, while elevated
-            <strong>size-to-volume ratios</strong> reveal unusual institutional activity
-            that often precedes significant price movements.
-          </p>
-        </div>
-      </div>
-
-      <div class="w-full m-auto rounded-none sm:rounded mb-4 overflow-x-auto">
+      <div
+        class="w-full m-auto rounded-none sm:rounded mb-4 overflow-x-auto mt-4"
+      >
         <table
           class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
         >
@@ -161,13 +162,25 @@
             <TableHeader {columns} {sortOrders} {sortData} />
           </thead>
           <tbody>
-            {#each stockList as item, index}
+            {#each displayedStockList as item, index}
               <tr
-                class="dark:sm:hover:bg-[#245073]/10 odd:bg-[#F6F7F8] dark:odd:bg-odd {index +
-                  1 ===
-                  rawData?.length && !['Pro']?.includes(data?.user?.tier)
-                  ? 'opacity-[0.1]'
-                  : ''}"
+                class="dark:sm:hover:bg-[#245073]/10 odd:bg-[#F6F7F8] dark:odd:bg-odd {!showFullHistory &&
+                index === displayedStockList.length - 1 &&
+                stockList?.length > DEFAULT_VISIBLE
+                  ? 'opacity-60 cursor-pointer'
+                  : index + 1 === rawData?.length &&
+                      !['Pro']?.includes(data?.user?.tier)
+                    ? 'opacity-[0.1]'
+                    : ''}"
+                on:click={() => {
+                  // If user clicks the faded last visible row while collapsed, expand the list
+                  if (
+                    !showFullHistory &&
+                    index === displayedStockList.length - 1 &&
+                    stockList?.length > DEFAULT_VISIBLE
+                  )
+                    showFullHistory = true;
+                }}
               >
                 <td class="text-start text-sm sm:text-[1rem] whitespace-nowrap">
                   {item?.rank}
@@ -204,6 +217,26 @@
           </tbody>
         </table>
       </div>
+
+      {#if stockList?.length > DEFAULT_VISIBLE}
+        <label
+          on:click={() => (showFullHistory = !showFullHistory)}
+          class="cursor-pointer flex justify-center items-center mt-5"
+        >
+          <svg
+            class="w-10 h-10 transform text-black dark:text-[#2A323C] {showFullHistory
+              ? 'rotate-180'
+              : ''}"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+          >
+            <path
+              fill="currentColor"
+              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2zm0 13.5L7.5 11l1.42-1.41L12 12.67l3.08-3.08L16.5 11L12 15.5z"
+            />
+          </svg>
+        </label>
+      {/if}
     {/if}
   </main>
 </section>
