@@ -276,11 +276,13 @@
             <div>
               <div class="flex flex-col w-full sm:w-fit items-end justify-end">
                 <InfoModal
+                  id="topAnalyst"
                   title="Top Analyst"
                   content="Filter by only analysts with 4+ stars based on their success rate and
           average return per rating. 4+ star analysts have a high accuracy and
           high average return per rating."
                 />
+
                 <div
                   class="inline-flex justify-center w-full rounded sm:w-auto"
                 >
