@@ -33,7 +33,10 @@
   let isLoaded = false;
   let syncWorker: Worker | undefined;
   let downloadWorker: Worker | undefined;
+  let searchWorker: Worker | undefined;
   let searchQuery = "";
+  let inputValue = "";
+  let originalFilteredData = [];
   let infoText = {};
   let tooltipTitle;
   let removeList = false;
@@ -1759,8 +1762,15 @@
     });
   }
 
+  async function resetTableSearch() {
+    inputValue = "";
+    search();
+  }
+
   async function switchStrategy(item) {
     displayTableTab = "general";
+    resetTableSearch();
+
     ruleName = "";
     selectedPopularStrategy = "";
     selectedStrategy = item?.id ?? "";
@@ -1805,6 +1815,7 @@
     );
 
     filteredData = event.data?.filteredData ?? [];
+    originalFilteredData = filteredData; // Store original filtered data for search
     displayResults = filteredData?.slice(0, 50);
   };
 
@@ -1824,6 +1835,37 @@
     downloadWorker.postMessage({
       ruleOfList: [...ruleOfList, ...otherTabRules],
     });
+  };
+
+  // Search functionality similar to Table.svelte
+  async function search() {
+    inputValue = inputValue?.toLowerCase();
+
+    setTimeout(async () => {
+      if (inputValue?.length > 0) {
+        await loadSearchWorker();
+      } else {
+        // Reset to original data if filter is empty
+        filteredData = originalFilteredData;
+        displayResults = originalFilteredData?.slice(0, 50);
+      }
+    }, 100);
+  }
+
+  const loadSearchWorker = async () => {
+    if (searchWorker && originalFilteredData?.length > 0) {
+      searchWorker.postMessage({
+        rawData: originalFilteredData,
+        inputValue: inputValue,
+      });
+    }
+  };
+
+  const handleSearchMessage = (event) => {
+    if (event.data?.message === "success") {
+      filteredData = event.data?.output ?? [];
+      displayResults = filteredData?.slice(0, 50);
+    }
   };
 
   // Preloading function for tab data using downloadWorker
@@ -2091,6 +2133,7 @@
 
   async function handleResetAll() {
     selectedPopularStrategy = "";
+    resetTableSearch();
     displayTableTab = "general";
     ruleOfList = [];
     Object?.keys(allRules)?.forEach((ruleName) => {
@@ -2196,6 +2239,14 @@ const handleKeyDown = (event) => {
       downloadWorker.onmessage = handleScreenerMessage;
     }
 
+    if (!searchWorker) {
+      const SearchWorker = await import(
+        "$lib/workers/tableSearchWorker?worker"
+      );
+      searchWorker = new SearchWorker.default();
+      searchWorker.onmessage = handleSearchMessage;
+    }
+
     if (!data?.user) {
       LoginPopup = (await import("$lib/components/LoginPopup.svelte")).default;
     }
@@ -2215,6 +2266,8 @@ const handleKeyDown = (event) => {
   onDestroy(() => {
     syncWorker?.terminate();
     syncWorker = undefined;
+    searchWorker?.terminate();
+    searchWorker = undefined;
     clearCache();
 
     // Clean up hover timeout
@@ -2506,6 +2559,7 @@ const handleKeyDown = (event) => {
   }
 
   async function popularStrategy(state: string) {
+    resetTableSearch();
     const strategies = {
       earningsVolatility: {
         name: "Earnings Volatility",
@@ -2543,7 +2597,7 @@ const handleKeyDown = (event) => {
           {
             condition: "",
             name: "earningsDate",
-            value: ["Next 7D"],
+            value: ["Next 30D"],
           },
         ],
       },
@@ -3174,8 +3228,7 @@ const handleKeyDown = (event) => {
                 <DropdownMenu.Group>
                   {#each strategyList as item}
                     <DropdownMenu.Item
-                      on:click={(e) => {
-                        e.preventDefault();
+                      on:click={() => {
                         switchStrategy(item);
                       }}
                       class=" {item?.id === selectedStrategy
@@ -3842,18 +3895,38 @@ const handleKeyDown = (event) => {
       {filteredData?.length} Stocks
     </h2>
     <div
-      class="col-span-2 flex flex-col md:flex-row items-center lg:order-2 lg:grow py-1.5 border-t border-b border-gray-300 dark:border-gray-800"
+      class="col-span-2 flex flex-col lg:flex-row items-center lg:order-2 lg:grow py-1.5 border-t border-b border-gray-300 dark:border-gray-800"
     >
       <div
-        class="flex flex-row sm:flex order-1 items-center ml-auto border-b border-gray-300 dark:border-gray-800 md:border-none pb-2 sm:pt-0 sm:pb-0 w-full order-0 sm:order-1"
+        class="w-full flex flex-row lg:flex order-1 items-center ml-auto border-b border-gray-300 dark:border-gray-800 lg:border-none pb-2 sm:pt-0 lg:pb-0 w-full order-0 lg:order-1"
       >
-        <input
-          bind:value={inputValue}
-          on:input={search}
-          type="text"
-          placeholder="Find..."
-          class="ml-auto py-[7px] text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow-xs focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-800 grow w-full sm:min-w-56 sm:max-w-14"
-        />
+        <div class="relative lg:ml-auto w-fit">
+          <div
+            class="inline-block cursor-pointer absolute right-2 top-2 text-sm"
+          >
+            {#if inputValue?.length > 0}
+              <label class="cursor-pointer" on:click={() => resetTableSearch()}>
+                <svg
+                  class="w-5 h-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  ><path
+                    fill="currentColor"
+                    d="m6.4 18.308l-.708-.708l5.6-5.6l-5.6-5.6l.708-.708l5.6 5.6l5.6-5.6l.708.708l-5.6 5.6l5.6 5.6l-.708.708l-5.6-5.6z"
+                  /></svg
+                >
+              </label>
+            {/if}
+          </div>
+
+          <input
+            bind:value={inputValue}
+            on:input={search}
+            type="text"
+            placeholder="Find..."
+            class=" py-[7px] text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-800 grow w-full sm:min-w-56 lg:max-w-14"
+          />
+        </div>
 
         <div class=" ml-2">
           <DownloadData
@@ -3863,14 +3936,14 @@ const handleKeyDown = (event) => {
           />
         </div>
       </div>
-      <nav class="w-full flex flex-row items-center order-2 sm:order-0">
+      <nav class="w-full flex flex-row items-center order-2 lg:order-0">
         <ul
           class="flex flex-row overflow-x-auto items-center space-x-2 whitespace-nowrap"
         >
           <li>
             <button
               on:click={() => (displayTableTab = "general")}
-              class="cursor-pointer text-[1rem] block rounded px-2 py-0.5 focus:outline-hidden sm:hover:text-white sm:hover:bg-default dark:sm:hover:bg-primary {displayTableTab ===
+              class="cursor-pointer text-[1rem] block rounded px-2 py-0.5 focus:outline-hidden sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-gray-100 dark:sm:hover:bg-primary {displayTableTab ===
               'general'
                 ? 'font-semibold bg-gray-100 text-muted dark:text-white dark:bg-primary'
                 : ''}"
@@ -3881,7 +3954,7 @@ const handleKeyDown = (event) => {
           <li>
             <button
               on:click={() => (displayTableTab = "filters")}
-              class="cursor-pointer text-[1rem] flex flex-row items-center relative block rounded px-2 py-1 sm:hover:text-white sm:hover:bg-default dark:sm:hover:bg-primary {displayTableTab ===
+              class="cursor-pointer text-[1rem] flex flex-row items-center relative block rounded px-2 py-1 sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-gray-100 dark:sm:hover:bg-primary {displayTableTab ===
               'filters'
                 ? 'font-semibold bg-gray-100 text-muted dark:text-white dark:bg-primary'
                 : ''} focus:outline-hidden"
@@ -3902,7 +3975,7 @@ const handleKeyDown = (event) => {
               on:click={() => changeTab("performance")}
               on:mouseenter={() => handleTabHover("performance")}
               on:mouseleave={handleTabHoverLeave}
-              class="cursor-pointer text-[1rem] block rounded px-2 py-0.5 focus:outline-hidden sm:hover:text-white sm:hover:bg-default dark:sm:hover:bg-primary {displayTableTab ===
+              class="cursor-pointer text-[1rem] block rounded px-2 py-0.5 focus:outline-hidden sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-gray-100 dark:sm:hover:bg-primary {displayTableTab ===
               'performance'
                 ? 'font-semibold bg-gray-100 text-muted dark:text-white dark:bg-primary'
                 : ''}"
@@ -3915,7 +3988,7 @@ const handleKeyDown = (event) => {
               on:click={() => changeTab("analysts")}
               on:mouseenter={() => handleTabHover("analysts")}
               on:mouseleave={handleTabHoverLeave}
-              class="cursor-pointer text-[1rem] block rounded px-2 py-0.5 focus:outline-hidden sm:hover:text-white sm:hover:bg-default dark:sm:hover:bg-primary {displayTableTab ===
+              class="cursor-pointer text-[1rem] block rounded px-2 py-0.5 focus:outline-hidden sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-gray-100 dark:sm:hover:bg-primary {displayTableTab ===
               'analysts'
                 ? 'font-semibold bg-gray-100 text-muted dark:text-white dark:bg-primary'
                 : ''}"
@@ -3928,7 +4001,7 @@ const handleKeyDown = (event) => {
               on:click={() => changeTab("dividends")}
               on:mouseenter={() => handleTabHover("dividends")}
               on:mouseleave={handleTabHoverLeave}
-              class="cursor-pointer text-[1rem] block rounded px-2 py-0.5 focus:outline-hidden sm:hover:text-white sm:hover:bg-default dark:sm:hover:bg-primary {displayTableTab ===
+              class="cursor-pointer text-[1rem] block rounded px-2 py-0.5 focus:outline-hidden sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-gray-100 dark:sm:hover:bg-primary {displayTableTab ===
               'dividends'
                 ? 'font-semibold bg-gray-100 text-muted dark:text-white dark:bg-primary'
                 : ''}"
@@ -3941,7 +4014,7 @@ const handleKeyDown = (event) => {
               on:click={() => changeTab("financials")}
               on:mouseenter={() => handleTabHover("financials")}
               on:mouseleave={handleTabHoverLeave}
-              class="cursor-pointer text-[1rem] block rounded px-2 py-0.5 focus:outline-hidden sm:hover:text-white sm:hover:bg-default dark:sm:hover:bg-primary {displayTableTab ===
+              class="cursor-pointer text-[1rem] block rounded px-2 py-0.5 focus:outline-hidden sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-gray-100 dark:sm:hover:bg-primary {displayTableTab ===
               'financials'
                 ? 'font-semibold bg-gray-100 text-muted dark:text-white dark:bg-primary'
                 : ''}"

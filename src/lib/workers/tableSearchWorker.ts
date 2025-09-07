@@ -10,7 +10,7 @@ onmessage = (event: MessageEvent) => {
   }
 
   const filterQuery = filterQueryRaw.toLowerCase();
-  const similarityThreshold = 0.5;
+  const similarityThreshold = 0.9;
 
   const output = [];
   for (let i = 0; i < rawData.length; i++) {
