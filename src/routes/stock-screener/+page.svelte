@@ -3446,7 +3446,7 @@ const handleKeyDown = (event) => {
           {#each displayRules as row (row?.rule)}
             <!--Start Added Rules-->
             <div
-              class="flex items-center justify-between space-x-2 px-1 py-1.5 text-[0.95rem] leading-tight"
+              class="flex items-center justify-between space-x-2 px-1 py-1.5 text-sm sm:text-[0.95rem] leading-tight"
             >
               <div class=" flex flex-row items-start sm:items-end">
                 {row?.label?.length > 30
@@ -3834,24 +3834,45 @@ const handleKeyDown = (event) => {
   <!--End Build Strategy-->
 
   <div
-    class="mt-6 grid-cols-2 items-center sm:grid lg:flex lg:space-x-1 lg:overflow-visible lg:px-1 py-1.5 border-t border-b border-gray-300 dark:border-gray-800 mb-2"
+    class="mt-4 grid-cols-2 items-center lg:overflow-visible lg:px-1 py-1.5 mb-2"
   >
-    <h2 class=" whitespace-nowrap text-xl font-semibold bp:text-[1.3rem]">
+    <h2
+      class=" whitespace-nowrap text-xl font-semibold py-1 bp:text-[1.3rem] border-t border-gray-300 dark:border-gray-800"
+    >
       {filteredData?.length} Stocks
     </h2>
     <div
-      class="col-span-2 flex flex-row items-center lg:order-2 lg:grow lg:border-0 lg:pl-1 xl:pl-3"
+      class="col-span-2 flex flex-col md:flex-row items-center lg:order-2 lg:grow py-1.5 border-t border-b border-gray-300 dark:border-gray-800"
     >
-      <nav class="w-full flex flex-row items-center">
+      <div
+        class="flex flex-row sm:flex order-1 items-center ml-auto border-b border-gray-300 dark:border-gray-800 md:border-none pb-2 sm:pt-0 sm:pb-0 w-full order-0 sm:order-1"
+      >
+        <input
+          bind:value={inputValue}
+          on:input={search}
+          type="text"
+          placeholder="Find..."
+          class="ml-auto py-[7px] text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow-xs focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-800 grow w-full sm:min-w-56 sm:max-w-14"
+        />
+
+        <div class=" ml-2">
+          <DownloadData
+            {data}
+            rawData={filteredData}
+            title={"stock_screener_data"}
+          />
+        </div>
+      </div>
+      <nav class="w-full flex flex-row items-center order-2 sm:order-0">
         <ul
           class="flex flex-row overflow-x-auto items-center space-x-2 whitespace-nowrap"
         >
           <li>
             <button
               on:click={() => (displayTableTab = "general")}
-              class="cursor-pointer text-[1rem] block rounded px-2 py-1 focus:outline-hidden sm:hover:text-white sm:hover:bg-default dark:sm:hover:bg-primary {displayTableTab ===
+              class="cursor-pointer text-[1rem] block rounded px-2 py-0.5 focus:outline-hidden sm:hover:text-white sm:hover:bg-default dark:sm:hover:bg-primary {displayTableTab ===
               'general'
-                ? 'font-semibold bg-black text-white dark:bg-primary'
+                ? 'font-semibold bg-gray-100 text-muted dark:text-white dark:bg-primary'
                 : ''}"
             >
               General
@@ -3862,7 +3883,7 @@ const handleKeyDown = (event) => {
               on:click={() => (displayTableTab = "filters")}
               class="cursor-pointer text-[1rem] flex flex-row items-center relative block rounded px-2 py-1 sm:hover:text-white sm:hover:bg-default dark:sm:hover:bg-primary {displayTableTab ===
               'filters'
-                ? 'font-semibold text-white bg-black dark:bg-primary'
+                ? 'font-semibold bg-gray-100 text-muted dark:text-white dark:bg-primary'
                 : ''} focus:outline-hidden"
             >
               <span class="">Filters</span>
@@ -3881,9 +3902,9 @@ const handleKeyDown = (event) => {
               on:click={() => changeTab("performance")}
               on:mouseenter={() => handleTabHover("performance")}
               on:mouseleave={handleTabHoverLeave}
-              class="cursor-pointer text-[1rem] block rounded px-2 py-1 focus:outline-hidden sm:hover:text-white sm:hover:bg-default dark:sm:hover:bg-primary {displayTableTab ===
+              class="cursor-pointer text-[1rem] block rounded px-2 py-0.5 focus:outline-hidden sm:hover:text-white sm:hover:bg-default dark:sm:hover:bg-primary {displayTableTab ===
               'performance'
-                ? 'font-semibold bg-black text-white dark:bg-primary'
+                ? 'font-semibold bg-gray-100 text-muted dark:text-white dark:bg-primary'
                 : ''}"
             >
               Performance
@@ -3894,9 +3915,9 @@ const handleKeyDown = (event) => {
               on:click={() => changeTab("analysts")}
               on:mouseenter={() => handleTabHover("analysts")}
               on:mouseleave={handleTabHoverLeave}
-              class="cursor-pointer text-[1rem] block rounded px-2 py-1 focus:outline-hidden sm:hover:text-white sm:hover:bg-default dark:sm:hover:bg-primary {displayTableTab ===
+              class="cursor-pointer text-[1rem] block rounded px-2 py-0.5 focus:outline-hidden sm:hover:text-white sm:hover:bg-default dark:sm:hover:bg-primary {displayTableTab ===
               'analysts'
-                ? 'font-semibold bg-black text-white dark:bg-primary'
+                ? 'font-semibold bg-gray-100 text-muted dark:text-white dark:bg-primary'
                 : ''}"
             >
               Analysts
@@ -3907,9 +3928,9 @@ const handleKeyDown = (event) => {
               on:click={() => changeTab("dividends")}
               on:mouseenter={() => handleTabHover("dividends")}
               on:mouseleave={handleTabHoverLeave}
-              class="cursor-pointer text-[1rem] block rounded px-2 py-1 focus:outline-hidden sm:hover:text-white sm:hover:bg-default dark:sm:hover:bg-primary {displayTableTab ===
+              class="cursor-pointer text-[1rem] block rounded px-2 py-0.5 focus:outline-hidden sm:hover:text-white sm:hover:bg-default dark:sm:hover:bg-primary {displayTableTab ===
               'dividends'
-                ? 'font-semibold bg-black text-white dark:bg-primary'
+                ? 'font-semibold bg-gray-100 text-muted dark:text-white dark:bg-primary'
                 : ''}"
             >
               Dividends
@@ -3920,22 +3941,15 @@ const handleKeyDown = (event) => {
               on:click={() => changeTab("financials")}
               on:mouseenter={() => handleTabHover("financials")}
               on:mouseleave={handleTabHoverLeave}
-              class="cursor-pointer text-[1rem] block rounded px-2 py-1 focus:outline-hidden sm:hover:text-white sm:hover:bg-default dark:sm:hover:bg-primary {displayTableTab ===
+              class="cursor-pointer text-[1rem] block rounded px-2 py-0.5 focus:outline-hidden sm:hover:text-white sm:hover:bg-default dark:sm:hover:bg-primary {displayTableTab ===
               'financials'
-                ? 'font-semibold bg-black text-white dark:bg-primary'
+                ? 'font-semibold bg-gray-100 text-muted dark:text-white dark:bg-primary'
                 : ''}"
             >
               Financials
             </button>
           </li>
         </ul>
-        <div class="w-fit ml-auto hidden sm:inline-block">
-          <DownloadData
-            {data}
-            rawData={filteredData}
-            title={"stock_screener_data"}
-          />
-        </div>
       </nav>
     </div>
   </div>
@@ -4270,9 +4284,7 @@ const handleKeyDown = (event) => {
         </div>
       {/if}
     {:else}
-      <Infobox
-        text="Looks like your taste is one-of-a-kind! No matches found... yet!"
-      />
+      <Infobox text="No Stocks found." />
     {/if}
   {:else}
     <div class="flex justify-center items-center h-80">
