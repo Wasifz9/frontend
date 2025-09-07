@@ -3296,10 +3296,10 @@ const handleKeyDown = (event) => {
         </div>
       </div>
       {#if showFilters}
-        <div class="mt-3 flex flex-col gap-y-2.5 sm:flex-row lg:gap-y-2">
+        <div class="mt-3 flex flex-col gap-y-2.5 lg:flex-row lg:gap-y-2">
           <label
             for="ruleModal"
-            class="text-[0.95rem] text-white inline-flex cursor-pointer items-center justify-center space-x-1 whitespace-nowrap rounded border border-gray-300 dark:border-none bg-blue-brand_light py-2 pl-3 pr-4 font-semibold bg-black text-white dark:bg-[#000] dark:sm:hover:bg-default/60 ease-out focus:outline-hidden"
+            class="text-[0.95rem] order-2 lg:order-0 text-white inline-flex cursor-pointer items-center justify-center space-x-1 whitespace-nowrap rounded border border-gray-300 dark:border-none bg-blue-brand_light py-2 pl-3 pr-4 font-semibold bg-black text-white dark:bg-[#000] dark:sm:hover:bg-default/60 ease-out focus:outline-hidden"
           >
             <svg
               class="h-5 w-5"
@@ -3318,7 +3318,7 @@ const handleKeyDown = (event) => {
           </label>
 
           <!-- Quick Search Input -->
-          <div class="relative sm:ml-3">
+          <div class="relative lg:ml-3">
             <div class="relative">
               <div
                 class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
@@ -3347,7 +3347,7 @@ const handleKeyDown = (event) => {
                 on:keydown={handleQuickSearchKeydown}
                 on:focus={() => updateQuickSearchResults(quickSearchTerm)}
                 on:blur={closeQuickSearchDropdown}
-                class="block w-full sm:w-64 py-2.5 shadow-xs bg-white placeholder:text-muted pl-10 text-[1rem] border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-[#2A2E39] dark:border-gray-800 dark:placeholder-gray-200 dark:text-white dark:focus:outline-none dark:focus:border-none"
+                class="block w-full lg:w-64 py-2.5 shadow bg-white placeholder:text-muted pl-10 text-[1rem] border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 dark:bg-[#2A2E39] dark:border-gray-800 dark:placeholder-gray-200 dark:text-white dark:focus:outline-none dark:focus:border-none"
               />
 
               <!-- Clear button -->
@@ -3440,7 +3440,7 @@ const handleKeyDown = (event) => {
             <label
               for={!data?.user ? "userLogin" : ""}
               on:click={() => handleSave(true)}
-              class="text-[0.95rem] sm:ml-3 cursor-pointer inline-flex items-center justify-center space-x-1 whitespace-nowrap rounded border border-gray-300 dark:border-none bg-blue-brand_light py-2 pl-3 pr-4 font-semibold text-white bg-black sm:hover:bg-default dark:bg-[#000] dark:sm:hover:bg-default/60 ease-out focus:outline-hidden"
+              class="text-[0.95rem] lg:ml-3 cursor-pointer inline-flex items-center justify-center space-x-1 whitespace-nowrap rounded border border-gray-300 dark:border-none bg-blue-brand_light py-2 pl-3 pr-4 font-semibold text-white bg-black sm:hover:bg-default dark:bg-[#000] dark:sm:hover:bg-default/60 ease-out focus:outline-hidden"
             >
               <svg
                 class="w-4 h-4 mr-2 inline-block cursor-pointer shrink-0"
@@ -3460,7 +3460,7 @@ const handleKeyDown = (event) => {
                 on:click={() => {
                   handleCreateStrategy();
                 }}
-                class="text-[0.95rem] sm:ml-3 cursor-pointer inline-flex items-center justify-center space-x-1 whitespace-nowrap rounded border border-gray-300 dark:border-none bg-blue-brand_light py-2 pl-3 pr-4 font-semibold text-white bg-black sm:hover:bg-default dark:bg-[#000] dark:sm:hover:bg-default/60 ease-out focus:outline-hidden"
+                class="text-[0.95rem] lg:ml-3 cursor-pointer inline-flex items-center justify-center space-x-1 whitespace-nowrap rounded border border-gray-300 dark:border-none bg-blue-brand_light py-2 pl-3 pr-4 font-semibold text-white bg-black sm:hover:bg-default dark:bg-[#000] dark:sm:hover:bg-default/60 ease-out focus:outline-hidden"
               >
                 <Copy class="w-4 h-4 inline-block mr-2" />
                 <div>Save as New</div>
@@ -3471,7 +3471,7 @@ const handleKeyDown = (event) => {
           {#if ruleOfList?.length !== 0}
             <label
               on:click={handleResetAll}
-              class="text-[0.95rem] sm:ml-3 cursor-pointer inline-flex items-center justify-center space-x-1 whitespace-nowrap rounded border border-gray-300 dark:border-none bg-blue-brand_light py-2 pl-3 pr-4 font-semibold text-white bg-black sm:hover:bg-default dark:bg-[#000] dark:sm:hover:text-red-500 ease-out focus:outline-hidden"
+              class="text-[0.95rem] lg:ml-3 cursor-pointer inline-flex items-center justify-center space-x-1 whitespace-nowrap rounded border border-gray-300 dark:border-none bg-blue-brand_light py-2 pl-3 pr-4 font-semibold text-white bg-black sm:hover:bg-default dark:bg-[#000] dark:sm:hover:text-red-500 ease-out focus:outline-hidden"
             >
               <svg
                 class="h-4 w-4"
@@ -3900,7 +3900,7 @@ const handleKeyDown = (event) => {
       <div
         class="w-full flex flex-row lg:flex order-1 items-center ml-auto border-b border-gray-300 dark:border-gray-800 lg:border-none pb-2 sm:pt-0 lg:pb-0 w-full order-0 lg:order-1"
       >
-        <div class="relative lg:ml-auto w-fit">
+        <div class="relative lg:ml-auto w-full lg:w-fit">
           <div
             class="inline-block cursor-pointer absolute right-2 top-2 text-sm"
           >
