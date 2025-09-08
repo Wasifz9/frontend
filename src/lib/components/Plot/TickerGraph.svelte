@@ -175,13 +175,13 @@
   }
 
   function plotData() {
-    const parsedData: Record<string, [number, number][]> = {};
+    const parsedData: Record<string, Array<{ x: number; price: number }>> = {};
     const series: any[] = [];
 
     // Define colors for tickers - optimized for light/dark mode
     const tickerColors = {
       0: $mode === "light" ? "#0066CC" : "#00d4ff", // Blue/Cyan for first ticker
-      1: $mode === "light" ? "#FF6B00" : "#ffa500", // Dark Orange/Orange for second ticker
+      1: $mode === "light" ? "#9f0712" : "#ffa500", // Dark Orange/Orange for second ticker
       2: $mode === "light" ? "#00A651" : "#00ff88", // Green for third ticker
     };
 
@@ -193,17 +193,15 @@
       if (seriesData.length > 0) {
         parsedData[symbol] = seriesData.map((item) => {
           const d = new Date(item?.date);
-          return [
-            Date.UTC(
-              d.getUTCFullYear(),
-              d.getUTCMonth(),
-              d.getUTCDate(),
-              d.getUTCHours(),
-              d.getUTCMinutes(),
-              d.getUTCSeconds(),
-            ),
-            item?.value || 0,
-          ];
+          const ts = Date.UTC(
+            d.getUTCFullYear(),
+            d.getUTCMonth(),
+            d.getUTCDate(),
+            d.getUTCHours(),
+            d.getUTCMinutes(),
+            d.getUTCSeconds(),
+          );
+          return { x: ts, price: Number(item?.value || 0) };
         });
       } else {
         parsedData[symbol] = [];
@@ -218,47 +216,32 @@
     Object.entries(parsedData).forEach(([symbol, dataPoints], index) => {
       if (!Array.isArray(dataPoints) || dataPoints.length === 0) return;
 
-      const firstValue = dataPoints[0]?.[1];
+      const firstValue = dataPoints[0]?.price;
       if (!firstValue || firstValue === 0) return;
 
       const percentageData = dataPoints.map((point) => {
-        const percentValue = ((point[1] || 0) / firstValue - 1) * 100;
+        const percentValue = ((point.price || 0) / firstValue - 1) * 100;
         // Update min/max tracking
         minPercentage = Math.min(minPercentage, percentValue);
         maxPercentage = Math.max(maxPercentage, percentValue);
-        return [point[0], percentValue];
+        // return an object point so we can carry price to tooltip
+        return { x: point.x, y: percentValue, price: point.price };
       });
 
       series.push({
         name: symbol,
-        type: "line",
+        type: "spline",
         data: percentageData,
-        color: tickerColors[index],
+        color:
+          tickerList?.length === 1
+            ? $mode === "light"
+              ? "#000"
+              : "#fff"
+            : tickerColors[index],
         lineWidth: 2,
         marker: { enabled: false },
         zIndex: 2,
       });
-
-      // Add baseline at 0%
-      if (index === 0) {
-        const firstTime = dataPoints[0][0];
-        const lastTime = dataPoints[dataPoints.length - 1][0];
-        series.push({
-          name: "Baseline",
-          type: "line",
-          data: [
-            [firstTime, 0],
-            [lastTime, 0],
-          ],
-          color: $mode === "light" ? "#9CA3AF" : "#4B5563",
-          lineWidth: 1,
-          dashStyle: "Solid",
-          marker: { enabled: false },
-          showInLegend: false,
-          enableMouseTracking: false,
-          zIndex: 1,
-        });
-      }
     });
 
     // Calculate yMin and yMax with padding
@@ -279,9 +262,7 @@
     const firstData = Object.values(parsedData).find(
       (data) => data?.length > 0,
     );
-    const baseDate = firstData?.[0]?.[0]
-      ? new Date(firstData[0][0])
-      : new Date();
+    const baseDate = firstData?.[0]?.x ? new Date(firstData[0].x) : new Date();
     const startTime = new Date(
       baseDate.getFullYear(),
       baseDate.getMonth(),
@@ -330,10 +311,24 @@
             minute: "2-digit",
           });
 
+          // Currency formatter for prices
+          const currency = new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "USD",
+            maximumFractionDigits: 2,
+          });
+
           let content = `<div style="padding: 8px;">`;
           this.points?.forEach((point) => {
+            // skip our baseline series
             if (!point.series.name.includes("Baseline")) {
-              content += `<div style="color: ${point.series.color}; margin-bottom: 4px;">${point.series.name}: ${point.y >= 0 ? "+" : ""}${point.y?.toFixed(2)}%</div>`;
+              // the underlying price is carried on the point
+              const rawPrice =
+                point.point && point.point.price ? point.point.price : null;
+              const priceFormatted =
+                rawPrice !== null ? ` ${currency.format(rawPrice)}` : "";
+
+              content += `<div style="color: ${point.series.color}; margin-bottom: 4px;">${point.series.name} ${priceFormatted} (<span class="${point?.y > 0 ? "text-green-800 dark:text-[#00FC50]" : point?.y < 0 ? "text-red-800 dark:text-[#FF2F1F]" : ""}">${point.y >= 0 ? "+" : ""}${point.y?.toFixed(2)}%</span>)</div>`;
             }
           });
           content += `<div style="color: ${$mode === "light" ? "#6b7280" : "#fff"}; font-size: 12px; margin-top: 4px;">${formattedTime}</div></div>`;
@@ -356,7 +351,6 @@
           style: {
             color: $mode === "light" ? "#374151" : "#e5e7eb",
             fontSize: "12px",
-            fontFamily: "monospace",
           },
           formatter: function () {
             const date = new Date(this.value);
@@ -389,7 +383,6 @@
           style: {
             color: $mode === "light" ? "#374151" : "#e5e7eb",
             fontSize: "12px",
-            fontFamily: "monospace",
           },
           formatter: function () {
             return (
@@ -469,14 +462,19 @@
             {#if quote}
               <div>
                 <div class="flex items-center gap-2 mb-3">
-                  <img
-                    src={`https://financialmodelingprep.com/image-stock/${ticker}.png`}
-                    alt="logo"
-                    class="w-5 h-5 rounded-full"
-                  />
-                  <span class=" text-sm"
-                    >{removeCompanyStrings(quote?.name)}</span
+                  <div
+                    class="size-8 rounded-full bg-black dark:bg-primary flex items-center justify-center overflow-hidden"
                   >
+                    <img
+                      src={`https://financialmodelingprep.com/image-stock/${ticker}.png`}
+                      alt="logo"
+                      class="size-4 avatar"
+                    />
+                  </div>
+
+                  <span class="text-sm sm:text-[1rem] font-semibold">
+                    {removeCompanyStrings(quote?.name)}
+                  </span>
                 </div>
 
                 <div class="flex items-end items-baseline gap-x-2">
@@ -595,8 +593,8 @@
           <div class="flex justify-center mb-6">
             <button
               on:click={() => (isExpanded = !isExpanded)}
-              class="cursor-pointer px-6 py-2 text-sm font-medium rounded
-                     text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-800"
+              class="cursor-pointer px-6 py-2 text-sm font-medium rounded shadow
+                     text-gray-800 dark:text-gray-300 sm:hover:bg-gray-100 dark:sm:hover:bg-primary transition-all duratio-50 border border-gray-300 dark:border-gray-800"
             >
               {#if isExpanded}
                 <span class="flex items-center gap-2">
@@ -642,10 +640,13 @@
         <!-- Loading State -->
         <div class="flex justify-center items-center h-96">
           <div class="relative">
-            <div class="bg-[#454A55] rounded p-4">
-              <span class="loading loading-spinner loading-md text-gray-400"
+            <label
+              class="shadow-xs bg-default dark:bg-secondary rounded h-14 w-14 flex justify-center items-center absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+            >
+              <span
+                class="loading loading-spinner loading-md text-white dark:text-white"
               ></span>
-            </div>
+            </label>
           </div>
         </div>
       {/if}
