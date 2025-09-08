@@ -10,13 +10,13 @@ onmessage = (event: MessageEvent) => {
   }
 
   const filterQuery = filterQueryRaw.toLowerCase();
-  const similarityThreshold = 0.9;
+  const similarityThreshold = 0.8;
 
   const output = [];
   for (let i = 0; i < rawData.length; i++) {
     const item = rawData[i];
-    const name = item?.name?.toLowerCase() || "";
-    const symbol = item?.symbol?.toLowerCase() || "";
+    const name = item?.name?.toLowerCase() || item?.assetDescription?.toLowerCase()  || "";
+    const symbol = item?.symbol?.toLowerCase()  || item?.ticker?.toLowerCase() || "";
 
     // Fast includes check (cheap)
     if (name.includes(filterQuery) || symbol.includes(filterQuery)) {

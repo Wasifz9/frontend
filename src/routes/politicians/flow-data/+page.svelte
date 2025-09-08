@@ -6,10 +6,14 @@
   //import UpgradeToPro from '$lib/components/UpgradeToPro.svelte';
   import ArrowLogo from "lucide-svelte/icons/move-up-right";
   import TableHeader from "$lib/components/Table/TableHeader.svelte";
+  import DownloadData from "$lib/components/DownloadData.svelte";
+  import Infobox from "$lib/components/Infobox.svelte";
 
   import SEO from "$lib/components/SEO.svelte";
 
   export let data;
+  let inputValue = "";
+  let searchWorker: Worker | undefined;
 
   let rawData = data?.getPoliticianRSS;
   let stockList = rawData?.slice(0, 50) || [];
@@ -24,7 +28,50 @@
     }
   }
 
+  async function resetTableSearch() {
+    inputValue = "";
+    search();
+  }
+
+  async function search() {
+    inputValue = inputValue?.toLowerCase();
+
+    setTimeout(async () => {
+      if (inputValue?.length > 0) {
+        await loadSearchWorker();
+      } else {
+        // Reset to original data if filter is empty
+        rawData = data?.getPoliticianRSS || [];
+        stockList = rawData?.slice(0, 50);
+      }
+    }, 100);
+  }
+
+  const loadSearchWorker = async () => {
+    if (searchWorker && rawData?.length > 0) {
+      searchWorker.postMessage({
+        rawData: data?.getPoliticianRSS,
+        inputValue: inputValue,
+      });
+    }
+  };
+
+  const handleSearchMessage = (event) => {
+    if (event.data?.message === "success") {
+      rawData = event.data?.output ?? [];
+      stockList = rawData?.slice(0, 50);
+    }
+  };
+
   onMount(async () => {
+    if (!searchWorker) {
+      const SearchWorker = await import(
+        "$lib/workers/tableSearchWorker?worker"
+      );
+      searchWorker = new SearchWorker.default();
+      searchWorker.onmessage = handleSearchMessage;
+    }
+
     window.addEventListener("scroll", handleScroll);
     //window.addEventListener('keydown', handleKeyDown);
 
@@ -165,19 +212,8 @@
           </div>
 
           <p class="mt-4">
-            Overview of the latest congressional trading activity. As of
-            <strong
-              >{new Date().toLocaleDateString("en-US", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-              })}</strong
-            >, we are tracking
-            <strong>{rawData?.length?.toLocaleString("en-US") || "0"}</strong>
-            total transactions from members of Congress. Currently displaying the
-            most recent
-            <strong>{stockList?.length?.toLocaleString("en-US") || "0"}</strong>
-            trades. The buy-sell ratio shows
+            Overview of the latest congressional trading activity. The buy-sell
+            ratio shows
             <strong
               >{(() => {
                 const buys =
@@ -255,107 +291,168 @@
           </p>
 
           <body class="w-full overflow-hidden m-auto">
-            <section class="w-full overflow-hidden m-auto mt-5">
+            <section class="w-full overflow-hidden m-auto mt-3">
               <div class=" flex justify-center w-full m-auto overflow-hidden">
                 <div
                   class="relative flex justify-center items-center overflow-hidden w-full"
                 >
                   <main class="w-full">
-                    <div class="w-full m-auto mt-4">
+                    <div class="items-center lg:overflow-visible lg:px-1 py-1">
+                      <div
+                        class="col-span-2 flex flex-col lg:flex-row items-start sm:items-center lg:order-2 lg:grow py-1 border-t border-b border-gray-300 dark:border-gray-800"
+                      >
+                        <h2
+                          class="text-start whitespace-nowrap text-lg sm:text-xl font-semibold py-1 border-b border-gray-300 dark:border-gray-800 lg:border-none w-full"
+                        >
+                          {rawData?.length} Congressional Trades
+                        </h2>
+                        <div
+                          class="mt-1 w-full flex flex-row lg:flex order-1 items-center ml-auto pb-1 w-full order-0 lg:order-1"
+                        >
+                          <div class="relative lg:ml-auto w-full lg:w-fit">
+                            <div
+                              class="inline-block cursor-pointer absolute right-2 top-2 text-sm"
+                            >
+                              {#if inputValue?.length > 0}
+                                <label
+                                  class="cursor-pointer"
+                                  on:click={() => resetTableSearch()}
+                                >
+                                  <svg
+                                    class="w-5 h-5"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    ><path
+                                      fill="currentColor"
+                                      d="m6.4 18.308l-.708-.708l5.6-5.6l-5.6-5.6l.708-.708l5.6 5.6l5.6-5.6l.708.708l-5.6 5.6l5.6 5.6l-.708.708l-5.6-5.6z"
+                                    /></svg
+                                  >
+                                </label>
+                              {/if}
+                            </div>
+
+                            <input
+                              bind:value={inputValue}
+                              on:input={search}
+                              type="text"
+                              placeholder="Find..."
+                              class=" py-[7px] text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-800 grow w-full sm:min-w-56 lg:max-w-14"
+                            />
+                          </div>
+
+                          <div class=" ml-2">
+                            <DownloadData
+                              {data}
+                              {rawData}
+                              title={"stock_screener_data"}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="w-full m-auto mt-2">
                       <div
                         class="w-full m-auto rounded-none sm:rounded mb-4 overflow-x-auto sm:overflow-hidden"
                       >
-                        <table
-                          class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
-                        >
-                          <thead>
-                            <TableHeader {columns} {sortOrders} {sortData} />
-                          </thead>
-                          <tbody>
-                            {#each stockList as item}
-                              <tr
-                                class="dark:sm:hover:bg-[#245073]/10 odd:bg-[#F6F7F8] dark:odd:bg-odd"
-                              >
-                                <td
-                                  class="text-start text-sm sm:text-[1rem] whitespace-nowrap"
+                        {#if stockList?.length > 0}
+                          <table
+                            class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
+                          >
+                            <thead>
+                              <TableHeader {columns} {sortOrders} {sortData} />
+                            </thead>
+                            <tbody>
+                              {#each stockList as item}
+                                <tr
+                                  class="dark:sm:hover:bg-[#245073]/10 odd:bg-[#F6F7F8] dark:odd:bg-odd"
                                 >
-                                  <a
-                                    href={`/politicians/${item?.id}`}
-                                    class="text-blue-800 sm:hover:text-muted dark:sm:hover:text-white dark:text-blue-400"
-                                    >{getAbbreviatedName(
-                                      item?.representative?.replace("_", " "),
-                                    )}</a
+                                  <td
+                                    class="text-start text-sm sm:text-[1rem] whitespace-nowrap"
                                   >
-                                </td>
-                                <td
-                                  class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
-                                >
-                                  {item?.party}
-                                </td>
-
-                                <td
-                                  class="text-end whitespace-nowrap text-sm sm:text-[1rem]"
-                                >
-                                  <HoverStockChart
-                                    symbol={item?.ticker}
-                                    assetType={item?.assetType}
-                                  />
-                                </td>
-                                <td
-                                  class="text-end whitespace-nowrap text-sm sm:text-[1rem]"
-                                >
-                                  <span class=""
-                                    >{item?.assetDescription.length > charNumber
-                                      ? formatString(
-                                          item?.assetDescription.slice(
-                                            0,
-                                            charNumber,
-                                          ),
-                                        ) + "..."
-                                      : formatString(item?.assetDescription)
-                                          ?.replace("- Common Stock", "")
-                                          ?.replace("Common Stock", "")}</span
+                                    <a
+                                      href={`/politicians/${item?.id}`}
+                                      class="text-blue-800 sm:hover:text-muted dark:sm:hover:text-white dark:text-blue-400"
+                                      >{getAbbreviatedName(
+                                        item?.representative?.replace("_", " "),
+                                      )}</a
+                                    >
+                                  </td>
+                                  <td
+                                    class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
                                   >
-                                </td>
+                                    {item?.party}
+                                  </td>
 
-                                <td
-                                  class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
-                                >
-                                  {new Date(
-                                    item?.disclosureDate,
-                                  )?.toLocaleString("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                    year: "numeric",
-                                    daySuffix: "2-digit",
-                                  })}
-                                </td>
+                                  <td
+                                    class="text-end whitespace-nowrap text-sm sm:text-[1rem]"
+                                  >
+                                    <HoverStockChart
+                                      symbol={item?.ticker}
+                                      assetType={item?.assetType}
+                                    />
+                                  </td>
+                                  <td
+                                    class="text-end whitespace-nowrap text-sm sm:text-[1rem]"
+                                  >
+                                    <span class=""
+                                      >{item?.assetDescription.length >
+                                      charNumber
+                                        ? formatString(
+                                            item?.assetDescription.slice(
+                                              0,
+                                              charNumber,
+                                            ),
+                                          ) + "..."
+                                        : formatString(item?.assetDescription)
+                                            ?.replace("- Common Stock", "")
+                                            ?.replace("Common Stock", "")}</span
+                                    >
+                                  </td>
 
-                                <td
-                                  class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
-                                >
-                                  {item?.amount?.replace(
-                                    "$1,000,001 - $5,000,000",
-                                    "$1Mio - $5Mio",
-                                  )}
-                                </td>
-                                <td class="text-sm sm:text-[1rem] text-end">
-                                  {#if item?.type === "Bought"}
-                                    <span
-                                      class="text-green-800 dark:text-[#00FC50]"
-                                      >Bought</span
-                                    >
-                                  {:else if item?.type === "Sold"}
-                                    <span
-                                      class="text-red-800 dark:text-[#FF2F1F]"
-                                      >Sold</span
-                                    >
-                                  {/if}
-                                </td>
-                              </tr>
-                            {/each}
-                          </tbody>
-                        </table>
+                                  <td
+                                    class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
+                                  >
+                                    {new Date(
+                                      item?.disclosureDate,
+                                    )?.toLocaleString("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                      year: "numeric",
+                                      daySuffix: "2-digit",
+                                    })}
+                                  </td>
+
+                                  <td
+                                    class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
+                                  >
+                                    {item?.amount?.replace(
+                                      "$1,000,001 - $5,000,000",
+                                      "$1Mio - $5Mio",
+                                    )}
+                                  </td>
+                                  <td class="text-sm sm:text-[1rem] text-end">
+                                    {#if item?.type === "Bought"}
+                                      <span
+                                        class="text-green-800 dark:text-[#00FC50]"
+                                        >Bought</span
+                                      >
+                                    {:else if item?.type === "Sold"}
+                                      <span
+                                        class="text-red-800 dark:text-[#FF2F1F]"
+                                        >Sold</span
+                                      >
+                                    {/if}
+                                  </td>
+                                </tr>
+                              {/each}
+                            </tbody>
+                          </table>
+                        {:else}
+                          <Infobox
+                            text={`No Stocks found for "${inputValue}"`}
+                          />
+                        {/if}
                       </div>
                       <!--<InfiniteLoading on:infinite={infiniteHandler} />-->
 
@@ -402,12 +499,12 @@
             >
               <div class="w-full flex justify-between items-center p-3 mt-3">
                 <h2 class="text-start text-xl font-bold ml-3">
-                  All Congress Trading
+                  All Congress Members
                 </h2>
-                <ArrowLogo class="w-8 h-8 mr-3 shrink-0 text-gray-400 dark:" />
+                <ArrowLogo class="w-8 h-8 mr-3 shrink-0 text-gray-400 " />
               </div>
               <span class="p-3 ml-3 mr-3">
-                Get detailed reports on latest Congress trading transactions.
+                Get detailed reports on all Congress member trading activity.
               </span>
             </a>
           </div>
