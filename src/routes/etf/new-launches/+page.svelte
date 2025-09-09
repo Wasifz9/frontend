@@ -4,17 +4,68 @@
   import ArrowLogo from "lucide-svelte/icons/move-up-right";
   import TableHeader from "$lib/components/Table/TableHeader.svelte";
   import SEO from "$lib/components/SEO.svelte";
+  import { onMount } from "svelte";
+  import DownloadData from "$lib/components/DownloadData.svelte";
+  import Infobox from "$lib/components/Infobox.svelte";
 
   export let data;
 
-  let etfData = data?.getETFNewLaunches;
+  let rawData = data?.getData;
+  let stockList = rawData;
+  let inputValue = "";
+  let searchWorker: Worker | undefined;
 
-  $: charNumber = $screenWidth < 640 ? 30 : 40;
+  async function resetTableSearch() {
+    inputValue = "";
+    search();
+  }
+
+  async function search() {
+    inputValue = inputValue?.toLowerCase();
+
+    setTimeout(async () => {
+      if (inputValue?.length > 0) {
+        await loadSearchWorker();
+      } else {
+        // Reset to original data if filter is empty
+        rawData = data?.getData || [];
+        stockList = rawData?.slice(0, 50);
+      }
+    }, 100);
+  }
+
+  const loadSearchWorker = async () => {
+    if (searchWorker && rawData?.length > 0) {
+      searchWorker.postMessage({
+        rawData: data?.getData,
+        inputValue: inputValue,
+      });
+    }
+  };
+
+  const handleSearchMessage = (event) => {
+    if (event.data?.message === "success") {
+      rawData = event.data?.output ?? [];
+      stockList = rawData?.slice(0, 50);
+    }
+  };
+
+  onMount(async () => {
+    if (!searchWorker) {
+      const SearchWorker = await import(
+        "$lib/workers/tableSearchWorker?worker"
+      );
+      searchWorker = new SearchWorker.default();
+      searchWorker.onmessage = handleSearchMessage;
+    }
+  });
 
   let columns = [
     { key: "inceptionDate", label: "Inception", align: "left" },
     { key: "symbol", label: "Symbol", align: "left" },
     { key: "name", label: "Fund Name", align: "left" },
+    { key: "price", label: "Price", align: "right" },
+    { key: "changesPercentage", label: "% Change", align: "right" },
     { key: "numberOfHoldings", label: "Holdings", align: "right" },
     { key: "totalAssets", label: "Total Assets", align: "right" },
   ];
@@ -23,6 +74,8 @@
     inceptionDate: { order: "none", type: "date" },
     symbol: { order: "none", type: "string" },
     name: { order: "none", type: "string" },
+    price: { order: "none", type: "number" },
+    changesPercentage: { order: "none", type: "number" },
     numberOfHoldings: { order: "none", type: "number" },
     totalAssets: { order: "none", type: "number" },
   };
@@ -38,7 +91,7 @@
     // Cycle through 'none', 'asc', 'desc' for the clicked key
     const orderCycle = ["none", "asc", "desc"];
 
-    let originalData = data?.getETFNewLaunches;
+    let originalData = rawData;
 
     const currentOrderIndex = orderCycle.indexOf(sortOrders[key].order);
     sortOrders[key].order =
@@ -47,7 +100,7 @@
 
     // Reset to original data when 'none' and stop further sorting
     if (sortOrder === "none") {
-      etfData = [...originalData]; // Reset to original data (spread to avoid mutation)
+      stockList = [...originalData]; // Reset to original data (spread to avoid mutation)
       return;
     }
 
@@ -82,13 +135,15 @@
     };
 
     // Sort using the generic comparison function
-    etfData = [...originalData].sort(compareValues);
+    stockList = [...originalData].sort(compareValues);
   };
+
+  $: charNumber = $screenWidth < 640 ? 30 : 30;
 </script>
 
 <SEO
   title="New ETF Launches - Recently Listed Exchange-Traded Funds Directory"
-  description="Complete directory of {etfData?.length ||
+  description="Complete directory of {stockList?.length ||
     100} newest ETFs launched on US markets, sorted by inception date. Discover emerging investment themes, innovative fund structures, and latest ETF innovations from leading providers. Track new fund launches for early investment opportunities."
   keywords="new ETF launches, recent ETFs, newest exchange-traded funds, ETF innovations, new fund launches, emerging ETFs, latest ETFs, ETF inception dates, new investment opportunities"
   structuredData={{
@@ -102,7 +157,7 @@
       "@type": "ItemList",
       name: "Recent ETF Launches",
       description: "Newest exchange-traded funds available for trading",
-      numberOfItems: etfData?.length || 0,
+      numberOfItems: stockList?.length || 0,
     },
     about: {
       "@type": "FinancialProduct",
@@ -114,7 +169,7 @@
 />
 
 <section
-  class="w-full max-w-3xl sm:max-w-[1400px] overflow-hidden pb-20 pt-5 px-4 lg:px-3"
+  class="w-full max-w-3xl sm:max-w-[1400px] overflow-hidden pb-20 pt-5 px-4 lg:px-3 min-h-screen"
 >
   <div class="text-sm sm:text-[1rem] breadcrumbs">
     <ul>
@@ -129,21 +184,71 @@
         class="relative flex flex-col lg:flex-row justify-center items-start overflow-hidden w-full"
       >
         <main class="w-full lg:w-3/4 lg:pr-10">
-          <div class="mb-6 border-[#2C6288] dark:border-white border-b-[2px]">
-            <h1 class="mb-1 text-2xl sm:text-3xl font-bold">
+          <div class=" border-[#2C6288] dark:border-white border-b-[2px]">
+            <h1 class="mb-3 text-2xl sm:text-3xl font-bold">
               New Launches of ETFs
             </h1>
           </div>
 
-          <div class="w-full mt-5 m-auto mb-10 overflow-hidden">
+          <Infobox text="Recently introduced Exchange-Traded Funds" />
+
+          <div class="items-center lg:overflow-visible px-1 py-1 mt-4">
+            <div
+              class="col-span-2 flex flex-col lg:flex-row items-start sm:items-center lg:order-2 lg:grow py-1 border-t border-b border-gray-300 dark:border-gray-800"
+            >
+              <h2
+                class="text-start whitespace-nowrap text-xl sm:text-2xl font-semibold py-1 border-b border-gray-300 dark:border-gray-800 lg:border-none w-full"
+              >
+                {rawData?.length?.toLocaleString("en-US")} new ETFs
+              </h2>
+              <div
+                class="mt-1 w-full flex flex-row lg:flex order-1 items-center ml-auto pb-1 pt-1 sm:pt-0 w-full order-0 lg:order-1"
+              >
+                <div class="relative lg:ml-auto w-full lg:w-fit">
+                  <div
+                    class="inline-block cursor-pointer absolute right-2 top-2 text-sm"
+                  >
+                    {#if inputValue?.length > 0}
+                      <label
+                        class="cursor-pointer"
+                        on:click={() => resetTableSearch()}
+                      >
+                        <svg
+                          class="w-5 h-5"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          ><path
+                            fill="currentColor"
+                            d="m6.4 18.308l-.708-.708l5.6-5.6l-5.6-5.6l.708-.708l5.6 5.6l5.6-5.6l.708.708l-5.6 5.6l5.6 5.6l-.708.708l-5.6-5.6z"
+                          /></svg
+                        >
+                      </label>
+                    {/if}
+                  </div>
+
+                  <input
+                    bind:value={inputValue}
+                    on:input={search}
+                    type="text"
+                    placeholder="Find..."
+                    class=" py-[7px] text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-800 grow w-full sm:min-w-56 lg:max-w-14"
+                  />
+                </div>
+
+                <div class="ml-2">
+                  <DownloadData
+                    {data}
+                    {rawData}
+                    title={"etf_new_launches_data"}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="w-full mt-2 m-auto mb-10 overflow-hidden">
             <!--Start Top Winners/Losers-->
             <div class="flex flex-col justify-center items-center">
-              <div class="text-start w-full mb-2">
-                <span class="font-bold text-2xl">
-                  {etfData?.length} ETFs
-                </span>
-              </div>
-
               <div class="w-full overflow-x-auto">
                 <table
                   class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
@@ -152,7 +257,7 @@
                     <TableHeader {columns} {sortOrders} {sortData} />
                   </thead>
                   <tbody>
-                    {#each etfData as item}
+                    {#each stockList as item}
                       <tr
                         class="dark:sm:hover:bg-[#245073]/10 odd:bg-[#F6F7F8] dark:odd:bg-odd"
                       >
@@ -186,18 +291,40 @@
                         <td
                           class=" text-sm sm:text-[1rem] whitespace-nowrap text-end"
                         >
+                          {item?.price !== null && item?.price !== 0
+                            ? item?.price
+                            : "n/a"}
+                        </td>
+
+                        <td
+                          class=" text-sm sm:text-[1rem] whitespace-nowrap text-end"
+                        >
+                          {#if item?.changesPercentage >= 0}
+                            <span class="text-green-800 dark:text-[#00FC50]"
+                              >+{item?.changesPercentage?.toFixed(2)}%</span
+                            >
+                          {:else}
+                            <span class="text-red-800 dark:text-[#FF2F1F]"
+                              >{item?.changesPercentage?.toFixed(2)}%</span
+                            >
+                          {/if}
+                        </td>
+
+                        <td
+                          class=" text-sm sm:text-[1rem] whitespace-nowrap text-end"
+                        >
                           {item?.numberOfHoldings !== null &&
                           item?.numberOfHoldings !== 0
-                            ? item?.numberOfHoldings
-                            : "-"}
+                            ? item?.numberOfHoldings?.toLocaleString("en-US")
+                            : "n/a"}
                         </td>
 
                         <td
                           class=" text-sm sm:text-[1rem] whitespace-nowrap text-end"
                         >
                           {item?.totalAssets !== 0 && item?.totalAssets !== null
-                            ? abbreviateNumber(item?.totalAssets)
-                            : "-"}
+                            ? item?.totalAssets?.toLocaleString("en-US")
+                            : "n/a"}
                         </td>
                       </tr>
                     {/each}

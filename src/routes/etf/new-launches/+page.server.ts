@@ -1,5 +1,5 @@
 export const load = async ({ locals }) => {
-  const getETFNewLaunches = async () => {
+  const getData = async () => {
     const { apiKey, apiURL } = locals;
 
     // make the POST request to the endpoint
@@ -17,6 +17,6 @@ export const load = async ({ locals }) => {
 
   // Make sure to return a promise
   return {
-    getETFNewLaunches: await getETFNewLaunches(),
+    getData: await getData(),
   };
 };
