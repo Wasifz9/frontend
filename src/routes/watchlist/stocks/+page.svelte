@@ -2189,7 +2189,7 @@
 
         <button
           type="submit"
-          class="cursor-pointer mt-2 py-3 bg-[#3B82F6] dark:bg-[#fff] sm:hover:bg-blue-600 dark:sm:hover:bg-gray-200 btn-md w-full rounded m-auto text-white dark:text-black font-semibold text-md"
+          class="cursor-pointer mt-2 py-3 bg-black text-white dark:text-black sm:hover:bg-muted dark:bg-[#fff] dark:sm:hover:bg-gray-100 btn-md w-full rounded m-auto font-semibold text-md"
         >
           Create Watchlist
         </button>

@@ -877,8 +877,8 @@
                     <Combobox.Input
                       on:input={search}
                       class="text-sm  controls-input shadow-xs focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-600 dark:placeholder:text-gray-200 px-3 py-2 pl-8 xs:pl-10 grow w-full "
-                      placeholder="Add new stock..."
-                      aria-label="Add new stock..."
+                      placeholder="Find..."
+                      aria-label="Find..."
                     />
                   </div>
                   <Combobox.Content

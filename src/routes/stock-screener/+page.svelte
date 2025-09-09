@@ -3087,7 +3087,7 @@ const handleKeyDown = (event) => {
       <div class="w-full flex flex-row items-center sm:mt-4">
         <h1 class=" text-3xl font-semibold">Stock Screener</h1>
         <span class="inline-block text-xs sm:text-sm font-semibold ml-2 mt-3">
-          {filteredData?.length} Matches Found
+          {filteredData?.length?.toLocaleString("en-US")} Matches Found
         </span>
       </div>
 
@@ -3892,7 +3892,7 @@ const handleKeyDown = (event) => {
     <h2
       class=" whitespace-nowrap text-xl font-semibold py-1 bp:text-[1.3rem] border-t border-gray-300 dark:border-gray-800"
     >
-      {filteredData?.length} Stocks
+      {filteredData?.length?.toLocaleString("en-US")} Stocks
     </h2>
     <div
       class="col-span-2 flex flex-col lg:flex-row items-center lg:order-2 lg:grow py-1.5 border-t border-b border-gray-300 dark:border-gray-800"
