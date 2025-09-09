@@ -33,38 +33,40 @@
   structuredData={{
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    "name": "Top Analyst Strong Buy Stocks",
-    "description": "Strong Buy stock recommendations from top-performing Wall Street analysts",
-    "url": "https://stocknear.com/analysts/top-stocks",
-    "breadcrumb": {
+    name: "Top Analyst Strong Buy Stocks",
+    description:
+      "Strong Buy stock recommendations from top-performing Wall Street analysts",
+    url: "https://stocknear.com/analysts/top-stocks",
+    breadcrumb: {
       "@type": "BreadcrumbList",
-      "itemListElement": [
+      itemListElement: [
         {
           "@type": "ListItem",
-          "position": 1,
-          "name": "Home",
-          "item": "https://stocknear.com"
+          position: 1,
+          name: "Home",
+          item: "https://stocknear.com",
         },
         {
           "@type": "ListItem",
-          "position": 2,
-          "name": "Analysts",
-          "item": "https://stocknear.com/analysts"
+          position: 2,
+          name: "Analysts",
+          item: "https://stocknear.com/analysts",
         },
         {
           "@type": "ListItem",
-          "position": 3,
-          "name": "Top Analyst Stocks",
-          "item": "https://stocknear.com/analysts/top-stocks"
-        }
-      ]
+          position: 3,
+          name: "Top Analyst Stocks",
+          item: "https://stocknear.com/analysts/top-stocks",
+        },
+      ],
     },
-    "mainEntity": {
+    mainEntity: {
       "@type": "ItemList",
-      "name": "Top Analyst Strong Buy Stock List",
-      "description": "List of Strong Buy stocks recommended by top-performing Wall Street analysts",
-      "numberOfItems": rawData?.length || 0
-    }
+      name: "Top Analyst Strong Buy Stock List",
+      description:
+        "List of Strong Buy stocks recommended by top-performing Wall Street analysts",
+      numberOfItems: rawData?.length || 0,
+    },
   }}
 />
 
@@ -101,6 +103,7 @@
               {defaultList}
               {excludedRules}
               {hideLastRow}
+              title={`Top ${rawData?.length} Stocks`}
             />
           </div>
           <UpgradeToPro {data} />

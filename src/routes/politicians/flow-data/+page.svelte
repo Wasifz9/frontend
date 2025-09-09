@@ -297,17 +297,17 @@
                   class="relative flex justify-center items-center overflow-hidden w-full"
                 >
                   <main class="w-full">
-                    <div class="items-center lg:overflow-visible lg:px-1 py-1">
+                    <div class="items-center lg:overflow-visible px-1 py-1">
                       <div
                         class="col-span-2 flex flex-col lg:flex-row items-start sm:items-center lg:order-2 lg:grow py-1 border-t border-b border-gray-300 dark:border-gray-800"
                       >
                         <h2
-                          class="text-start whitespace-nowrap text-lg sm:text-xl font-semibold py-1 border-b border-gray-300 dark:border-gray-800 lg:border-none w-full"
+                          class="text-start whitespace-nowrap text-xl sm:text-2xl font-semibold py-1 border-b border-gray-300 dark:border-gray-800 lg:border-none w-full"
                         >
                           {rawData?.length} Congressional Trades
                         </h2>
                         <div
-                          class="mt-1 w-full flex flex-row lg:flex order-1 items-center ml-auto pb-1 w-full order-0 lg:order-1"
+                          class="mt-1 w-full flex flex-row lg:flex order-1 items-center ml-auto pb-1 pt-1 sm:pt-0 w-full order-0 lg:order-1"
                         >
                           <div class="relative lg:ml-auto w-full lg:w-fit">
                             <div
@@ -340,7 +340,7 @@
                             />
                           </div>
 
-                          <div class=" ml-2">
+                          <div class="ml-2">
                             <DownloadData
                               {data}
                               {rawData}
