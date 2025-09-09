@@ -4,12 +4,15 @@
   import { abbreviateNumber, formatString } from "$lib/utils";
   import { onMount } from "svelte";
   import SEO from "$lib/components/SEO.svelte";
+  import DownloadData from "$lib/components/DownloadData.svelte";
+  import Infobox from "$lib/components/Infobox.svelte";
 
   export let data;
 
-  let rawData = data?.getAllHedgeFunds;
+  let rawData = data?.getData;
   let displayList = rawData?.slice(0, 100) ?? [];
   let inputValue = "";
+  let searchWorker: Worker | undefined;
 
   async function handleScroll() {
     const scrollThreshold = document.body.offsetHeight * 0.8; // 80% of the website height
@@ -21,11 +24,48 @@
     }
   }
 
+  async function resetTableSearch() {
+    inputValue = "";
+    search();
+  }
+
+  async function search() {
+    inputValue = inputValue?.toLowerCase();
+
+    setTimeout(async () => {
+      if (inputValue?.length > 0) {
+        await loadSearchWorker();
+      } else {
+        // Reset to original data if filter is empty
+        rawData = data?.getData || [];
+        displayList = rawData?.slice(0, 50);
+      }
+    }, 100);
+  }
+
+  const loadSearchWorker = async () => {
+    if (searchWorker && rawData?.length > 0) {
+      searchWorker.postMessage({
+        rawData: data?.getData,
+        inputValue: inputValue,
+      });
+    }
+  };
+
+  const handleSearchMessage = (event) => {
+    if (event.data?.message === "success") {
+      rawData = event.data?.output ?? [];
+      displayList = rawData?.slice(0, 50);
+    }
+  };
+
   onMount(async () => {
-    if (!syncWorker) {
-      const SyncWorker = await import("./workers/filterQuery?worker");
-      syncWorker = new SyncWorker.default();
-      syncWorker.onmessage = handleMessage;
+    if (!searchWorker) {
+      const SearchWorker = await import(
+        "$lib/workers/tableSearchWorker?worker"
+      );
+      searchWorker = new SearchWorker.default();
+      searchWorker.onmessage = handleSearchMessage;
     }
 
     window.addEventListener("scroll", handleScroll);
@@ -37,43 +77,6 @@
       //window.removeEventListener('keydown', handleKeyDown);
     };
   });
-
-  let syncWorker: Worker | undefined = undefined;
-
-  // Handling messages from the worker
-  const handleMessage = async (event) => {
-    const filterData = event.data?.output;
-
-    if (filterData?.length !== 0) {
-      rawData = filterData;
-      displayList = [...filterData]?.slice(0, 50);
-    } else {
-      // Reset to original data if no matches found
-      rawData = data?.getAllHedgeFunds;
-      displayList = rawData?.slice(0, 50);
-    }
-  };
-
-  const loadWorker = async () => {
-    syncWorker.postMessage({
-      rawData: data?.getAllHedgeFunds,
-      inputValue: inputValue,
-    });
-  };
-
-  async function search() {
-    inputValue = inputValue?.toLowerCase();
-
-    setTimeout(async () => {
-      if (inputValue?.length !== 0) {
-        await loadWorker();
-      } else {
-        // Reset to original data if filter is empty
-        rawData = data?.getAllHedgeFunds;
-        displayList = rawData?.slice(0, 50);
-      }
-    }, 500);
-  }
 
   let columns = [
     { key: "rank", label: "Rank", align: "left" },
@@ -236,33 +239,61 @@
                 Top Hedge Funds in US
               </h1>
             </div>
-            <div class="w-full pt-2">
-              <div class="w-full flex flex-row items-center">
-                <div class="relative w-fit">
-                  <div
-                    class="absolute inset-y-0 left-3 flex items-center pointer-events-none"
-                  >
-                    <svg
-                      class="h-5 w-5"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
+
+            <Infobox
+              text="List of all Wall Street Institutions with the highest Asset under Management."
+            />
+
+            <div class="items-center lg:overflow-visible px-1 py-1 mt-4">
+              <div
+                class="col-span-2 flex flex-col lg:flex-row items-start sm:items-center lg:order-2 lg:grow py-1 border-t border-b border-gray-300 dark:border-gray-800"
+              >
+                <h2
+                  class="text-start whitespace-nowrap text-xl sm:text-2xl font-semibold py-1 border-b border-gray-300 dark:border-gray-800 lg:border-none w-full"
+                >
+                  {rawData?.length?.toLocaleString("en-US")} Institutes
+                </h2>
+                <div
+                  class="mt-1 w-full flex flex-row lg:flex order-1 items-center ml-auto pb-1 pt-1 sm:pt-0 w-full order-0 lg:order-1"
+                >
+                  <div class="relative lg:ml-auto w-full lg:w-fit">
+                    <div
+                      class="inline-block cursor-pointer absolute right-2 top-2 text-sm"
                     >
-                      <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      ></path>
-                    </svg>
+                      {#if inputValue?.length > 0}
+                        <label
+                          class="cursor-pointer"
+                          on:click={() => resetTableSearch()}
+                        >
+                          <svg
+                            class="w-5 h-5"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            ><path
+                              fill="currentColor"
+                              d="m6.4 18.308l-.708-.708l5.6-5.6l-5.6-5.6l.708-.708l5.6 5.6l5.6-5.6l.708.708l-5.6 5.6l5.6 5.6l-.708.708l-5.6-5.6z"
+                            /></svg
+                          >
+                        </label>
+                      {/if}
+                    </div>
+
+                    <input
+                      bind:value={inputValue}
+                      on:input={search}
+                      type="text"
+                      placeholder="Find..."
+                      class=" py-[7px] text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-800 grow w-full sm:min-w-56 lg:max-w-14"
+                    />
                   </div>
-                  <input
-                    bind:value={inputValue}
-                    on:input={search}
-                    type="text"
-                    placeholder="Search Hedge Fund"
-                    class="w-fit py-[5.5px] pl-10 border bg-gray-100 dark:bg-default shadow-sm focus:shadow focus:bg-white focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-600 grow w-full sm:min-w-56 sm:max-w-xs"
-                  />
+
+                  <div class="ml-2">
+                    <DownloadData
+                      {data}
+                      {rawData}
+                      title={"latest_analyst_ratings_data"}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

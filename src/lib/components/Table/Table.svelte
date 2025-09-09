@@ -246,10 +246,10 @@
     // Trigger reactivity by creating a new reference
     rawData = [...updatedRawData];
     stockList = rawData?.slice(0, 100);
-    
+
     // Validate and clean rules after updating data
     validateAndCleanRules();
-    
+
     columns = generateColumns(rawData);
     sortOrders = generateSortOrders(rawData);
   };
@@ -263,17 +263,19 @@
 
   function validateAndCleanRules() {
     if (!rawData || rawData.length === 0) return;
-    
+
     // Get available keys from the first item in rawData
     const availableKeys = new Set(Object.keys(rawData[0]));
-    
+
     // Filter ruleOfList to only include rules that exist in rawData
-    const validRules = ruleOfList.filter(rule => availableKeys.has(rule.rule));
-    
+    const validRules = ruleOfList.filter((rule) =>
+      availableKeys.has(rule.rule),
+    );
+
     // Update ruleOfList if any rules were removed
     if (validRules.length !== ruleOfList.length) {
       ruleOfList = validRules;
-      checkedItems = new Set(ruleOfList.map(item => item.name));
+      checkedItems = new Set(ruleOfList.map((item) => item.name));
       allRows = sortIndicatorCheckMarks(allRows);
       saveRules();
       return true; // Indicates that cleanup was performed
@@ -525,7 +527,7 @@
 
       // Validate and clean rules before updating checked items
       validateAndCleanRules();
-      
+
       // Update checked items and sort the indicators
       checkedItems = new Set(ruleOfList.map((item) => item.name));
       allRows = sortIndicatorCheckMarks(allRows);
@@ -605,7 +607,7 @@
   // Function to generate columns based on keys in rawData
   function generateColumns(data) {
     if (!data || data.length === 0) return [];
-    
+
     const leftAlignKeys = new Set(["rank", "symbol", "name"]);
 
     // Custom labels for specific keys
@@ -626,10 +628,14 @@
     );
 
     // Get available keys from the data
-    const availableKeys = Object?.keys(data[0])?.filter((key) => key !== "type");
+    const availableKeys = Object?.keys(data[0])?.filter(
+      (key) => key !== "type",
+    );
 
     // Filter ruleOfList to only include rules that exist in availableKeys
-    const validRulesList = ruleOfList.filter(item => availableKeys.includes(item.rule));
+    const validRulesList = ruleOfList.filter((item) =>
+      availableKeys.includes(item.rule),
+    );
 
     // Merge the preferred order with the valid rules list
     const orderedKeys = [
@@ -812,7 +818,7 @@
       bind:value={inputValue}
       on:input={search}
       placeholder="Find..."
-      class="ml-auto py-[7px] text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow-xs focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-800 grow w-full sm:min-w-56 sm:max-w-14"
+      class="ml-auto py-[7px] text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-800 grow w-full sm:min-w-56 sm:max-w-14"
     />
 
     <div class=" ml-2">
@@ -823,7 +829,7 @@
         <Button
           builders={[builder]}
           on:click={() => (allRows = sortIndicatorCheckMarks(allRows))}
-          class="ml-2 transition-all min-w-fit sm:min-w-[110px]  bg-default text-white shadow-xs dark:border-gray-600 border sm:hover:bg-black dark:sm:hover:bg-primary ease-out flex flex-row justify-between items-center px-3 py-2 rounded truncate"
+          class="ml-2 transition-all min-w-fit sm:min-w-[110px]  bg-default text-white shadow dark:border-gray-600 border sm:hover:bg-black dark:sm:hover:bg-primary ease-out flex flex-row justify-between items-center px-3 py-2 rounded truncate"
         >
           <span class="w-fit text-[0.85rem] sm:text-sm">Indicators</span>
           <svg

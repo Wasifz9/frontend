@@ -1,5 +1,5 @@
 export const load = async ({ locals,  }) => {
-  const getAllHedgeFunds = async () => {
+  const getData = async () => {
     const { apiURL, apiKey } = locals;
     const response = await fetch(apiURL + "/all-hedge-funds", {
       method: "GET",
@@ -18,6 +18,6 @@ export const load = async ({ locals,  }) => {
  
   // Make sure to return a promise
   return {
-    getAllHedgeFunds: await getAllHedgeFunds(),
+    getData: await getData(),
   };
 };
