@@ -113,8 +113,7 @@
     <p class="mb-5 text-base md:text-lg leading-relaxed">
       Thank you for subscribing to <strong>Stocknear</strong>! You've made a
       smart investment that typically pays for itself with just one prevented
-      loss or better-timed trade. Our data shows members save an average of
-      <strong>$10,000+ annually</strong> through improved decision-making.
+      loss or better-timed trade.
     </p>
 
     <p class="mb-5 text-base md:text-lg leading-relaxed">
@@ -131,7 +130,7 @@
 
     {#if ["Pro", "Lifetime"]?.includes(tier)}
       <p class="mb-5 text-base md:text-lg leading-relaxed">
-        Your subscription unlocks:
+        Your Pro subscription unlocks:
       </p>
       <ul
         class="list-disc list-inside mb-5 text-base md:text-lg leading-relaxed"
@@ -142,13 +141,6 @@
         <li>Advanced screeners and unlimited alerts</li>
         <li>Priority access to new features and updates</li>
       </ul>
-
-      <p class="text-base md:text-lg leading-relaxed">
-        We ship new features weekly based on member feedback. <strong
-          >Pro tip:</strong
-        > Start by setting up your watchlist and price alerts – members who use alerts
-        actively report 15% better trade timing on average.
-      </p>
     {:else if tier === "Plus"}
       <p class="mb-5 text-base md:text-lg leading-relaxed">
         Your Plus subscription unlocks:
@@ -163,15 +155,6 @@
         <li>Complete financial history and analysis tools</li>
         <li>Ad-free experience across the platform</li>
       </ul>
-
-      <p class="text-base md:text-lg leading-relaxed">
-        We ship new features weekly based on member feedback. <strong
-          >Pro tip:</strong
-        > Start by setting up your watchlist and price alerts – members who use alerts
-        actively report 15% better trade timing on average. Consider upgrading to
-        Pro to unlock real-time options flow and dark pool data for even deeper market
-        insights.
-      </p>
     {/if}
 
     <a
