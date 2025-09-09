@@ -26,7 +26,7 @@
 
     // Twitter conversion tracking
     if (typeof window !== "undefined" && window.twq && value) {
-      window.twq("event", "tw-onuuu-qdjh5", {
+      window?.twq("event", "tw-onuuu-qdjh5", {
         value: value,
         currency: "USD",
         conversion_id: data?.user?.id || null,
@@ -35,7 +35,7 @@
 
     // Meta Pixel conversion tracking
     if (typeof window !== "undefined" && window.fbq && value) {
-      window.fbq("track", "Purchase", {
+      window?.fbq("track", "Purchase", {
         value: value,
         currency: "USD",
         content_ids: [data?.user?.id || "unknown"],
@@ -46,7 +46,7 @@
 
     // Reddit Pixel conversion tracking
     if (typeof window !== "undefined" && window.rdt && value) {
-      window.rdt("track", "Purchase", {
+      window?.rdt("track", "Purchase", {
         value: value,
         currency: "USD",
         transactionId: data?.user?.id || "unknown",
@@ -55,7 +55,7 @@
 
     // Google Ads conversion tracking
     if (typeof window !== "undefined" && window.gtag && value) {
-      window.gtag("event", "conversion", {
+      window?.gtag("event", "conversion", {
         send_to: "AW-11328922950/FfVkCPuTupcbEMbKhpoq",
         value: value || 1.0,
         currency: "EUR",
