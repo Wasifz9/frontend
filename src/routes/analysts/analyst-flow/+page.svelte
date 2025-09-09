@@ -3,6 +3,8 @@
   import UpgradeToPro from "$lib/components/UpgradeToPro.svelte";
   import SEO from "$lib/components/SEO.svelte";
   import AnalystInfo from "$lib/components/AnalystInfo.svelte";
+  import DownloadData from "$lib/components/DownloadData.svelte";
+  import Infobox from "$lib/components/Infobox.svelte";
 
   import { screenWidth } from "$lib/store";
   import { onMount } from "svelte";
@@ -10,6 +12,8 @@
   export let data;
 
   let rawData = data?.getData;
+  let inputValue = "";
+  let searchWorker: Worker | undefined;
 
   let stockList = rawData?.slice(0, 50);
 
@@ -23,7 +27,50 @@
     }
   }
 
-  onMount(() => {
+  async function resetTableSearch() {
+    inputValue = "";
+    search();
+  }
+
+  async function search() {
+    inputValue = inputValue?.toLowerCase();
+
+    setTimeout(async () => {
+      if (inputValue?.length > 0) {
+        await loadSearchWorker();
+      } else {
+        // Reset to original data if filter is empty
+        rawData = data?.getData || [];
+        stockList = rawData?.slice(0, 50);
+      }
+    }, 100);
+  }
+
+  const loadSearchWorker = async () => {
+    if (searchWorker && rawData?.length > 0) {
+      searchWorker.postMessage({
+        rawData: data?.getData,
+        inputValue: inputValue,
+      });
+    }
+  };
+
+  const handleSearchMessage = (event) => {
+    if (event.data?.message === "success") {
+      rawData = event.data?.output ?? [];
+      stockList = rawData?.slice(0, 50);
+    }
+  };
+
+  onMount(async () => {
+    if (!searchWorker) {
+      const SearchWorker = await import(
+        "$lib/workers/tableSearchWorker?worker"
+      );
+      searchWorker = new SearchWorker.default();
+      searchWorker.onmessage = handleSearchMessage;
+    }
+
     if (["Pro", "Plus"]?.includes(data?.user?.tier)) {
       window.addEventListener("scroll", handleScroll);
       return () => {
@@ -123,38 +170,40 @@
   structuredData={{
     "@context": "https://schema.org",
     "@type": "WebPage",
-    "name": "Analyst Flow - Latest Ratings",
-    "description": "Real-time feed of Wall Street analyst ratings and stock recommendations",
-    "url": "https://stocknear.com/analysts/analyst-flow",
-    "breadcrumb": {
+    name: "Analyst Flow - Latest Ratings",
+    description:
+      "Real-time feed of Wall Street analyst ratings and stock recommendations",
+    url: "https://stocknear.com/analysts/analyst-flow",
+    breadcrumb: {
       "@type": "BreadcrumbList",
-      "itemListElement": [
+      itemListElement: [
         {
           "@type": "ListItem",
-          "position": 1,
-          "name": "Home",
-          "item": "https://stocknear.com"
+          position: 1,
+          name: "Home",
+          item: "https://stocknear.com",
         },
         {
           "@type": "ListItem",
-          "position": 2,
-          "name": "Analysts",
-          "item": "https://stocknear.com/analysts"
+          position: 2,
+          name: "Analysts",
+          item: "https://stocknear.com/analysts",
         },
         {
           "@type": "ListItem",
-          "position": 3,
-          "name": "Analyst Flow",
-          "item": "https://stocknear.com/analysts/analyst-flow"
-        }
-      ]
+          position: 3,
+          name: "Analyst Flow",
+          item: "https://stocknear.com/analysts/analyst-flow",
+        },
+      ],
     },
-    "mainEntity": {
+    mainEntity: {
       "@type": "ItemList",
-      "name": "Latest Analyst Ratings",
-      "description": "Real-time feed of analyst ratings and stock recommendations",
-      "numberOfItems": rawData?.length || 0
-    }
+      name: "Latest Analyst Ratings",
+      description:
+        "Real-time feed of analyst ratings and stock recommendations",
+      numberOfItems: rawData?.length || 0,
+    },
   }}
 />
 
@@ -180,81 +229,64 @@
             </h1>
           </div>
 
-          <!-- Congress Trading Overview Paragraph -->
-          <p class="mt-4">
-            Overview of the latest Wall Street analyst activity. As of
-            <strong
-              >{new Date().toLocaleDateString("en-US", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-                timeZone: "UTC",
-              })}</strong
-            >, we are tracking
+          <Infobox
+            text="Latest insights from Wall Street analysts in real-time."
+          />
 
-            <strong>{rawData?.length?.toLocaleString("en-US") || "0"}</strong>
-
-            total analyst ratings and recommendations. The average analyst score
-            is
-
-            <strong
-              >{(() => {
-                const scores =
-                  rawData
-                    ?.filter((item) => item?.analystScore)
-                    ?.map((item) => item.analystScore) || [];
-                return scores.length > 0
-                  ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(
-                      1,
-                    )
-                  : "n/a";
-              })()}</strong
+          <div class="items-center lg:overflow-visible px-1 py-1 mt-4">
+            <div
+              class="col-span-2 flex flex-col lg:flex-row items-start sm:items-center lg:order-2 lg:grow py-1 border-t border-b border-gray-300 dark:border-gray-800"
             >
+              <h2
+                class="text-start whitespace-nowrap text-xl sm:text-2xl font-semibold py-1 border-b border-gray-300 dark:border-gray-800 lg:border-none w-full"
+              >
+                {rawData?.length?.toLocaleString("en-US")} Ratings
+              </h2>
+              <div
+                class="mt-1 w-full flex flex-row lg:flex order-1 items-center ml-auto pb-1 pt-1 sm:pt-0 w-full order-0 lg:order-1"
+              >
+                <div class="relative lg:ml-auto w-full lg:w-fit">
+                  <div
+                    class="inline-block cursor-pointer absolute right-2 top-2 text-sm"
+                  >
+                    {#if inputValue?.length > 0}
+                      <label
+                        class="cursor-pointer"
+                        on:click={() => resetTableSearch()}
+                      >
+                        <svg
+                          class="w-5 h-5"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          ><path
+                            fill="currentColor"
+                            d="m6.4 18.308l-.708-.708l5.6-5.6l-5.6-5.6l.708-.708l5.6 5.6l5.6-5.6l.708.708l-5.6 5.6l5.6 5.6l-.708.708l-5.6-5.6z"
+                          /></svg
+                        >
+                      </label>
+                    {/if}
+                  </div>
 
-            out of 5.0 stars. The average upside potential is
+                  <input
+                    bind:value={inputValue}
+                    on:input={search}
+                    type="text"
+                    placeholder="Find..."
+                    class=" py-[7px] text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-800 grow w-full sm:min-w-56 lg:max-w-14"
+                  />
+                </div>
 
-            <strong
-              >{(() => {
-                const upsides =
-                  stockList
-                    ?.filter(
-                      (item) =>
-                        item?.upside !== null && item?.upside !== undefined,
-                    )
-                    ?.map((item) => item.upside) || [];
-                return upsides.length > 0
-                  ? (
-                      upsides.reduce((a, b) => a + b, 0) / upsides.length
-                    ).toFixed(1) + "%"
-                  : "n/a";
-              })()}</strong
-            >, indicating
+                <div class="ml-2">
+                  <DownloadData
+                    {data}
+                    {rawData}
+                    title={"latest_analyst_ratings_data"}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
 
-            <strong
-              >{(() => {
-                const upsides =
-                  stockList
-                    ?.filter(
-                      (item) =>
-                        item?.upside !== null && item?.upside !== undefined,
-                    )
-                    ?.map((item) => item.upside) || [];
-                const avgUpside =
-                  upsides.length > 0
-                    ? upsides.reduce((a, b) => a + b, 0) / upsides.length
-                    : 0;
-                if (avgUpside > 15) return "highly optimistic";
-                if (avgUpside > 10) return "optimistic";
-                if (avgUpside > 5) return "moderately positive";
-                if (avgUpside > 0) return "cautiously positive";
-                if (avgUpside > -5) return "neutral";
-                if (avgUpside > -10) return "cautious";
-                return "pessimistic";
-              })()}</strong
-            >
-
-            sentiment from Wall Street analysts.
-          </p>
           <div class="w-full m-auto mt-4">
             <div
               class="w-full m-auto rounded-none sm:rounded mb-4 overflow-x-auto"

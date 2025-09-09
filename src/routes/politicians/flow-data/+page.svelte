@@ -304,7 +304,8 @@
                         <h2
                           class="text-start whitespace-nowrap text-xl sm:text-2xl font-semibold py-1 border-b border-gray-300 dark:border-gray-800 lg:border-none w-full"
                         >
-                          {rawData?.length} Congressional Trades
+                          {rawData?.length?.toLocaleString("en-US")} Congressional
+                          Trades
                         </h2>
                         <div
                           class="mt-1 w-full flex flex-row lg:flex order-1 items-center ml-auto pb-1 pt-1 sm:pt-0 w-full order-0 lg:order-1"
