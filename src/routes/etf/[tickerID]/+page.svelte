@@ -10,6 +10,7 @@
     priceIncrease,
     wsBidPrice,
     wsAskPrice,
+    wsShares,
     currentPortfolioPrice,
     etfTicker,
     shouldUpdatePriceChart,
@@ -32,6 +33,7 @@
   export let form;
 
   let stockDeck = data?.getStockDeck;
+  let quoteVolume = data?.getStockQuote?.volume;
 
   $: previousClose = data?.getStockQuote?.previousClose;
   //============================================//
@@ -701,6 +703,18 @@
       initializePrice();
     }
   }
+
+  $: {
+    if (
+      $wsShares &&
+      $wsShares > 0 &&
+      $wsShares !== null &&
+      typeof window !== "undefined" &&
+      quoteVolume
+    ) {
+      quoteVolume += $wsShares;
+    }
+  }
 </script>
 
 <SEO
@@ -987,7 +1001,7 @@
                     >
                     <td
                       class="whitespace-nowrap px-0.5 py-[1px] text-left text-sm sm:text-[0.9rem] font-semibold dark:font-normal xs:px-1 sm:text-right"
-                      >{abbreviateNumber(data?.getStockQuote?.volume)}</td
+                      >{Math.floor(quoteVolume)?.toLocaleString("en-us")}</td
                     ></tr
                   >
                   <tr

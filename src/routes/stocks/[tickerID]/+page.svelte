@@ -10,6 +10,7 @@
     priceIncrease,
     wsBidPrice,
     wsAskPrice,
+    wsShares,
     currentPortfolioPrice,
     stockTicker,
     screenWidth,
@@ -33,7 +34,7 @@
   export let form;
 
   let stockDeck = data?.getStockDeck;
-
+  let quoteVolume = data?.getStockQuote?.volume;
   $: previousClose = data?.getStockQuote?.previousClose;
   //============================================//
   const intervals = ["1D", "1W", "1M", "6M", "YTD", "1Y", "MAX"];
@@ -700,6 +701,17 @@
       initializePrice();
     }
   }
+  $: {
+    if (
+      $wsShares &&
+      $wsShares > 0 &&
+      $wsShares !== null &&
+      typeof window !== "undefined" &&
+      quoteVolume
+    ) {
+      quoteVolume += $wsShares;
+    }
+  }
 </script>
 
 <SEO
@@ -1037,9 +1049,7 @@
                     >
                     <td
                       class="whitespace-nowrap px-0.5 py-[1px] text-left text-sm sm:text-[0.9rem] font-semibold dark:font-normal xs:px-1 sm:text-right"
-                      >{data?.getStockQuote?.volume?.toLocaleString(
-                        "en-us",
-                      )}</td
+                      >{Math.floor(quoteVolume)?.toLocaleString("en-us")}</td
                     ></tr
                   >
                   <tr

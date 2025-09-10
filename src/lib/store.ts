@@ -66,6 +66,7 @@ export const currentPortfolioPrice = writable(<number>0);
 export const realtimePrice = writable(<number>0);
 export const wsBidPrice = writable(null);
 export const wsAskPrice = writable(null);
+export const wsShares = writable(0);
 
 export const priceIncrease = writable(<boolean>false);
 export const isCrosshairMoveActive = writable(<boolean>true);

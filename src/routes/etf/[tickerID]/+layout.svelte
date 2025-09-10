@@ -2,6 +2,7 @@
   import {
     wsBidPrice,
     wsAskPrice,
+    wsShares,
     globalForm,
     screenWidth,
     openPriceAlert,
@@ -201,7 +202,8 @@
         //console.log("Received message:", data);
         try {
           const parsedData = JSON.parse(data);
-          const { type, lp, time, bp, ap, avgPrice } = parsedData?.at(0) || {};
+          const { type, lp, ls, time, bp, ap, avgPrice } =
+            parsedData?.at(0) || {};
 
           if (type === "T") {
             $realtimePrice = typeof lp !== "undefined" ? lp : null;
@@ -213,6 +215,8 @@
           } else if (type === "Q") {
             $wsBidPrice = typeof bp !== "undefined" ? bp : null;
             $wsAskPrice = typeof ap !== "undefined" ? ap : null;
+            $wsShares = typeof ls !== "undefined" ? ls : 0;
+
             $realtimePrice =
               typeof avgPrice !== "undefined" ? avgPrice?.toFixed(2) : null;
           }
@@ -258,6 +262,7 @@
       }
       $wsAskPrice = null;
       $wsBidPrice = null;
+      $wsShares = null;
     }
   });
 
@@ -275,6 +280,7 @@
     $priceIncrease = null;
     $wsAskPrice = null;
     $wsBidPrice = null;
+    $wsShares = null;
     //$traded = false
   });
 
