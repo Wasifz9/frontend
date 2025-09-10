@@ -797,14 +797,12 @@
                 </h3>
               </div>
 
-              <div class="">
+              <div class="mt-6">
                 <div class="">
                   {#each posts as item, index}
                     <div
                       id="post-{index}"
-                      class="{index >= 1
-                        ? 'my-4'
-                        : 'my-1'} p-4 rounded border border-gray-100 dark:border-gray-700 shadow-xs bg-gray-100 dark:bg-[#111315]"
+                      class="{index >= 1 ? 'my-4' : 'my-1'} "
                     >
                       <div class="flex items-start space-x-3">
                         <a
@@ -827,17 +825,17 @@
                               href="https://truthsocial.com/@realDonaldTrump"
                               target="_blank"
                               rel="noopener noreferrer"
-                              class="hover:text-blue-800"
+                              class="sm:hover:text-blue-800 dark:sm:hover:text-blue-400"
                             >
                               Donald J. Trump
                             </a>
                           </h3>
-                          <h4 class="text-sm text-gray-500 dark:text-gray-400">
+                          <h4 class="text-sm">
                             <a
                               href="https://truthsocial.com/@realDonaldTrump"
                               target="_blank"
                               rel="noopener noreferrer"
-                              class="hover:text-blue-800"
+                              class="sm:hover:text-blue-800 dark:sm:hover:text-blue-400"
                             >
                               @realDonaldTrump
                             </a>
@@ -845,89 +843,17 @@
                         </div>
                       </div>
 
-                      <p class="text-md text-gray-800 dark:text-white mt-2">
-                        {item?.content?.length > 400
-                          ? item?.content?.slice(0, 400) + "..."
+                      <p class=" mt-2">
+                        {item?.content?.length > 500
+                          ? item?.content?.slice(0, 500) + "..."
                           : item?.content}
                       </p>
 
                       <div
-                        class="border-b border-gray-300 dark:border-gray-800 mt-4"
+                        class="flex flex-row items-center mt-6 w-full border-b border-gray-300 dark:border-gray-800 pb-2"
                       >
-                        <span
-                          class="text-gray-600 dark:text-gray-300 mb-4 text-sm"
-                          >{item?.date}</span
-                        >
-                      </div>
-                      <div class="flex flex-row items-center mt-4 w-full">
-                        <!--
-                        <label
-                          on:click={() => captureScreenshot(index)}
-                          class="cursor-pointer"
-                        >
-                          <svg
-                            class="w-4 h-4 mr-4 text-gray-400"
-                            viewBox="0 -2 32 32"
-                            version="1.1"
-                            xmlns="http://www.w3.org/2000/svg"
-                            xmlns:xlink="http://www.w3.org/1999/xlink"
-                            xmlns:sketch="http://www.bohemiancoding.com/sketch/ns"
-                            fill="#ffffff"
-                            ><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g
-                              id="SVGRepo_tracerCarrier"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                            ></g><g id="SVGRepo_iconCarrier">
-                              <title>camera</title>
-                              <desc>Created with Sketch Beta.</desc>
-                              <defs> </defs>
-                              <g
-                                id="Page-1"
-                                stroke="none"
-                                stroke-width="1"
-                                fill="none"
-                                fill-rule="evenodd"
-                                sketch:type="MSPage"
-                              >
-                                <g
-                                  id="Icon-Set"
-                                  sketch:type="MSLayerGroup"
-                                  transform="translate(-256.000000, -465.000000)"
-                                  fill="#000000"
-                                >
-                                  <path
-                                    d="M272,487 C268.687,487 266,484.313 266,481 C266,477.687 268.687,475 272,475 C275.313,475 278,477.687 278,481 C278,484.313 275.313,487 272,487 L272,487 Z M272,473 C267.582,473 264,476.582 264,481 C264,485.418 267.582,489 272,489 C276.418,489 280,485.418 280,481 C280,476.582 276.418,473 272,473 L272,473 Z M286,489 C286,490.104 285.104,491 284,491 L260,491 C258.896,491 258,490.104 258,489 L258,473 C258,471.896 258.896,471 260,471 L264,471 L265,469 C265.707,467.837 265.896,467 267,467 L277,467 C278.104,467 278.293,467.837 279,469 L280,471 L284,471 C285.104,471 286,471.896 286,473 L286,489 L286,489 Z M284,469 L281,469 L280,467 C279.411,465.837 279.104,465 278,465 L266,465 C264.896,465 264.53,465.954 264,467 L263,469 L260,469 C257.791,469 256,470.791 256,473 L256,489 C256,491.209 257.791,493 260,493 L284,493 C286.209,493 288,491.209 288,489 L288,473 C288,470.791 286.209,469 284,469 L284,469 Z"
-                                    id="camera"
-                                    sketch:type="MSShapeGroup"
-                                  >
-                                  </path>
-                                </g>
-                              </g>
-                            </g></svg
-                          >
-                        </label>
-                       
-                        <label>
-                          <svg
-                            class="w-5 h-5 text-gray-600"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                            ><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g
-                              id="SVGRepo_tracerCarrier"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                            ></g><g id="SVGRepo_iconCarrier">
-                              <path
-                                d="M14 12C14 14.7614 11.7614 17 9 17H7C4.23858 17 2 14.7614 2 12C2 9.23858 4.23858 7 7 7H7.5M10 12C10 9.23858 12.2386 7 15 7H17C19.7614 7 22 9.23858 22 12C22 14.7614 19.7614 17 17 17H16.5"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                              ></path>
-                            </g></svg
-                          >
-                        </label>
-                         -->
+                        <span class=" text-sm">{item?.date}</span>
+
                         <label
                           for="socialPostModal"
                           on:click={() => {
@@ -1053,7 +979,7 @@
     </p>
 
     <div class="border-b border-gray-300 dark:border-gray-800">
-      <span class="text-gray-600 dark:text-gray-300 mb-4 text-sm"
+      <span class=" mb-4 text-sm"
         >{new Date(postDate ?? null)?.toLocaleString("en-US", {
           month: "long",
           day: "numeric",
@@ -1135,9 +1061,7 @@
     </p>
 
     <div class="border-b border-gray-300 dark:border-gray-800">
-      <span class="text-gray-600 dark:text-gray-300 mb-4 text-sm"
-        >{postDate}</span
-      >
+      <span class=" mb-4 text-sm">{postDate}</span>
     </div>
 
     <div class="flex justify-end space-x-3 mt-5">

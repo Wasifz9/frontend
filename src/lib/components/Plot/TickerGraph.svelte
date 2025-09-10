@@ -468,7 +468,7 @@
                     <img
                       src={`https://financialmodelingprep.com/image-stock/${ticker}.png`}
                       alt="logo"
-                      class="size-4 avatar"
+                      class="size-4 avatar rounded-full"
                     />
                   </div>
 
