@@ -460,7 +460,7 @@
                   <DropdownMenu.Trigger asChild let:builder>
                     <Button
                       builders={[builder]}
-                      class="shadow-xs w-full border-gray-300 dark:border-gray-600 border bg-default text-white dark:bg-default dark:sm:hover:bg-primary ease-out  flex flex-row justify-between items-center px-3 py-2  rounded truncate"
+                      class="shadow-xs w-full border-gray-300 dark:border-gray-800 border bg-default text-white dark:bg-default dark:sm:hover:bg-primary ease-out  flex flex-row justify-between items-center px-3 py-2  rounded truncate"
                     >
                       <span class="truncate">{selectedSector}</span>
                       <svg
@@ -556,14 +556,12 @@
               >
                 Official Presidential Schedule
               </h3>
-              <div
-                class="border border-gray-300 dark:border-gray-800 rounded p-4"
-              >
+              <div class="">
                 <div class="space-y-4">
                   {#each Object?.entries(groupedByDate) as [date, items], indexA}
                     <div class="my-4">
                       <div
-                        class="border-b border-gray-300 dark:border-gray-600 pb-2 w-full flex flex-row items-center justify-between"
+                        class="border-b border-gray-300 dark:border-gray-800 pb-2 w-full flex flex-row items-center justify-between"
                       >
                         <span class="text-[1rem] sm:text-lg font-semibold">
                           {date}</span
@@ -651,14 +649,12 @@
               >
                 Executive Actions
               </h3>
-              <div
-                class=" border border-gray-300 dark:border-gray-800 rounded p-4"
-              >
+              <div class="">
                 <div class="space-y-4">
                   {#each Object.entries(groupedOrders) as [date, items], indexA}
                     <div class="my-4">
                       <div
-                        class="border-b border-gray-300 dark:border-gray-600 pb-2 flex flex-row items-center"
+                        class="border-b border-gray-300 dark:border-gray-800 pb-2 flex flex-row items-center"
                       >
                         <span class="text-[1rem] font-semibold">{date}</span>
                         {#if latestInfoDate(date)}
@@ -672,11 +668,7 @@
 
                       {#each items as item, indexB}
                         <!-- Card container -->
-                        <div
-                          class="{indexB > 0
-                            ? 'my-4'
-                            : 'my-1'} p-4 rounded border border-gray-300 dark:border-gray-700 shadow-xs bg-white dark:bg-[#111315]"
-                        >
+                        <div class="{indexB > 0 ? 'my-4' : 'my-1'} ">
                           <!-- Top row: avatar + user info -->
                           <div class="flex items-start space-x-3">
                             <a
@@ -694,16 +686,12 @@
                             </a>
 
                             <div class="flex flex-col items-start w-full">
-                              <h3
-                                class="font-semibold text-gray-900 dark:text-white"
-                              >
+                              <h3 class="font-semibold">
                                 <span>Donald J. Trump</span>
                               </h3>
-                              <h4
-                                class="text-sm text-gray-800 dark:text-gray-400"
-                              >
+                              <h4 class="text-sm">
                                 <div>
-                                  {item?.title}
+                                  Title: {item?.title}
                                   <!-- Sentiment badge -->
                                   <div
                                     class={`mt-2 px-3 py-1 rounded  text-xs sm:text-sm w-fit
@@ -727,8 +715,8 @@
                             <span
                               class="text-md text-gray-800 dark:text-gray-300"
                             >
-                              {item?.description?.length > 300
-                                ? item?.description?.slice(0, 300) + "..."
+                              {item?.description?.length > 500
+                                ? item?.description?.slice(0, 500) + "..."
                                 : item?.description}
                             </span>
                           </div>
@@ -738,14 +726,17 @@
                           ></div>
 
                           <!-- Source link -->
-                          <div class="flex flex-row items-center w-full">
+                          <div
+                            class="flex flex-row items-center justify-end w-full"
+                          >
                             <a
                               href={item?.link}
                               rel="noopener noreferrer"
                               target="_blank"
+                              class="mr-3 cursor-pointer bg-black sm:hover:bg-default dark:bg-white dark:text-muted text-white rounded px-3 py-1.5 text-sm font-semibold dark:sm:hover:bg-gray-100 ml-auto"
                             >
-                              <svg
-                                class="w-5 h-5 text-gray-600 dark:text-gray-300"
+                              Open link <svg
+                                class="size-5 inline-block text-black"
                                 viewBox="0 0 24 24"
                                 fill="none"
                                 xmlns="http://www.w3.org/2000/svg"
@@ -764,6 +755,7 @@
                                 </g></svg
                               >
                             </a>
+
                             <label
                               for="executivePostModal"
                               on:click={() => {
@@ -773,7 +765,7 @@
                                 postDate = item?.date;
                                 postUrl = item?.link;
                               }}
-                              class=" cursor-pointer bg-black sm:hover:bg-default dark:bg-white dark:text-muted text-white rounded px-3 py-1.5 text-sm font-semibold dark:sm:hover:bg-gray-100 ml-auto"
+                              class=" cursor-pointer bg-black sm:hover:bg-default dark:bg-white dark:text-muted text-white rounded px-3 py-1.5 text-sm font-semibold dark:sm:hover:bg-gray-100"
                             >
                               Read More
                             </label>
@@ -805,9 +797,7 @@
                 </h3>
               </div>
 
-              <div
-                class="border border-gray-300 dark:border-gray-800 rounded p-4"
-              >
+              <div class="">
                 <div class="">
                   {#each posts as item, index}
                     <div
@@ -832,9 +822,7 @@
                         </a>
 
                         <div class="flex flex-col items-start w-full">
-                          <h3
-                            class="font-semibold text-gray-900 dark:text-white"
-                          >
+                          <h3 class="font-semibold">
                             <a
                               href="https://truthsocial.com/@realDonaldTrump"
                               target="_blank"
@@ -961,7 +949,7 @@
           <div class="order-4 shrink-0 lg:float-right lg:w-[336px]">
             {#if !["Pro", "Plus"]?.includes(data?.user?.tier)}
               <div
-                class="w-full border border-gray-300 dark:border-gray-600 rounded h-fit pb-4 mt-4 cursor-pointer sm:hover:shadow-lg dark:sm:hover:bg-secondary transition ease-out duration-100"
+                class="w-full border border-gray-300 dark:border-gray-800 rounded h-fit pb-4 mt-4 cursor-pointer sm:hover:shadow-lg dark:sm:hover:bg-secondary transition ease-out duration-100"
               >
                 <a
                   href="/pricing"
@@ -983,7 +971,7 @@
             {/if}
 
             <div
-              class="w-full border border-gray-300 dark:border-gray-600 rounded h-fit pb-4 mt-4 cursor-pointer sm:hover:shadow-lg dark:sm:hover:bg-secondary transition ease-out duration-100"
+              class="w-full border border-gray-300 dark:border-gray-800 rounded h-fit pb-4 mt-4 cursor-pointer sm:hover:shadow-lg dark:sm:hover:bg-secondary transition ease-out duration-100"
             >
               <a
                 href={"/stock-screener"}
@@ -1000,7 +988,7 @@
               </a>
             </div>
             <div
-              class="w-full border border-gray-300 dark:border-gray-600 rounded h-fit pb-4 mt-4 cursor-pointer sm:hover:shadow-lg dark:sm:hover:bg-secondary transition ease-out duration-100"
+              class="w-full border border-gray-300 dark:border-gray-800 rounded h-fit pb-4 mt-4 cursor-pointer sm:hover:shadow-lg dark:sm:hover:bg-secondary transition ease-out duration-100"
             >
               <a
                 href={"/watchlist/stocks"}
@@ -1041,7 +1029,7 @@
       </span>
 
       <div class="flex flex-col items-start w-full">
-        <h3 class="font-semibold text-gray-900 dark:text-white">
+        <h3 class="font-semibold">
           <span> Donald J. Trump </span>
         </h3>
         <h4 class="text-sm text-gray-800 dark:text-gray-400">{postTitle}</h4>
@@ -1064,7 +1052,7 @@
       {@html postContent}
     </p>
 
-    <div class="border-b border-gray-300 dark:border-gray-600">
+    <div class="border-b border-gray-300 dark:border-gray-800">
       <span class="text-gray-600 dark:text-gray-300 mb-4 text-sm"
         >{new Date(postDate ?? null)?.toLocaleString("en-US", {
           month: "long",
@@ -1119,7 +1107,7 @@
       </a>
 
       <div class="flex flex-col items-start w-full">
-        <h3 class="font-semibold text-gray-900 dark:text-white">
+        <h3 class="font-semibold">
           <a
             href="https://truthsocial.com/@realDonaldTrump"
             target="_blank"
@@ -1146,7 +1134,7 @@
       {postContent}
     </p>
 
-    <div class="border-b border-gray-300 dark:border-gray-600">
+    <div class="border-b border-gray-300 dark:border-gray-800">
       <span class="text-gray-600 dark:text-gray-300 mb-4 text-sm"
         >{postDate}</span
       >
