@@ -24,15 +24,6 @@
           ? 20
           : null;
 
-    // Twitter conversion tracking
-    if (typeof window !== "undefined" && window.twq && value) {
-      window?.twq("event", "tw-onuuu-qdjh5", {
-        value: value,
-        currency: "USD",
-        conversion_id: data?.user?.id || null,
-      });
-    }
-
     // Meta Pixel conversion tracking
     if (typeof window !== "undefined" && window.fbq && value) {
       window?.fbq("track", "Purchase", {
@@ -41,15 +32,6 @@
         content_ids: [data?.user?.id || "unknown"],
         content_type: "product",
         content_name: tier + " Subscription",
-      });
-    }
-
-    // Reddit Pixel conversion tracking
-    if (typeof window !== "undefined" && window.rdt && value) {
-      window?.rdt("track", "Purchase", {
-        value: value,
-        currency: "USD",
-        transactionId: data?.user?.id || "unknown",
       });
     }
 
