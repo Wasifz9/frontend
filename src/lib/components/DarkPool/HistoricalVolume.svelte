@@ -463,92 +463,35 @@
           <div class="relative">
             <!-- Apply the blur class to the chart -->
             <div
-              class="{!['Pro']?.includes(data?.user?.tier)
-                ? 'blur-[3px]'
-                : ''} mt-5 shadow-xs sm:mt-0 border border-gray-300 dark:border-gray-800 rounded"
+              class="mt-5 shadow-xs sm:mt-0 border border-gray-300 dark:border-gray-800 rounded"
               use:highcharts={config}
             ></div>
-            <!-- Overlay with "Upgrade to Pro" -->
-            {#if !["Pro"]?.includes(data?.user?.tier)}
-              <div
-                class="font-bold text-lg sm:text-xl absolute top-0 bottom-0 left-0 right-0 flex items-center justify-center text-muted dark:text-white"
-              >
-                <a
-                  href="/pricing"
-                  class="sm:hover:text-blue-800 dark:sm:hover:text-white dark:text-white flex flex-row items-center"
-                >
-                  <span>Upgrade to Pro</span>
-                  <svg
-                    class="ml-1 w-5 h-5 sm:w-6 sm:h-6 inline-block"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    ><path
-                      fill="currentColor"
-                      d="M17 9V7c0-2.8-2.2-5-5-5S7 4.2 7 7v2c-1.7 0-3 1.3-3 3v7c0 1.7 1.3 3 3 3h10c1.7 0 3-1.3 3-3v-7c0-1.7-1.3-3-3-3M9 7c0-1.7 1.3-3 3-3s3 1.3 3 3v2H9z"
-                    /></svg
-                  >
-                </a>
-              </div>
-            {/if}
           </div>
         </div>
       </div>
 
       <div
-        class="mt-5 flex flex-col sm:flex-row items-start sm:items-center w-full justify-between sm:border-y border-gray-300 dark:border-gray-800 sm:pt-2 sm:pb-2"
+        class="mt-5 flex items-center justify-end w-full border-y border-gray-300 dark:border-gray-800 py-2"
       >
-        <h3 class="text-xl sm:text-2xl font-bold mb-2 sm:mb-0">
-          Historical Table
-        </h3>
-
-        <div
-          class="inline-flex justify-center w-full rounded sm:w-auto sm:ml-auto"
-        >
-          <div
-            class="bg-default text-white dark:bg-secondary w-full min-w-24 sm:w-fit relative flex flex-wrap items-center justify-center rounded p-1"
-          >
-            {#each tabs as item, i}
-              {#if data?.user?.tier !== "Pro" && i > 0}
-                <button
-                  on:click={() => goto("/pricing")}
-                  class="cursor-pointer group relative z-1 rounded-full w-1/2 min-w-24 md:w-auto px-5 py-1"
-                >
-                  <span class="relative text-sm block font-semibold">
-                    {item.title}
-                    <svg
-                      class="inline-block ml-0.5 -mt-1 w-3.5 h-3.5"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      ><path
-                        fill="currentColor"
-                        d="M17 9V7c0-2.8-2.2-5-5-5S7 4.2 7 7v2c-1.7 0-3 1.3-3 3v7c0 1.7 1.3 3 3 3h10c1.7 0 3-1.3 3-3v-7c0-1.7-1.3-3-3-3M9 7c0-1.7 1.3-3 3-3s3 1.3 3 3v2H9z"
-                      /></svg
-                    >
-                  </span>
-                </button>
-              {:else}
-                <button
-                  on:click={() => changeTimePeriod(i)}
-                  class="cursor-pointer group relative z-1 rounded-full w-1/2 min-w-24 md:w-auto px-5 py-1 {activeIdx ===
-                  i
-                    ? 'z-0'
-                    : ''} "
-                >
-                  {#if activeIdx === i}
-                    <div class="absolute inset-0 rounded bg-[#fff]"></div>
-                  {/if}
-                  <span
-                    class="relative text-sm block font-semibold whitespace-nowrap {activeIdx ===
-                    i
-                      ? 'text-black'
-                      : ''}"
-                  >
-                    {item.title}
-                  </span>
-                </button>
-              {/if}
-            {/each}
-          </div>
+        <div class="inline-flex rounded-lg shadow-sm">
+          {#each tabs as item, i}
+            <button
+              on:click={() => changeTimePeriod(i)}
+              class="cursor-pointer px-4 py-2 text-sm font-medium focus:z-10 focus:outline-none transition-colors duration-50
+                          {i === 0 ? 'rounded-l border' : ''}
+                          {i === tabs?.length - 1
+                ? 'rounded-r border-t border-r border-b'
+                : ''}
+                          {i !== 0 && i !== tabs?.length - 1
+                ? 'border-t border-b'
+                : ''}
+                          {activeIdx === i
+                ? 'bg-black dark:bg-white text-white dark:text-black'
+                : 'bg-white  border-gray-300 sm:hover:bg-gray-100 dark:bg-primary dark:border-gray-800'}"
+            >
+              {item.title}
+            </button>
+          {/each}
         </div>
       </div>
 
