@@ -4,13 +4,11 @@
   import SEO from "$lib/components/SEO.svelte";
   import Infobox from "$lib/components/Infobox.svelte";
   import Tutorial from "$lib/components/Tutorial.svelte";
-  import { Button } from "$lib/components/shadcn/button/index.js";
   import TableHeader from "$lib/components/Table/TableHeader.svelte";
   import { onMount } from "svelte";
   import DownloadData from "$lib/components/DownloadData.svelte";
 
   //import * as XLSX from 'xlsx';
-  import { goto } from "$app/navigation";
   import highcharts from "$lib/highcharts.ts";
   import { mode } from "mode-watcher";
 
@@ -714,10 +712,10 @@
               </div>
 
               <div
-                class="flex flex-row items-center w-full justify-between mt-3"
+                class="flex flex-row items-center w-full justify-between mt-3 border-t border-b border-gray-300 dark:border-gray-800 py-2"
               >
                 <h3 class=" history-driver text-xl sm:text-2xl font-bold">
-                  Short Interest History
+                  History
                 </h3>
 
                 <div class="flex flex-row items-center w-fit w-[50%] ml-auto">

@@ -2,7 +2,6 @@
   import { displayCompanyName, stockTicker } from "$lib/store";
   import { abbreviateNumber, removeCompanyStrings } from "$lib/utils";
   import SEO from "$lib/components/SEO.svelte";
-  import Tutorial from "$lib/components/Tutorial.svelte";
   import TableHeader from "$lib/components/Table/TableHeader.svelte";
   import DownloadData from "$lib/components/DownloadData.svelte";
 
@@ -10,7 +9,6 @@
   import * as DropdownMenu from "$lib/components/shadcn/dropdown-menu/index.js";
   import { Button } from "$lib/components/shadcn/button/index.js";
   //import * as XLSX from 'xlsx';
-  import { goto } from "$app/navigation";
   import highcharts from "$lib/highcharts.ts";
   import { mode } from "mode-watcher";
 
@@ -503,83 +501,6 @@
     // Sort using the generic comparison function
     tableList = [...originalData].sort(compareValues);
   };
-
-  let steps = [
-    {
-      popover: {
-        title: "Market Cap",
-        description: `This dashboard shows total market capitalization, its size classification, and how it’s moved over the past year.`,
-        side: "center",
-        align: "center",
-      },
-    },
-    {
-      element: ".marketCap-driver",
-      popover: {
-        title: "Total Market Cap",
-        description: `The company’s current market cap is ${abbreviateNumber(data?.getStockQuote?.marketCap)}. This is the total equity value implied by all outstanding shares.`,
-        side: "left",
-        align: "start",
-      },
-    },
-    {
-      element: ".category-driver",
-      popover: {
-        title: "Market Cap Category",
-        description: `Categories help you compare relative scale across tickers.`,
-        side: "bottom",
-        align: "start",
-      },
-    },
-    {
-      element: ".oneYearChange-driver",
-      popover: {
-        title: "1‑Year Change",
-        description: `Shows how much market cap has moved in the last year (${changePercentageYearAgo?.toFixed(2)}%). A “> 100%” indicates a strong positive trend.`,
-        side: "right",
-        align: "start",
-      },
-    },
-    {
-      element: ".timeframe-toggle-driver",
-      popover: {
-        title: "Adjust Timeframe",
-        description:
-          "Switch the chart between different time periods to zoom in on shorter- or longer-term trends.",
-        side: "bottom",
-        align: "start",
-      },
-    },
-    {
-      element: ".chart-driver",
-      popover: {
-        title: "Market Cap Over Time",
-        description:
-          "This chart displays the market cap over time so you can spot divergences or spikes.",
-        side: "right",
-        align: "start",
-      },
-    },
-    {
-      element: ".history-driver",
-      popover: {
-        title: "Detailed History",
-        description:
-          "Browse annual or quarterly snapshots of market cap and percent change. Use this for a quick snapshot how fast the company is growing.",
-        side: "right",
-        align: "start",
-      },
-    },
-    {
-      popover: {
-        title: "You’re All Set!",
-        description:
-          "Now you know how to read market cap and how to apply it to your trading strategies. Happy investing!",
-        side: "center",
-        align: "center",
-      },
-    },
-  ];
 </script>
 
 <SEO
@@ -635,7 +556,6 @@
             <h1 class="text-xl sm:text-2xl font-bold">
               {removeCompanyStrings($displayCompanyName)} Market Cap
             </h1>
-            <Tutorial {steps} />
           </div>
 
           {#if rawData?.length !== 0}
@@ -661,7 +581,7 @@
               />
 
               <div
-                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 mt-3"
+                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-2 mt-3"
               >
                 <div
                   class="marketCap-driver shadow bg-gray-100 dark:bg-[#1C1E22] rounded p-4"
@@ -735,7 +655,7 @@
               </div>
 
               <div
-                class="flex flex-col sm:flex-row items-start sm:items-center w-full"
+                class="flex flex-col sm:flex-row items-start sm:items-center w-full border-t border-b border-gray-300 dark:border-gray-800 py-2"
               >
                 <h2 class="mb-3 sm:mb-0 text-xl sm:text-2xl font-bold">
                   Market Cap Chart
@@ -751,7 +671,7 @@
                       <DropdownMenu.Trigger asChild let:builder>
                         <Button
                           builders={[builder]}
-                          class="w-full  border-gray-300 dark:border-gray-600 border bg-black text-white sm:hover:bg-default dark:sm:hover:bg-primary ease-out  flex flex-row justify-between items-center px-3 py-2  rounded truncate"
+                          class="w-full  border-gray-300 dark:border-gray-600 border bg-black text-white sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary ease-out  flex flex-row justify-between items-center px-3 py-2  rounded truncate"
                         >
                           <span class="truncate text-xs sm:text-sm"
                             >{timePeriod}</span
@@ -845,61 +765,40 @@
               ></div>
 
               <div
-                class=" flex flex-col sm:flex-row items-start sm:items-center w-full justify-between"
+                class=" flex flex-row items-center w-full justify-between mt-2 border-t border-b border-gray-300 dark:border-gray-800 py-2"
               >
                 <h3 class="history-driver text-xl sm:text-2xl font-bold">
-                  Market Cap History
+                  History
                 </h3>
 
-                <div
-                  class="inline-flex justify-center w-full rounded sm:w-auto sm:ml-auto"
-                >
+                <div class="inline-flex justify-center rounded w-auto">
                   <div
-                    class="bg-black text-white dark:bg-secondary w-full min-w-24 sm:w-fit relative flex flex-wrap items-center justify-center rounded p-1 mt-4"
+                    class=" flex flex-col sm:flex-row items-start sm:items-center w-full justify-between"
                   >
-                    {#each tabs as item, i}
-                      {#if !["Pro", "Plus"]?.includes(data?.user?.tier) && i > 0}
-                        <button
-                          on:click={() => goto("/pricing")}
-                          class="cursor-pointer group relative z-1 rounded-full w-1/2 min-w-24 md:w-auto px-5 py-1"
-                        >
-                          <span class="relative text-sm block font-semibold">
-                            {item.title}
-                            <svg
-                              class="inline-block ml-0.5 -mt-1 w-3.5 h-3.5"
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              ><path
-                                fill="#A3A3A3"
-                                d="M17 9V7c0-2.8-2.2-5-5-5S7 4.2 7 7v2c-1.7 0-3 1.3-3 3v7c0 1.7 1.3 3 3 3h10c1.7 0 3-1.3 3-3v-7c0-1.7-1.3-3-3-3M9 7c0-1.7 1.3-3 3-3s3 1.3 3 3v2H9z"
-                              /></svg
+                    <div class="">
+                      <div class="inline-flex">
+                        <div class="inline-flex rounded-lg shadow-sm">
+                          {#each tabs as item, i}
+                            <button
+                              on:click={() => changeTablePeriod(i)}
+                              class="cursor-pointer px-4 py-2 text-sm font-medium focus:z-10 focus:outline-none transition-colors duration-50
+                          {i === 0 ? 'rounded-l border' : ''}
+                          {i === tabs?.length - 1
+                                ? 'rounded-r border-t border-r border-b'
+                                : ''}
+                          {i !== 0 && i !== tabs?.length - 1
+                                ? 'border-t border-b'
+                                : ''}
+                          {activeIdx === i
+                                ? 'bg-black dark:bg-white text-white dark:text-black'
+                                : 'bg-white  border-gray-300 sm:hover:bg-gray-100 dark:bg-primary dark:border-gray-800'}"
                             >
-                          </span>
-                        </button>
-                      {:else}
-                        <button
-                          on:click={() => changeTablePeriod(i)}
-                          class="cursor-pointer group relative z-1 rounded-full w-1/2 min-w-24 md:w-auto px-5 py-1 {activeIdx ===
-                          i
-                            ? 'z-0'
-                            : ''} "
-                        >
-                          {#if activeIdx === i}
-                            <div
-                              class="absolute inset-0 rounded bg-[#fff]"
-                            ></div>
-                          {/if}
-                          <span
-                            class="relative text-sm block font-semibold whitespace-nowrap {activeIdx ===
-                            i
-                              ? 'text-black'
-                              : ''}"
-                          >
-                            {item.title}
-                          </span>
-                        </button>
-                      {/if}
-                    {/each}
+                              {item.title}
+                            </button>
+                          {/each}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

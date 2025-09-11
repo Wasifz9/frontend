@@ -74,7 +74,7 @@
       title: "News",
     },
     {
-      title: "Earnings",
+      title: "Earnings Release",
     },
   ];
 
@@ -1229,7 +1229,7 @@
             <div
               class="flex w-full sm:w-[50%] md:w-auto mb-5 {!data?.user
                 ? 'hidden'
-                : 'md:block'} border-t border-b border-gray-300 dark:border-gray-600 py-2"
+                : 'md:block'} border-t border-b border-gray-300 dark:border-gray-800 py-2"
             >
               <div
                 class="grid grid-cols-2 gap-3 sm:gap-0 sm:flex sm:flex-row sm:items-center"
@@ -1922,7 +1922,7 @@
                         class=" flex flex-col sm:flex-row items-start sm:items-center w-full justify-between"
                       >
                         <div class="">
-                          <div class="inline-flex mt-4 sm:mt-0">
+                          <div class="inline-flex">
                             <div class="inline-flex rounded-lg shadow-sm">
                               {#each tabs as item, i}
                                 <button
