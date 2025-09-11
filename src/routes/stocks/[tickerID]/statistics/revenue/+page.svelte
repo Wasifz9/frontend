@@ -3,7 +3,6 @@
   import { abbreviateNumber, removeCompanyStrings } from "$lib/utils";
   import SEO from "$lib/components/SEO.svelte";
   import { mode } from "mode-watcher";
-  import Tutorial from "$lib/components/Tutorial.svelte";
   import * as DropdownMenu from "$lib/components/shadcn/dropdown-menu/index.js";
   import { Button } from "$lib/components/shadcn/button/index.js";
 
@@ -228,97 +227,6 @@
     return options;
   }
 
-  let steps = [
-    {
-      popover: {
-        title: "Revenue",
-        description: `This dashboard shows total revenue, revenue growth, and related efficiency and valuation metrics, plus their historical trends. Traders use these to gauge top-line strength: strong or rising revenue growth signals healthy demand and momentum, while declines can flag weakening fundamentals.`,
-        side: "center",
-        align: "center",
-      },
-    },
-    {
-      element: ".revenue-ttm-driver",
-      popover: {
-        title: "Revenue (TTM)",
-        description: `Trailing twelve months (TTM) revenue: ${abbreviateNumber(rawData?.revenue, true)}. Aggregates the last four quarters for a normalized view of recent top-line performance. Higher revenue usually correlates with stronger business scale and investor confidence.`,
-        side: "left",
-        align: "start",
-      },
-    },
-    {
-      element: ".revenue-growth-driver",
-      popover: {
-        title: "Revenue Growth",
-        description: `Year-over-year growth = (Current Revenue − Prior Revenue) / Prior Revenue × 100. Here: ${rawData?.growthRevenue}%. High growth (> 20%) often reflects accelerating sales trends, while negative growth can indicate contraction.`,
-        side: "bottom",
-        align: "start",
-      },
-    },
-    {
-      element: ".ps-ratio-driver",
-      popover: {
-        title: "Price / Sales Ratio",
-        description: `Price/Sales is defined as Market Cap / Revenue. A low P/S ratio (< 1) can signal undervaluation relative to peers, while a high ratio (> 5) implies strong market growth expectations or premium valuation.`,
-        side: "right",
-        align: "start",
-      },
-    },
-    {
-      element: ".rev-per-emp-driver",
-      popover: {
-        title: "Revenue / Employee",
-        description: `Revenue per employee = Revenue / Employees. Higher values indicate greater efficiency and productivity, whereas low values may suggest overstaffing or inefficiencies.`,
-        side: "bottom",
-        align: "start",
-      },
-    },
-    {
-      element: ".employees-driver",
-      popover: {
-        title: "Employees",
-        description: `Changes in staffing levels help contextualize shifts in revenue efficiency and per-employee output.`,
-        side: "right",
-        align: "start",
-      },
-    },
-    {
-      element: ".marketCap-driver",
-      popover: {
-        title: "Market Cap",
-        description: `Provides valuation context relative to revenue; compare market cap / revenue multiple versus industry benchmarks.`,
-        side: "left",
-        align: "start",
-      },
-    },
-    {
-      element: ".chart-driver",
-      popover: {
-        title: "Revenue Over Time",
-        description: `Plots revenue by period to reveal trends, seasonality, or inflection points. Look for consistent growth or accelerating curves when making trading decisions.`,
-        side: "right",
-        align: "start",
-      },
-    },
-    {
-      element: ".history-driver",
-      popover: {
-        title: "Revenue History Table",
-        description: `Detailed historical revenue and % change with period end dates. Use this to verify growth consistency or spot volatile swings that could impact stock performance.`,
-        side: "right",
-        align: "start",
-      },
-    },
-    {
-      popover: {
-        title: "You’re All Set!",
-        description: `Now you understand how each revenue metric is calculated, why they matter, and how high or low values can influence trading decisions. Happy investing!`,
-        side: "center",
-        align: "center",
-      },
-    },
-  ];
-
   $: {
     if ($mode || $timeFrame) {
       changeTablePeriod(0);
@@ -380,7 +288,6 @@
             <h1 class="text-xl sm:text-2xl font-bold">
               {removeCompanyStrings($displayCompanyName)} Revenue
             </h1>
-            <Tutorial {steps} />
           </div>
 
           {#if Object?.keys(data?.getHistoricalRevenue)?.length > 0}
@@ -474,11 +381,11 @@
               </div>
 
               <div
-                class=" flex flex-col sm:flex-row items-start sm:items-center w-full justify-between"
+                class=" flex flex-col sm:flex-row items-start sm:items-center w-full justify-between border-t border-b border-gray-300 dark:border-gray-800 py-2"
               >
                 <h2 class="text-xl sm:text-2xl font-bold">Revenue Chart</h2>
-                <div class="ml-auto">
-                  <div class="inline-flex mt-4 sm:mt-0">
+                <div class="sm:ml-auto">
+                  <div class="inline-flex mt-2 sm:mt-0">
                     <div class="inline-flex rounded-lg shadow-sm">
                       {#each plotTabs as item, i}
                         <button
@@ -562,61 +469,29 @@
               ></div>
 
               <div
-                class="history-driver mt-5 flex flex-col sm:flex-row items-start sm:items-center w-full justify-between sm:border-y border-gray-300 dark:border-gray-800 sm:pt-2 sm:pb-2"
+                class="history-driver mt-5 flex flex-row items-center w-full justify-between border-t border-b border-gray-300 dark:border-gray-800 py-2"
               >
-                <h3 class="text-xl sm:text-2xl font-bold mb-2 sm:mb-0">
-                  Revenue History
-                </h3>
+                <h3 class="text-xl sm:text-2xl font-bold">History</h3>
 
                 <div class="inline-flex ml-auto">
                   <div class="inline-flex rounded-lg shadow-sm">
                     {#each tabs as item, i}
-                      {#if !["Pro", "Plus"]?.includes(data?.user?.tier) && i > 0}
-                        <button
-                          on:click={() => goto("/pricing")}
-                          class="cursor-pointer px-4 py-2 text-sm font-medium focus:z-10 focus:outline-none transition-colors duration-50
+                      <button
+                        on:click={() => changeTablePeriod(i)}
+                        class="cursor-pointer px-4 py-2 text-sm font-medium focus:z-10 focus:outline-none transition-colors duration-50
                           {i === 0 ? 'rounded-l border' : ''}
                           {i === tabs.length - 1
-                            ? 'rounded-r border-t border-r border-b'
-                            : ''}
+                          ? 'rounded-r border-t border-r border-b'
+                          : ''}
                           {i !== 0 && i !== tabs.length - 1
-                            ? 'border-t border-b'
-                            : ''}
+                          ? 'border-t border-b'
+                          : ''}
                           {activeIdx === i
-                            ? 'bg-black dark:bg-white text-white dark:text-black'
-                            : 'bg-white  border-gray-300 sm:hover:bg-gray-100 dark:bg-primary dark:border-gray-800'}"
-                        >
-                          <span class="whitespace-nowrap">
-                            {item.title}
-                            <svg
-                              class="inline-block ml-0.5 -mt-1 w-3.5 h-3.5"
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              ><path
-                                fill="#A3A3A3"
-                                d="M17 9V7c0-2.8-2.2-5-5-5S7 4.2 7 7v2c-1.7 0-3 1.3-3 3v7c0 1.7 1.3 3 3 3h10c1.7 0 3-1.3 3-3v-7c0-1.7-1.3-3-3-3M9 7c0-1.7 1.3-3 3-3s3 1.3 3 3v2H9z"
-                              /></svg
-                            >
-                          </span>
-                        </button>
-                      {:else}
-                        <button
-                          on:click={() => changeTablePeriod(i)}
-                          class="cursor-pointer px-4 py-2 text-sm font-medium focus:z-10 focus:outline-none transition-colors duration-50
-                          {i === 0 ? 'rounded-l border' : ''}
-                          {i === tabs.length - 1
-                            ? 'rounded-r border-t border-r border-b'
-                            : ''}
-                          {i !== 0 && i !== tabs.length - 1
-                            ? 'border-t border-b'
-                            : ''}
-                          {activeIdx === i
-                            ? 'bg-black dark:bg-white text-white dark:text-black'
-                            : 'bg-white  border-gray-300 sm:hover:bg-gray-100 dark:bg-primary dark:border-gray-800'}"
-                        >
-                          {item.title}
-                        </button>
-                      {/if}
+                          ? 'bg-black dark:bg-white text-white dark:text-black'
+                          : 'bg-white  border-gray-300 sm:hover:bg-gray-100 dark:bg-primary dark:border-gray-800'}"
+                      >
+                        {item.title}
+                      </button>
                     {/each}
                   </div>
                 </div>

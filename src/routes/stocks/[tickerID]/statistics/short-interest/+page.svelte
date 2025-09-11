@@ -605,7 +605,7 @@
                       : "unchanged"
                 } by ${abbreviateNumber(
                   rawData?.at(0)?.percentChangeMoMo?.toFixed(2),
-                )}% to the previous Month.`}
+                )}% to the previous month.`}
               />
 
               <div
