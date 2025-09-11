@@ -2035,7 +2035,7 @@ export let defaultChats = [
   {
     label: "Find me undervalued stocks",
     query:
-      "@StockScreener find me undervalued stocks with p/e above 0 and revenue growth above 5%",
+      "@StockScreener find me undervalued stocks with p/e above 0 and revenue growth above 5% and price to book ratio above 0",
     type: "Stocks",
   },
   {

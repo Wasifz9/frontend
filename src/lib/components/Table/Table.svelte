@@ -829,7 +829,7 @@
         <Button
           builders={[builder]}
           on:click={() => (allRows = sortIndicatorCheckMarks(allRows))}
-          class="ml-2 transition-all min-w-fit sm:min-w-[110px]  bg-default text-white shadow dark:border-gray-600 border sm:hover:bg-black dark:sm:hover:bg-primary ease-out flex flex-row justify-between items-center px-3 py-2 rounded truncate"
+          class="ml-2 transition-all min-w-fit sm:min-w-[110px]  bg-default text-white shadow dark:border-gray-600 border sm:hover:bg-black dark:bg-primary dark:sm:hover:bg-secondary ease-out flex flex-row justify-between items-center px-3 py-2 rounded truncate"
         >
           <span class="w-fit text-[0.85rem] sm:text-sm">Indicators</span>
           <svg

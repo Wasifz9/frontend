@@ -493,7 +493,7 @@
                             : ''}
                           {timeIdx === i
                             ? 'bg-black dark:bg-white text-white dark:text-black'
-                            : 'bg-white  border-gray-300 sm:hover:bg-gray-100 dark:bg-default dark:border-gray-800'}"
+                            : 'bg-white  border-gray-300 sm:hover:bg-gray-100 dark:bg-primary dark:border-gray-800'}"
                         >
                           {item.title}
                         </button>
@@ -505,7 +505,7 @@
                       <DropdownMenu.Trigger asChild let:builder>
                         <Button
                           builders={[builder]}
-                          class="flex-shrink-0  w-full sm:w-fit border border-gray-300 dark:border-gray-800 bg-black sm:hover:bg-default text-white dark:sm:hover:bg-primary ease-out  flex flex-row justify-between items-center px-3 py-1.5  rounded truncate"
+                          class="flex-shrink-0  w-full sm:w-fit border border-gray-300 dark:border-gray-800 bg-black sm:hover:bg-default text-white dark:bg-primary dark:sm:hover:bg-secondary ease-out  flex flex-row justify-between items-center px-3 py-1.5  rounded truncate"
                         >
                           <span class="truncate">{$timeFrame}</span>
                           <svg
@@ -584,7 +584,7 @@
                             : ''}
                           {activeIdx === i
                             ? 'bg-black dark:bg-white text-white dark:text-black'
-                            : 'bg-white  border-gray-300 sm:hover:bg-gray-100 dark:bg-default dark:border-gray-800'}"
+                            : 'bg-white  border-gray-300 sm:hover:bg-gray-100 dark:bg-primary dark:border-gray-800'}"
                         >
                           <span class="whitespace-nowrap">
                             {item.title}
@@ -612,7 +612,7 @@
                             : ''}
                           {activeIdx === i
                             ? 'bg-black dark:bg-white text-white dark:text-black'
-                            : 'bg-white  border-gray-300 sm:hover:bg-gray-100 dark:bg-default dark:border-gray-800'}"
+                            : 'bg-white  border-gray-300 sm:hover:bg-gray-100 dark:bg-primary dark:border-gray-800'}"
                         >
                           {item.title}
                         </button>

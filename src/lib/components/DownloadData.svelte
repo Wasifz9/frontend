@@ -86,7 +86,7 @@
   <DropdownMenu.Trigger asChild let:builder>
     <Button
       builders={[builder]}
-      class="border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:default  flex flex-row justify-between items-center  max-w-[240px] sm:w-auto px-3 rounded truncate"
+      class="transition-all duration-50 border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary  flex flex-row justify-between items-center  max-w-[240px] sm:w-auto px-3 rounded truncate"
     >
       <span class="truncate text-[0.85rem] sm:text-sm"> Download </span>
       <svg
