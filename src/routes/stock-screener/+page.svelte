@@ -3103,7 +3103,7 @@ const handleKeyDown = (event) => {
               <DropdownMenu.Trigger asChild let:builder>
                 <Button
                   builders={[builder]}
-                  class="w-full  border-gray-300 dark:border-gray-600 border text-white bg-black sm:hover:bg-default dark:bg-default dark:sm:hover:bg-primary ease-out flex flex-row justify-between items-center px-3 py-2  rounded truncate"
+                  class="w-full  border-gray-300 dark:border-gray-600 border text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary ease-out flex flex-row justify-between items-center px-3 py-2  rounded truncate"
                 >
                   <span class="truncate"
                     >{selectedPopularStrategy?.length !== 0
@@ -3142,7 +3142,7 @@ const handleKeyDown = (event) => {
                   {#each popularStrategyList as item}
                     <DropdownMenu.Item
                       on:click={() => popularStrategy(item?.key)}
-                      class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
+                      class="cursor-pointer sm:hover:bg-gray-100 dark:sm:hover:bg-primary"
                     >
                       {item?.label}
                     </DropdownMenu.Item>
@@ -3164,7 +3164,7 @@ const handleKeyDown = (event) => {
               <DropdownMenu.Trigger asChild let:builder>
                 <Button
                   builders={[builder]}
-                  class="min-w-[110px]  w-full border-gray-300 dark:border-gray-600 border text-white bg-black sm:hover:bg-default dark:bg-default  dark:sm:hover:bg-primary ease-out flex flex-row justify-between items-center px-3 py-2  rounded truncate"
+                  class="min-w-[110px]  w-full border-gray-300 dark:border-gray-600 border text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary ease-out flex flex-row justify-between items-center px-3 py-2  rounded truncate"
                 >
                   <span class="truncate max-w-48"
                     >{selectedStrategy?.length !== 0
@@ -3205,7 +3205,7 @@ const handleKeyDown = (event) => {
                         handleCreateStrategy();
                       }}
                       builders={[builder]}
-                      class="p-0 -mb-2 -mt-2 text-sm inline-flex cursor-pointer items-center justify-center space-x-1 whitespace-nowrap   bg-[#0909B] focus:outline-hidden "
+                      class="p-0 -mb-2 -mt-2 text-sm inline-flex cursor-pointer items-center justify-center space-x-1 whitespace-nowrap bg-[#0909B] focus:outline-hidden "
                     >
                       <svg
                         class="h-4 w-4"
@@ -3232,8 +3232,8 @@ const handleKeyDown = (event) => {
                         switchStrategy(item);
                       }}
                       class=" {item?.id === selectedStrategy
-                        ? 'bg-gray-300 dark:bg-primary'
-                        : ''} cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
+                        ? 'bg-gray-100 dark:bg-primary'
+                        : ''} cursor-pointer sm:hover:bg-gray-100 dark:sm:hover:bg-primary"
                     >
                       {item?.title?.length > 20
                         ? item?.title?.slice(0, 20) + "..."
@@ -3774,7 +3774,7 @@ const handleKeyDown = (event) => {
                               {#if ruleCondition[row?.rule] === "between"}
                                 {#if newValue && row?.step[index + 1]}
                                   <DropdownMenu.Item
-                                    class="sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
+                                    class="sm:hover:bg-gray-100 dark:sm:hover:bg-primary"
                                   >
                                     <button
                                       on:click={() => {
@@ -3797,7 +3797,7 @@ const handleKeyDown = (event) => {
                                 {/if}
                               {:else}
                                 <DropdownMenu.Item
-                                  class="sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
+                                  class="sm:hover:bg-gray-100 dark:sm:hover:bg-primary"
                                 >
                                   <button
                                     on:click={() => {
@@ -3817,7 +3817,7 @@ const handleKeyDown = (event) => {
                           {:else if checkedRules?.includes(row?.rule)}
                             {#each row?.step as item}
                               <DropdownMenu.Item
-                                class="sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
+                                class="sm:hover:bg-gray-100 dark:sm:hover:bg-primary"
                               >
                                 <div
                                   class="flex items-center"
@@ -3844,7 +3844,7 @@ const handleKeyDown = (event) => {
                           {:else}
                             {#each testList.length > 0 && searchQuery?.length > 0 ? testList : searchQuery?.length > 0 && testList?.length === 0 ? [] : row?.rule === "country" ? listOfRelevantCountries : row?.rule === "sector" ? sectorList : row?.rule === "industry" ? industryList : ["analystRating", "topAnalystRating", "score"]?.includes(ruleName) ? ["Strong Buy", "Buy", "Hold", "Sell", "Strong Sell"] : [] as item}
                               <DropdownMenu.Item
-                                class="sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
+                                class="sm:hover:bg-gray-100 dark:sm:hover:bg-primary"
                               >
                                 <div
                                   class="flex items-center"
@@ -4583,7 +4583,7 @@ const handleKeyDown = (event) => {
 
       <button
         type="submit"
-        class="cursor-pointer mt-2 py-2.5 bg-black dark:bg-[#fff] dark:sm:hover:bg-gray-300 duration-100 w-full rounded m-auto text-white dark:text-black font-semibold text-md"
+        class="cursor-pointer mt-2 py-2.5 bg-black dark:bg-[#fff] dark:sm:hover:bg-gray-100 duration-100 w-full rounded m-auto text-white dark:text-black font-semibold text-md"
       >
         Create Screener
       </button>
