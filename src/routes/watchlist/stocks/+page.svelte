@@ -2195,7 +2195,7 @@
         for="deleteWatchlist"
         class="cursor-pointer px-4 py-2 rounded text-sm font-medium
             transition-colors duration-100
-            bg-gray-600 text-white dark:bg-white dark:text-black"
+            bg-black text-white dark:bg-white dark:text-black"
         tabindex="0">Cancel</label
       ><label
         for="deleteWatchlist"
