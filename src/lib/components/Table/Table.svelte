@@ -62,6 +62,7 @@
   };
 
   let pagePathName = $page?.url?.pathname;
+
   let testList = [];
   let searchQuery = "";
   let activeSortKey = null;
@@ -264,8 +265,8 @@
     });
   };
 
-  function validateAndCleanRules() {
-    if (!rawData || rawData.length === 0) return;
+  function validateAndCleanRules(skipAutoSave = false) {
+    if (!rawData || rawData.length === 0) return false;
 
     // Get available keys from the first item in rawData
     const availableKeys = new Set(Object.keys(rawData[0]));
@@ -280,18 +281,50 @@
       ruleOfList = validRules;
       checkedItems = new Set(ruleOfList.map((item) => item.name));
       allRows = sortIndicatorCheckMarks(allRows);
-      saveRules();
+
+      // Only auto-save if explicitly allowed
+      if (!skipAutoSave) {
+        saveRules();
+      }
       return true; // Indicates that cleanup was performed
     }
     return false; // No cleanup needed
   }
 
   function saveRules() {
+    // Check if localStorage is available and pagePathName is valid
+    if (!pagePathName || typeof localStorage === "undefined" || !localStorage) {
+      console.warn(
+        "Cannot save rules: localStorage unavailable or invalid path",
+      );
+      return;
+    }
+
     try {
-      // Save the version along with the rules
-      localStorage?.setItem(pagePathName, JSON?.stringify(ruleOfList));
+      // Validate ruleOfList before serializing
+      if (!ruleOfList || !Array.isArray(ruleOfList)) {
+        console.warn("Cannot save rules: invalid ruleOfList data");
+        return;
+      }
+
+      // Save the rules to localStorage
+      const serializedRules = JSON.stringify(ruleOfList);
+      localStorage.setItem(pagePathName, serializedRules);
     } catch (e) {
-      console.log("Failed saving indicator rules: ", e);
+      console.error("Failed saving indicator rules:", e);
+
+      // If JSON.stringify failed, try to save a simplified version
+      try {
+        const simplifiedRules = ruleOfList.map((rule) => ({
+          name: rule.name,
+          rule: rule.rule,
+          type: rule.type || "string",
+        }));
+        localStorage.setItem(pagePathName, JSON.stringify(simplifiedRules));
+        console.info("Saved simplified rules as fallback");
+      } catch (fallbackError) {
+        console.error("Failed saving even simplified rules:", fallbackError);
+      }
     }
   }
 
@@ -471,13 +504,17 @@
 
   $: stockList = [...stockList];
 
+  let isInitialLoad = true;
+
   // Reactive statement to validate and clean rules when rawData changes
   $: if (rawData && rawData.length > 0) {
-    const wasCleanedUp = validateAndCleanRules();
+    const wasCleanedUp = validateAndCleanRules(isInitialLoad);
     if (wasCleanedUp) {
       columns = generateColumns(rawData);
       sortOrders = generateSortOrders(rawData);
     }
+    // After the first reactive run, allow auto-saving
+    isInitialLoad = false;
   }
 
   $: if ($isOpen) {
@@ -493,45 +530,54 @@
   };
 
   onMount(async () => {
-    if (!syncWorker) {
-      const SyncWorker = await import("$lib/workers/tableSearchWorker?worker");
-      syncWorker = new SyncWorker.default();
-      syncWorker.onmessage = handleMessage;
-    }
-
     try {
+      // derive pagePathName and storageKey from the page store
+
+      // Load saved rules (if any)
       const savedRules = localStorage?.getItem(pagePathName);
-
       if (savedRules) {
-        const parsedRules = JSON?.parse(savedRules);
-
-        // Compare and update ruleOfList based on allRows
-        ruleOfList = parsedRules.map((rule) => {
-          const matchingRow = allRows.find((row) => row.name === rule.name);
-          if (matchingRow && matchingRow.type !== rule.type) {
-            return { ...rule, type: matchingRow.type };
-          }
-          return rule;
-        });
-
-        // Check for the user's tier and filter out paywalled features
-        if (!["Pro", "Plus"]?.includes(data?.user?.tier)) {
-          ruleOfList = ruleOfList.filter((item) =>
-            excludedRules.has(item?.rule),
-          );
+        let parsedRules;
+        try {
+          parsedRules = JSON?.parse(savedRules);
+        } catch (err) {
+          console.warn("Saved rules parse error, ignoring saved rules:", err);
+          parsedRules = null;
         }
 
-        // Save the updated ruleOfList back to localStorage
-        localStorage?.setItem(pagePathName, JSON.stringify(ruleOfList));
+        if (parsedRules && Array.isArray(parsedRules)) {
+          // Reconcile parsed rules with the current allRows list (update types if changed)
+          ruleOfList = parsedRules.map((rule) => {
+            const matchingRow = allRows.find(
+              (row) => row.name === rule.name || row.rule === rule.rule,
+            );
+            if (matchingRow && matchingRow.type !== rule.type) {
+              return {
+                ...rule,
+                type: matchingRow.type,
+                rule: matchingRow.rule,
+                name: matchingRow.name,
+              };
+            }
+            return rule;
+          });
+
+          // If user is not Pro/Plus, keep only free rules (your existing logic used excludedRules as the free-list)
+          if (!["Pro", "Plus"]?.includes(data?.user?.tier)) {
+            ruleOfList = ruleOfList.filter((item) =>
+              excludedRules.has(item?.rule),
+            );
+          }
+
+          // Persist potentially reconciled rules back to storage
+          localStorage?.setItem(pagePathName, JSON.stringify(ruleOfList));
+        }
       } else {
-        // If no saved rules, initialize with the current ruleOfList
-        localStorage?.setItem(pagePathName, JSON.stringify(ruleOfList));
+        // If no saved rules, initialize with the current ruleOfList (and persist)
+        pagePathName &&
+          localStorage?.setItem(pagePathName, JSON.stringify(ruleOfList));
       }
 
-      // Validate and clean rules before updating checked items
-      validateAndCleanRules();
-
-      // Update checked items and sort the indicators
+      // Update checked items and sort the indicators (validation will happen reactively)
       checkedItems = new Set(ruleOfList.map((item) => item.name));
       allRows = sortIndicatorCheckMarks(allRows);
 
