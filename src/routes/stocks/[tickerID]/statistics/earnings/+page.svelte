@@ -1,0 +1,666 @@
+<script lang="ts">
+    import { displayCompanyName, stockTicker } from "$lib/store";
+    import { abbreviateNumber, removeCompanyStrings } from "$lib/utils";
+    import SEO from "$lib/components/SEO.svelte";
+    import Infobox from "$lib/components/Infobox.svelte";
+    import TableHeader from "$lib/components/Table/TableHeader.svelte";
+    import { onMount } from "svelte";
+    import DownloadData from "$lib/components/DownloadData.svelte";
+    import NextEarnings from "$lib/components/NextEarnings.svelte";
+
+    //import * as XLSX from 'xlsx';
+    import highcharts from "$lib/highcharts.ts";
+    import { mode } from "mode-watcher";
+
+    export let data;
+
+    let rawData = data?.getData?.history || [];
+    let tableList = rawData;
+    tableList
+        ?.sort((a, b) => new Date(b?.recordDate) - new Date(a?.recordDate))
+        ?.slice(0, 20);
+
+    async function handleScroll() {
+        const scrollThreshold = document.body.offsetHeight * 0.8; // 80% of the website height
+        const isBottom = window.innerHeight + window.scrollY >= scrollThreshold;
+        if (isBottom && tableList?.length !== rawData?.history?.length) {
+            const nextIndex = tableList?.length;
+            const newResults = rawData?.slice(nextIndex, nextIndex + 20);
+            tableList = [...tableList, ...newResults];
+        }
+    }
+
+    function plotData() {
+        if (!rawData || rawData.length === 0) {
+            return {};
+        }
+
+        // Prepare series data in one pass
+        const priceSeries = [];
+        const shortFloatData = [];
+
+        rawData.forEach(({ recordDate, price, shortPercentOfFloat }) => {
+            const time = new Date(recordDate).getTime();
+            priceSeries.push([time, price]);
+            shortFloatData.push({
+                time,
+                price,
+                shortFloat: shortPercentOfFloat,
+            });
+        });
+
+        // Calculate statistical thresholds for categorization
+        const shortFloatValues = shortFloatData.map((d) => d.shortFloat);
+        const maxShortFloat = Math.max(...shortFloatValues);
+        const minShortFloat = Math.min(...shortFloatValues);
+        const avgShortFloat =
+            shortFloatValues.reduce((sum, val) => sum + val, 0) /
+            shortFloatValues.length;
+
+        // Calculate standard deviation for better threshold detection
+        const variance =
+            shortFloatValues.reduce(
+                (sum, val) => sum + Math.pow(val - avgShortFloat, 2),
+                0,
+            ) / shortFloatValues.length;
+        const stdDev = Math.sqrt(variance);
+
+        // Define thresholds for different severity levels (relative to avg)
+        const extremeThreshold = avgShortFloat + 2 * stdDev;
+        const highThreshold = avgShortFloat + stdDev;
+        const mediumThreshold = avgShortFloat + 0.5 * stdDev;
+
+        // Categorize short interest spikes into different severity levels
+        const extremeShortBubbles = [];
+        const highShortBubbles = [];
+        const mediumShortBubbles = [];
+
+        shortFloatData.forEach((item) => {
+            // Create bubble point with proper structure
+            const bubblePoint = {
+                x: item.time,
+                y: item.price,
+                z: item.shortFloat, // Size based on short float percentage
+                shortFloat: item.shortFloat,
+                date: new Date(item.time).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                }),
+            };
+
+            // Categorize by severity (keeps same thresholds, but used for grouping/visuals)
+            if (item.shortFloat >= extremeThreshold) {
+                extremeShortBubbles.push(bubblePoint);
+            } else if (item.shortFloat >= highThreshold) {
+                highShortBubbles.push(bubblePoint);
+            } else if (item.shortFloat >= mediumThreshold) {
+                mediumShortBubbles.push(bubblePoint);
+            }
+        });
+
+        const fillColorStart = "rgba(70, 129, 244, 0.5)";
+        const fillColorEnd = "rgba(70, 129, 244, 0.001)";
+
+        const options = {
+            credits: { enabled: false },
+            chart: {
+                backgroundColor: $mode === "light" ? "#fff" : "#09090B",
+                plotBackgroundColor: $mode === "light" ? "#fff" : "#09090B",
+                height: 400,
+                animation: false,
+            },
+            title: {
+                text: `<h3 class="mt-3 -mb-3 text-[1rem] sm:text-lg">Earnings Impact</h3>`,
+                useHTML: true,
+                style: { color: $mode === "light" ? "black" : "white" },
+            },
+            xAxis: {
+                type: "datetime",
+                crosshair: {
+                    color: $mode === "light" ? "black" : "white",
+                    width: 1,
+                    dashStyle: "Solid",
+                },
+                labels: {
+                    style: { color: $mode === "light" ? "#6b7280" : "#fff" },
+                    formatter: function () {
+                        const date = new Date(this.value);
+                        return `<span class="text-xs">${date.toLocaleDateString(
+                            "en-US",
+                            {
+                                month: "short",
+                                year: "numeric",
+                            },
+                        )}</span>`;
+                    },
+                },
+                tickPositioner: function () {
+                    const positions = [];
+                    const { min, max } = this.getExtremes();
+                    const tickCount = 5;
+                    const interval = Math.floor((max - min) / tickCount);
+                    for (let i = 0; i <= tickCount; i++) {
+                        positions.push(min + i * interval);
+                    }
+                    return positions;
+                },
+            },
+            yAxis: {
+                title: {
+                    text: "Stock Price ($)",
+                    style: {
+                        color: $mode === "light" ? "#6b7280" : "#fff",
+                    },
+                },
+                labels: {
+                    style: {
+                        color: $mode === "light" ? "#6b7280" : "#fff",
+                    },
+                    formatter: function () {
+                        return `$${this.value.toFixed(2)}`;
+                    },
+                },
+                gridLineWidth: 1,
+                gridLineColor: $mode === "light" ? "#e5e7eb" : "#111827",
+            },
+            tooltip: {
+                shared: false,
+                useHTML: true,
+                backgroundColor: "rgba(0, 0, 0, 0.8)",
+                borderColor: "rgba(255, 255, 255, 0.2)",
+                borderWidth: 1,
+                style: {
+                    color: "#fff",
+                    fontSize: "14px",
+                    padding: "10px",
+                },
+                borderRadius: 4,
+                formatter: function () {
+                    const date = new Date(this.x);
+                    const formattedDate = date.toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                    });
+
+                    if (this.series.type === "bubble") {
+                        // Determine how the short float compares to the average
+                        const val = this.point.shortFloat;
+                        let severityLabel = "";
+                        let severityColor = "";
+
+                        if (val >= extremeThreshold) {
+                            severityLabel = "Well above average";
+                            severityColor = "#dc2626"; // red
+                        } else if (val >= highThreshold) {
+                            severityLabel = "Above average";
+                            severityColor = "#f59e0b"; // orange
+                        } else if (val >= mediumThreshold) {
+                            severityLabel = "Slightly above average";
+                            severityColor = "#fbbf24"; // amber
+                        } else {
+                            severityLabel = "Average or below";
+                            severityColor =
+                                $mode === "light" ? "#10b981" : "#34d399"; // green tones
+                        }
+
+                        return `
+            <span class="text-white text-sm font-normal">${formattedDate}</span><br>
+            <span class="text-white text-sm">Stock Price: $${this.point.y?.toFixed(2)}</span><br>
+            <span class="text-white text-sm">Short Float: ${this.point.shortFloat?.toFixed(2)}%</span><br>
+            <span class="text-white text-sm">Comparison to Avg: <span style="color: ${severityColor}">${severityLabel}</span></span><br>
+          `;
+                    } else {
+                        return `
+            <span class="text-white text-sm font-normal">${formattedDate}</span><br>
+            <span class="text-white text-sm font-[501]">Stock Price: $${this.y?.toFixed(2)}</span>
+          `;
+                    }
+                },
+            },
+            plotOptions: {
+                series: {
+                    legendSymbol: "rectangle",
+                    animation: false,
+                    marker: {
+                        enabled: false,
+                        states: {
+                            hover: { enabled: false },
+                            select: { enabled: false },
+                        },
+                    },
+                },
+                spline: {
+                    lineWidth: 2.5,
+                    shadow: false,
+                },
+                areaspline: {
+                    lineWidth: 1.5,
+                    fillOpacity: 0.3,
+                    shadow: false,
+                },
+                bubble: {
+                    minSize: 5, // Smaller minimum for small spikes
+                    maxSize: 40, // Larger maximum for biggest spikes
+                    opacity: 0.5,
+                    marker: {
+                        enabled: true, // Enable markers for bubbles
+                        fillOpacity: 0.8,
+                        lineWidth: 1,
+                        lineColor: $mode === "light" ? "#d97706" : "#f59e0b",
+                    },
+                    dataLabels: {
+                        enabled: false,
+                    },
+                    sizeBy: "z", // Size bubbles by z-value
+                    zMin: minShortFloat, // Use actual minimum volume for scaling
+                    zMax: maxShortFloat, // Use actual maximum volume for scaling
+                    sizeByAbsoluteValue: false, // Use relative sizing for better proportion
+                },
+            },
+            legend: {
+                enabled: true,
+                align: "center",
+                verticalAlign: "top",
+                layout: "horizontal",
+                squareSymbol: false,
+                symbolWidth: 20,
+                symbolHeight: 12,
+                symbolRadius: 0,
+                itemStyle: {
+                    color: $mode === "light" ? "black" : "white",
+                },
+            },
+            series: [
+                {
+                    name: "Stock Price",
+                    type: "area",
+                    data: priceSeries,
+                    color: "#4681f4",
+                    lineWidth: 1.5,
+                    fillColor: {
+                        linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                        stops: [
+                            [0, fillColorStart],
+                            [1, fillColorEnd],
+                        ],
+                    },
+                    animation: false,
+                    zIndex: 1,
+                },
+                {
+                    // points >= avg + 2*stdDev
+                    name: "Well above average",
+                    type: "bubble",
+                    data: extremeShortBubbles,
+                    color: "#ef4444", // Red for well above avg
+                    marker: {
+                        lineColor: "#dc2626",
+                    },
+                    animation: false,
+                    zIndex: 4,
+                    showInLegend: extremeShortBubbles.length > 0,
+                },
+                {
+                    // points >= avg + 1*stdDev
+                    name: "Above average",
+                    type: "bubble",
+                    data: highShortBubbles,
+                    color: "#fb923c", // Orange for above avg
+                    marker: {
+                        lineColor: "#f59e0b",
+                    },
+                    animation: false,
+                    zIndex: 3,
+                    showInLegend: highShortBubbles.length > 0,
+                },
+                {
+                    // points >= avg + 0.5*stdDev
+                    name: "Slightly above average",
+                    type: "bubble",
+                    data: mediumShortBubbles,
+                    color: "#fbbf24", // Amber for slightly above avg
+                    marker: {
+                        lineColor: "#fbbf24",
+                    },
+                    animation: false,
+                    zIndex: 2,
+                    showInLegend: mediumShortBubbles.length > 0,
+                },
+            ],
+        };
+
+        return options;
+    }
+
+    let config = null;
+
+    let columns = [
+        { key: "recordDate", label: "Date", align: "left" },
+        { key: "totalShortInterest", label: "Short Interest", align: "right" },
+        { key: "shortPriorMo", label: "Short Prior Month", align: "right" },
+        { key: "percentChangeMoMo", label: "% Change", align: "right" },
+        { key: "daysToCover", label: "Day to Cover", align: "right" },
+        { key: "shortPercentOfFloat", label: "Short % Float", align: "right" },
+        { key: "shortPercentOfOut", label: "Short % Out", align: "right" },
+    ];
+
+    let sortOrders = {
+        recordDate: { order: "none", type: "date" },
+        totalShortInterest: { order: "none", type: "number" },
+        shortPriorMo: { order: "none", type: "number" },
+        percentChangeMoMo: { order: "none", type: "number" },
+        daysToCover: { order: "none", type: "number" },
+        shortPercentOfFloat: { order: "none", type: "number" },
+        shortPercentOfOut: { order: "none", type: "number" },
+    };
+
+    const sortData = (key) => {
+        // Reset all other keys to 'none' except the current key
+        for (const k in sortOrders) {
+            if (k !== key) {
+                sortOrders[k].order = "none";
+            }
+        }
+
+        // Cycle through 'none', 'asc', 'desc' for the clicked key
+        const orderCycle = ["none", "asc", "desc"];
+
+        let originalData = rawData?.sort(
+            (a, b) => new Date(b?.date) - new Date(a?.date),
+        );
+
+        const currentOrderIndex = orderCycle.indexOf(sortOrders[key].order);
+        sortOrders[key].order =
+            orderCycle[(currentOrderIndex + 1) % orderCycle.length];
+        const sortOrder = sortOrders[key].order;
+
+        // Reset to original data when 'none' and stop further sorting
+        if (sortOrder === "none") {
+            tableList = [...originalData]?.slice(0, 20); // Reset to original data (spread to avoid mutation)
+            return;
+        }
+
+        // Define a generic comparison function
+        const compareValues = (a, b) => {
+            const { type } = sortOrders[key];
+            let valueA, valueB;
+
+            switch (type) {
+                case "date":
+                    valueA = new Date(a[key]);
+                    valueB = new Date(b[key]);
+                    break;
+                case "string":
+                    valueA = a[key].toUpperCase();
+                    valueB = b[key].toUpperCase();
+                    return sortOrder === "asc"
+                        ? valueA.localeCompare(valueB)
+                        : valueB.localeCompare(valueA);
+                case "number":
+                default:
+                    valueA = parseFloat(a[key]);
+                    valueB = parseFloat(b[key]);
+                    break;
+            }
+
+            if (sortOrder === "asc") {
+                return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
+            } else {
+                return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
+            }
+        };
+
+        // Sort using the generic comparison function
+        tableList = [...originalData]?.sort(compareValues)?.slice(0, 20);
+    };
+
+    onMount(() => {
+        window.addEventListener("scroll", handleScroll);
+        return () => {
+            window.removeEventListener("scroll", handleScroll);
+        };
+    });
+
+    $: {
+        if ($mode) {
+            config = plotData();
+        }
+    }
+</script>
+
+<SEO
+    title={`${$displayCompanyName} (${$stockTicker}) Short Interest Analysis | Historical Data & Squeeze Indicators`}
+    description={`Comprehensive short interest analysis for ${$displayCompanyName} (${$stockTicker}). Track short position changes, days to cover, short ratio, float percentage, and historical trends. Advanced short squeeze detection and bearish sentiment analysis tools.`}
+    keywords={`${$stockTicker} short interest, ${$displayCompanyName} short squeeze, days to cover, short float percentage, ${$stockTicker} short ratio, short position analysis, short interest history, bearish sentiment analysis, squeeze indicators`}
+    type="website"
+    url={`https://stocknear.com/stocks/${$stockTicker}/statistics/short-interest`}
+    structuredData={{
+        "@context": "https://schema.org",
+        "@type": ["FinancialProduct", "Dataset"],
+        name: `${$displayCompanyName} Short Interest Analysis`,
+        description: `Professional short interest tracking and squeeze analysis for ${$displayCompanyName} (${$stockTicker})`,
+        url: `https://stocknear.com/stocks/${$stockTicker}/statistics/short-interest`,
+        applicationCategory: "FinanceApplication",
+        featureList: [
+            "Short interest tracking",
+            "Days to cover analysis",
+            "Short float percentage",
+            "Historical short data",
+            "Short squeeze indicators",
+            "Bearish sentiment analysis",
+            "Short ratio calculations",
+            "Position change tracking",
+        ],
+        provider: {
+            "@type": "Organization",
+            name: "Stocknear",
+            url: "https://stocknear.com",
+        },
+        mainEntity: {
+            "@type": "Corporation",
+            name: $displayCompanyName,
+            tickerSymbol: $stockTicker,
+        },
+        about: {
+            "@type": "Thing",
+            name: "Short Interest Analysis",
+            description:
+                "Professional analysis of short positions and squeeze potential",
+        },
+    }}
+/>
+
+<section class=" w-full overflow-hidden h-full">
+    <div
+        class="w-full flex justify-center w-full sm-auto h-full overflow-hidden"
+    >
+        <div
+            class="w-full relative flex justify-center items-center overflow-hidden"
+        >
+            <main class="w-full">
+                <div class="sm:pl-7 sm:pb-7 sm:pt-7 m-auto mt-2 sm:mt-0">
+                    <div
+                        class="w-full flex flex-col sm:flex-row justify-between"
+                    >
+                        <h1 class="text-xl sm:text-2xl font-bold">
+                            {removeCompanyStrings($displayCompanyName)} Earnings
+                            Overview
+                        </h1>
+                    </div>
+
+                    {#if rawData?.length !== 0}
+                        <div class="grid grid-cols-1 gap-2">
+                            {#if data?.getNextEarnings && Object.keys(data.getNextEarnings).length > 0 && data?.getEarningsSurprise?.date !== data.getNextEarnings?.date}
+                                <div class="mt-3">
+                                    <NextEarnings {data} hideTitle={true} />
+                                </div>
+                            {/if}
+
+                            <div
+                                class="flex flex-col sm:flex-row items-start sm:items-center w-full mt-3"
+                            >
+                                <h2 class="text-xl sm:text-2xl font-bold">
+                                    Historical Chart
+                                </h2>
+                            </div>
+
+                            <div class="chart-driver">
+                                <div class="grow">
+                                    <div class="relative">
+                                        <!-- Apply the blur class to the chart -->
+                                        <div
+                                            class="{!['Plus', 'Pro']?.includes(
+                                                data?.user?.tier,
+                                            )
+                                                ? 'blur-[3px]'
+                                                : ''}   border border-gray-300 dark:border-gray-800 rounded"
+                                            use:highcharts={config}
+                                        ></div>
+                                        <!-- Overlay with "Upgrade to Pro" -->
+                                        {#if !["Plus", "Pro"]?.includes(data?.user?.tier)}
+                                            <div
+                                                class="font-bold text-lg sm:text-xl absolute top-0 bottom-0 left-0 right-0 flex items-center justify-center text-muted dark:text-white"
+                                            >
+                                                <a
+                                                    href="/pricing"
+                                                    class="sm:hover:text-blue-800 dark:sm:hover:text-white dark:text-white flex flex-row items-center"
+                                                >
+                                                    <span>Upgrade to Pro</span>
+                                                    <svg
+                                                        class="ml-1 w-5 h-5 sm:w-6 sm:h-6 inline-block"
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        viewBox="0 0 24 24"
+                                                        ><path
+                                                            fill="currentColor"
+                                                            d="M17 9V7c0-2.8-2.2-5-5-5S7 4.2 7 7v2c-1.7 0-3 1.3-3 3v7c0 1.7 1.3 3 3 3h10c1.7 0 3-1.3 3-3v-7c0-1.7-1.3-3-3-3M9 7c0-1.7 1.3-3 3-3s3 1.3 3 3v2H9z"
+                                                        /></svg
+                                                    >
+                                                </a>
+                                            </div>
+                                        {/if}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div
+                                class="flex flex-row items-center w-full justify-between mt-3 border-t border-b border-gray-300 dark:border-gray-800 py-2"
+                            >
+                                <h3
+                                    class=" history-driver text-xl sm:text-2xl font-bold"
+                                >
+                                    History
+                                </h3>
+
+                                <div
+                                    class="flex flex-row items-center w-fit w-[50%] ml-auto"
+                                >
+                                    <DownloadData
+                                        {data}
+                                        {rawData}
+                                        title={`short_interest_${$stockTicker}`}
+                                    />
+                                </div>
+                            </div>
+
+                            <div class="w-full overflow-x-auto">
+                                <table
+                                    class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto mt-2"
+                                >
+                                    <thead>
+                                        <TableHeader
+                                            {columns}
+                                            {sortOrders}
+                                            {sortData}
+                                        />
+                                    </thead>
+                                    <tbody>
+                                        {#each tableList as item}
+                                            <!-- row -->
+                                            <tr
+                                                class="dark:sm:hover:bg-[#245073]/10 odd:bg-[#F6F7F8] dark:odd:bg-odd"
+                                            >
+                                                <td
+                                                    class=" text-sm sm:text-[1rem] whitespace-nowrap"
+                                                >
+                                                    {new Date(
+                                                        item?.recordDate,
+                                                    )?.toLocaleDateString(
+                                                        "en-US",
+                                                        {
+                                                            day: "2-digit", // Include day number
+                                                            month: "short", // Display short month name
+                                                            year: "numeric", // Include year
+                                                            timeZone: "UTC",
+                                                        },
+                                                    )}
+                                                </td>
+
+                                                <td
+                                                    class=" text-sm sm:text-[1rem] text-right whitespace-nowrap"
+                                                >
+                                                    {abbreviateNumber(
+                                                        item?.totalShortInterest,
+                                                    )}
+                                                </td>
+                                                <td
+                                                    class=" text-sm sm:text-[1rem] text-right whitespace-nowrap"
+                                                >
+                                                    {abbreviateNumber(
+                                                        item?.shortPriorMo,
+                                                    )}
+                                                </td>
+                                                <td
+                                                    class=" text-sm sm:text-[1rem] whitespace-nowrap text-end"
+                                                >
+                                                    <span
+                                                        class={item?.percentChangeMoMo &&
+                                                        item?.percentChangeMoMo >=
+                                                            0
+                                                            ? "before:content-['+'] text-green-800 dark:text-[#00FC50]"
+                                                            : "text-red-800 dark:text-[#FF2F1F]"}
+                                                    >
+                                                        {item?.percentChangeMoMo
+                                                            ? item?.percentChangeMoMo +
+                                                              "%"
+                                                            : "n/a"}
+                                                    </span>
+                                                </td>
+                                                <td
+                                                    class=" text-sm sm:text-[1rem] text-right whitespace-nowrap"
+                                                >
+                                                    {abbreviateNumber(
+                                                        item?.daysToCover,
+                                                    )}
+                                                </td>
+                                                <td
+                                                    class=" text-sm sm:text-[1rem] text-right whitespace-nowrap"
+                                                >
+                                                    {item?.shortPercentOfFloat
+                                                        ? item?.shortPercentOfFloat +
+                                                          "%"
+                                                        : "n/a"}
+                                                </td>
+                                                <td
+                                                    class=" text-sm sm:text-[1rem] text-right whitespace-nowrap"
+                                                >
+                                                    {item?.shortPercentOfOut
+                                                        ? item?.shortPercentOfOut +
+                                                          "%"
+                                                        : "n/a"}
+                                                </td>
+                                            </tr>
+                                        {/each}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {:else}
+                        <Infobox text="No data available" />
+                    {/if}
+                </div>
+            </main>
+        </div>
+    </div>
+</section>

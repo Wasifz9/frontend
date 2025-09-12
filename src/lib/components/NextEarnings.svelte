@@ -2,6 +2,7 @@
   import { stockTicker, displayCompanyName } from "$lib/store";
   import { abbreviateNumber } from "$lib/utils";
   export let data;
+  export let hideTitle = false;
 
   let rawData = {};
   let revenueRatio = 0;
@@ -38,16 +39,18 @@
   <div class="space-y-3 overflow-hidden text-muted dark:text-white">
     <!--Start Content-->
     <div class="w-auto lg:w-full flex flex-col m-auto">
-      <div class="flex flex-col items-center w-full mb-3">
-        <div class="flex flex-row justify-start mr-auto items-center">
-          <!--<img class="h-10 inline-block mr-2" src={copilotIcon} />-->
-          <div class="flex flex-row items-center">
-            <h3 class="mr-1 flex flex-row items-center text-2xl font-bold">
-              Next Earnings Release
-            </h3>
+      {#if !hideTitle}
+        <div class="flex flex-col items-center w-full mb-3">
+          <div class="flex flex-row justify-start mr-auto items-center">
+            <!--<img class="h-10 inline-block mr-2" src={copilotIcon} />-->
+            <div class="flex flex-row items-center">
+              <h3 class="mr-1 flex flex-row items-center text-2xl font-bold">
+                Next Earnings Release
+              </h3>
+            </div>
           </div>
         </div>
-      </div>
+      {/if}
 
       <div class=" text-[1rem]">
         {$displayCompanyName} is scheduled to release its earnings on
