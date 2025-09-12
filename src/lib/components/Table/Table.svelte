@@ -248,32 +248,38 @@
   function loadIndicatorsTabRules() {
     // Get current page path
     const currentPath = pagePathName || $page?.url?.pathname;
-    
+
     if (!currentPath || typeof localStorage === "undefined") {
       indicatorsTabRules = [...defaultList];
-      indicatorsTabCheckedItems = new Set(defaultList.map(item => item.name));
+      indicatorsTabCheckedItems = new Set(defaultList.map((item) => item.name));
       return;
     }
-    
+
     const indicatorsTabKey = `${currentPath}_indicators`;
     const savedRules = localStorage?.getItem(indicatorsTabKey);
-    
+
     if (savedRules) {
       try {
         const parsedRules = JSON.parse(savedRules);
-        if (parsedRules && Array.isArray(parsedRules) && parsedRules.length > 0) {
+        if (
+          parsedRules &&
+          Array.isArray(parsedRules) &&
+          parsedRules.length > 0
+        ) {
           indicatorsTabRules = parsedRules;
-          indicatorsTabCheckedItems = new Set(parsedRules.map(rule => rule.name));
+          indicatorsTabCheckedItems = new Set(
+            parsedRules.map((rule) => rule.name),
+          );
           return;
         }
       } catch (e) {
         console.warn("Error parsing saved indicators rules:", e);
       }
     }
-    
+
     // Fallback to defaults if no saved rules or parsing failed
     indicatorsTabRules = [...defaultList];
-    indicatorsTabCheckedItems = new Set(defaultList.map(item => item.name));
+    indicatorsTabCheckedItems = new Set(defaultList.map((item) => item.name));
   }
 
   // Load indicators rules immediately when component initializes
@@ -377,10 +383,10 @@
       const indicatorsTabKey = `${pagePathName}_indicators`;
       const serializedRules = JSON.stringify(ruleOfList);
       localStorage.setItem(indicatorsTabKey, serializedRules);
-      
+
       // Also update in-memory indicators tab state
       indicatorsTabRules = [...ruleOfList];
-      indicatorsTabCheckedItems = new Set(ruleOfList.map(rule => rule.name));
+      indicatorsTabCheckedItems = new Set(ruleOfList.map((rule) => rule.name));
     } catch (e) {
       console.error("Failed saving indicator rules:", e);
 
@@ -393,10 +399,12 @@
         }));
         const indicatorsTabKey = `${pagePathName}_indicators`;
         localStorage.setItem(indicatorsTabKey, JSON.stringify(simplifiedRules));
-        
+
         // Also update in-memory indicators tab state with simplified rules
         indicatorsTabRules = [...simplifiedRules];
-        indicatorsTabCheckedItems = new Set(simplifiedRules.map(rule => rule.name));
+        indicatorsTabCheckedItems = new Set(
+          simplifiedRules.map((rule) => rule.name),
+        );
         console.info("Saved simplified rules as fallback");
       } catch (fallbackError) {
         console.error("Failed saving even simplified rules:", fallbackError);
@@ -405,35 +413,52 @@
   }
 
   async function handleResetAll() {
-    // Only allow reset on indicators tab
-    if (displayTableTab !== "indicators") {
-      return;
+    searchQuery = "";
+
+    // Reset indicators tab rules
+    indicatorsTabRules = [...defaultList];
+    indicatorsTabCheckedItems = new Set(defaultList.map((item) => item.name));
+
+    // If we're currently on indicators tab, also update the display
+    if (displayTableTab === "indicators") {
+      ruleOfList = [...defaultList];
+      checkedItems = new Set(defaultList.map((item) => item.name));
+      await updateStockScreenerData();
     }
 
-    searchQuery = "";
-    ruleOfList = [...defaultList];
-    checkedItems = new Set(defaultList.map((item) => item.name));
     allRows = sortIndicatorCheckMarks(allRows);
-    await updateStockScreenerData();
+
+    // Save the reset rules to localStorage
+    if (pagePathName && typeof localStorage !== "undefined") {
+      const indicatorsTabKey = `${pagePathName}_indicators`;
+      localStorage.setItem(indicatorsTabKey, JSON.stringify(defaultList));
+    }
 
     console.log("Resetting all rules to default");
-    saveRules();
   }
 
   async function handleSelectAll() {
-    // Only allow select all on indicators tab
-    if (displayTableTab !== "indicators") {
-      return;
-    }
-
     if (["Pro", "Plus"]?.includes(data?.user?.tier)) {
       searchQuery = "";
-      ruleOfList = [...allRows]; // Select all available indicators
-      checkedItems = new Set(allRows.map((item) => item.name));
-      allRows = sortIndicatorCheckMarks(allRows);
-      await updateStockScreenerData();
 
-      saveRules();
+      // Select all indicators for indicators tab
+      indicatorsTabRules = [...allRows];
+      indicatorsTabCheckedItems = new Set(allRows.map((item) => item.name));
+
+      // If we're currently on indicators tab, also update the display
+      if (displayTableTab === "indicators") {
+        ruleOfList = [...allRows];
+        checkedItems = new Set(allRows.map((item) => item.name));
+        await updateStockScreenerData();
+      }
+
+      allRows = sortIndicatorCheckMarks(allRows);
+
+      // Save the selected rules to localStorage
+      if (pagePathName && typeof localStorage !== "undefined") {
+        const indicatorsTabKey = `${pagePathName}_indicators`;
+        localStorage.setItem(indicatorsTabKey, JSON.stringify(allRows));
+      }
     } else {
       toast.error("Unlock this feature with Pro Subscription.", {
         style: `border-radius: 5px; background: #fff; color: #000; border-color: ${$mode === "light" ? "#F9FAFB" : "#4B5563"}; font-size: 15px;`,
@@ -465,8 +490,10 @@
 
   function sortIndicatorCheckMarks(allRows) {
     return allRows?.sort((a, b) => {
-      const isAChecked = indicatorsTabCheckedItems && indicatorsTabCheckedItems.has(a?.name);
-      const isBChecked = indicatorsTabCheckedItems && indicatorsTabCheckedItems.has(b?.name);
+      const isAChecked =
+        indicatorsTabCheckedItems && indicatorsTabCheckedItems.has(a?.name);
+      const isBChecked =
+        indicatorsTabCheckedItems && indicatorsTabCheckedItems.has(b?.name);
 
       // Sort checked items first
       if (isAChecked !== isBChecked) return isAChecked ? -1 : 1;
@@ -535,9 +562,9 @@
   }
 
   async function handleChangeValue(value) {
-    // Only allow indicator changes on indicators tab
+    // If not on indicators tab, switch to it first
     if (displayTableTab !== "indicators") {
-      return;
+      await changeTab("indicators");
     }
 
     // Toggle indicator in indicators tab
@@ -552,11 +579,9 @@
       indicatorsTabCheckedItems.has(item.name),
     );
 
-    // If we're currently on indicators tab, also update the display
-    if (displayTableTab === "indicators") {
-      checkedItems = new Set([...indicatorsTabCheckedItems]);
-      ruleOfList = [...indicatorsTabRules];
-    }
+    // Update the display since we're now on indicators tab
+    checkedItems = new Set([...indicatorsTabCheckedItems]);
+    ruleOfList = [...indicatorsTabRules];
 
     allRows = [...allRows];
 
@@ -653,11 +678,11 @@
   $: if (rawData && rawData.length > 0) {
     // Validate indicator rules but don't let it reset everything
     const wasCleanedUp = validateAndCleanRules(isInitialLoad);
-    
+
     // Always regenerate columns when data changes
     columns = generateColumns(rawData);
     sortOrders = generateSortOrders(rawData);
-    
+
     // After the first reactive run, allow auto-saving
     isInitialLoad = false;
   }
@@ -1132,7 +1157,8 @@
                       class="cursor-pointer rounded checked:bg-gray-700"
                       checked={displayTableTab === "indicators"
                         ? isChecked(item?.name)
-                        : (indicatorsTabCheckedItems && indicatorsTabCheckedItems.has(item?.name))}
+                        : indicatorsTabCheckedItems &&
+                          indicatorsTabCheckedItems.has(item?.name)}
                     />
                     <span class="ml-2">{item?.name}</span>
                   </label>
@@ -1140,24 +1166,21 @@
                   <label
                     on:click|capture={(event) => {
                       event.preventDefault();
-                      if (displayTableTab === "indicators") {
-                        handleChangeValue(item?.name);
-                      }
+                      handleChangeValue(item?.name);
                     }}
                     class="cursor-pointer"
                     for={item?.name}
                   >
                     <input
-                      disabled={defaultRules?.includes(item?.rule) ||
-                        displayTableTab !== "indicators"}
+                      disabled={defaultRules?.includes(item?.rule)}
                       type="checkbox"
-                      class="rounded {defaultRules?.includes(item?.rule) ||
-                      displayTableTab !== 'indicators'
+                      class="rounded {defaultRules?.includes(item?.rule)
                         ? 'checked:bg-gray-800'
                         : 'checked:bg-blue-700'}"
                       checked={displayTableTab === "indicators"
                         ? isChecked(item?.name)
-                        : (indicatorsTabCheckedItems && indicatorsTabCheckedItems.has(item?.name))}
+                        : indicatorsTabCheckedItems &&
+                          indicatorsTabCheckedItems.has(item?.name)}
                     />
                     <span class="ml-2">{item?.name}</span>
                   </label>
@@ -1273,7 +1296,7 @@
           : ''} focus:outline-hidden"
       >
         Indicators
-        {#if indicatorsTabRules && indicatorsTabRules.length > defaultList.length && displayTableTab !== "indicators"}
+        {#if indicatorsTabRules && indicatorsTabRules.length > defaultList.length}
           <div
             class="ml-1 flex items-center justify-center h-4 w-4 bg-blue-800 dark:bg-white text-white dark:text-black rounded-full text-xs font-bold"
           >
