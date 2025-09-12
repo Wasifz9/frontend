@@ -600,7 +600,7 @@
       // (Assuming updatedData.ticker contains the new ticker list.)
       allList = allList?.map((item) => {
         if (item?.id === displayWatchList?.id) {
-          return { ...item, tickers: updatedData.ticker };
+          return { ...item, ticker: updatedData.ticker };
         }
         return item;
       });
