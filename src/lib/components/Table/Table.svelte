@@ -51,6 +51,7 @@
 
   const defaultRules = defaultList?.map((item) => item?.rule);
 
+  let searchWorker: Worker | undefined;
   let syncWorker: Worker | undefined = undefined;
 
   // Handling messages from the worker
@@ -521,12 +522,39 @@
     websocketRealtimeData();
     console.log("WebSocket restarted");
   }
+  const loadSearchWorker = async () => {
+    if (searchWorker && rawData?.length > 0) {
+      searchWorker.postMessage({
+        rawData: originalData,
+        inputValue: inputValue,
+      });
+    }
+  };
 
-  const loadWorker = async () => {
-    syncWorker.postMessage({
-      rawData: originalData,
-      inputValue: inputValue,
-    });
+  async function resetTableSearch() {
+    inputValue = "";
+    search();
+  }
+
+  async function search() {
+    inputValue = inputValue?.toLowerCase();
+
+    setTimeout(async () => {
+      if (inputValue?.length > 0) {
+        await loadSearchWorker();
+      } else {
+        // Reset to original data if filter is empty
+        rawData = originalData;
+        stockList = originalData?.slice(0, 50);
+      }
+    }, 100);
+  }
+
+  const handleSearchMessage = (event) => {
+    if (event.data?.message === "success") {
+      rawData = event.data?.output ?? [];
+      stockList = rawData?.slice(0, 50);
+    }
   };
 
   onMount(async () => {
@@ -588,6 +616,15 @@
         downloadWorker = new DownloadWorker.default();
         downloadWorker.onmessage = handleDownloadMessage;
       }
+
+      if (!searchWorker) {
+        const SearchWorker = await import(
+          "$lib/workers/tableSearchWorker?worker"
+        );
+        searchWorker = new SearchWorker.default();
+        searchWorker.onmessage = handleSearchMessage;
+      }
+
       await updateStockScreenerData();
 
       window.addEventListener("scroll", handleScroll);
@@ -709,20 +746,6 @@
       type: ruleToMetadataMap[key]?.type || "string", // Add type from allRows or default to 'string'
       align: leftAlignKeys.has(key) ? "left" : "right",
     }));
-  }
-
-  async function search() {
-    inputValue = inputValue?.toLowerCase();
-
-    setTimeout(async () => {
-      if (inputValue?.length > 0) {
-        await loadWorker();
-      } else {
-        // Reset to original data if filter is empty
-        rawData = originalData;
-        stockList = originalData?.slice(0, 50);
-      }
-    }, 100);
   }
 
   // Function to generate sortOrders based on keys in rawData
@@ -862,13 +885,31 @@
   <div
     class="flex items-center ml-auto border-t border-b border-gray-300 dark:border-gray-800 sm:border-none pt-2 pb-2 sm:pt-0 sm:pb-0 w-full"
   >
-    <input
-      type="text"
-      bind:value={inputValue}
-      on:input={search}
-      placeholder="Find..."
-      class="ml-auto py-[7px] text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-800 grow w-full sm:min-w-56 sm:max-w-14"
-    />
+    <div class="relative lg:ml-auto w-full lg:w-fit">
+      <div class="inline-block cursor-pointer absolute right-2 top-2 text-sm">
+        {#if inputValue?.length > 0}
+          <label class="cursor-pointer" on:click={() => resetTableSearch()}>
+            <svg
+              class="w-5 h-5"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              ><path
+                fill="currentColor"
+                d="m6.4 18.308l-.708-.708l5.6-5.6l-5.6-5.6l.708-.708l5.6 5.6l5.6-5.6l.708.708l-5.6 5.6l5.6 5.6l-.708.708l-5.6-5.6z"
+              /></svg
+            >
+          </label>
+        {/if}
+      </div>
+
+      <input
+        bind:value={inputValue}
+        on:input={search}
+        type="text"
+        placeholder="Find..."
+        class=" py-[7px] text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-800 grow w-full sm:min-w-56 lg:max-w-14"
+      />
+    </div>
 
     <div class=" ml-2">
       <DownloadData {data} {rawData} title={data?.getParams ?? "data"} />
