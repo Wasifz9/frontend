@@ -8,412 +8,564 @@
     import DownloadData from "$lib/components/DownloadData.svelte";
     import NextEarnings from "$lib/components/NextEarnings.svelte";
 
-    //import * as XLSX from 'xlsx';
     import highcharts from "$lib/highcharts.ts";
     import { mode } from "mode-watcher";
 
     export let data;
 
-    let rawData = data?.getData?.history || [];
-    let tableList = rawData;
-    tableList
-        ?.sort((a, b) => new Date(b?.recordDate) - new Date(a?.recordDate))
-        ?.slice(0, 20);
+    // raw earnings & prices from backend
+    let rawData: Array<any> = data?.getData?.historicalEarnings || [];
+    let rawPrices: Array<any> = data?.getData?.historicalPrice || [];
+
+    // ensure data is sorted descending by earnings date (latest first)
+    rawData = [...rawData].sort(
+        (a, b) => new Date(b?.date).getTime() - new Date(a?.date).getTime(),
+    );
+    rawPrices = [...rawPrices].sort(
+        (a, b) => new Date(a?.date).getTime() - new Date(b?.date).getTime(),
+    ); // ascending for priceSeries
+
+    // visible slice for table
+    let tableList = rawData?.slice(0, 20) || [];
+
+    const todayDateStr = new Date().toISOString().slice(0, 10);
+
+    function isFutureDate(dateStr: string) {
+        if (!dateStr) return false;
+        // dates are in 'YYYY-MM-DD' so lexicographic compare works
+        return dateStr > todayDateStr;
+    }
 
     async function handleScroll() {
-        const scrollThreshold = document.body.offsetHeight * 0.8; // 80% of the website height
+        const scrollThreshold = document.body.offsetHeight * 0.8; // 80% of page height
         const isBottom = window.innerHeight + window.scrollY >= scrollThreshold;
-        if (isBottom && tableList?.length !== rawData?.history?.length) {
-            const nextIndex = tableList?.length;
-            const newResults = rawData?.slice(nextIndex, nextIndex + 20);
+        if (isBottom && tableList?.length < rawData?.length) {
+            const nextIndex = tableList.length;
+            const newResults = rawData.slice(nextIndex, nextIndex + 20);
             tableList = [...tableList, ...newResults];
         }
     }
 
+    // utility: find closest price point (by absolute time diff)
+    function findClosestPrice(dateStr: string) {
+        if (!rawPrices || rawPrices.length === 0) return null;
+        const t = new Date(dateStr).getTime();
+        let best = null;
+        let bestDiff = Infinity;
+        for (let i = 0; i < rawPrices.length; i++) {
+            const p = rawPrices[i];
+            const pt = new Date(p.date).getTime();
+            const diff = Math.abs(pt - t);
+            if (diff < bestDiff) {
+                bestDiff = diff;
+                best = p;
+            }
+            // optimization: if price dates are ascending and pt > t and diff starts increasing afterwards
+            // but keep simple for readability
+        }
+        return best;
+    }
+
+    function safeParseFloat(v: any, fallback = 0) {
+        const n = parseFloat(v);
+        return Number.isFinite(n) ? n : fallback;
+    }
+
+    // Chart config
+    let config = null;
+
     function plotData() {
-        if (!rawData || rawData.length === 0) {
+        if (
+            !rawData ||
+            rawData.length === 0 ||
+            !rawPrices ||
+            rawPrices.length === 0
+        ) {
             return {};
         }
 
-        // Prepare series data in one pass
-        const priceSeries = [];
-        const shortFloatData = [];
+        // Helper function to calculate price change after earnings
+        function calculatePriceImpact(earningsDate, prices) {
+            const dateMs = new Date(earningsDate).getTime();
+            const dayAfter = dateMs + 24 * 60 * 60 * 1000;
+            const weekAfter = dateMs + 7 * 24 * 60 * 60 * 1000;
 
-        rawData.forEach(({ recordDate, price, shortPercentOfFloat }) => {
-            const time = new Date(recordDate).getTime();
-            priceSeries.push([time, price]);
-            shortFloatData.push({
-                time,
-                price,
-                shortFloat: shortPercentOfFloat,
-            });
-        });
+            const priceOnDate = findClosestPrice(earningsDate);
+            const priceNextDay = findClosestPrice(
+                new Date(dayAfter).toISOString().split("T")[0],
+            );
+            const priceNextWeek = findClosestPrice(
+                new Date(weekAfter).toISOString().split("T")[0],
+            );
 
-        // Calculate statistical thresholds for categorization
-        const shortFloatValues = shortFloatData.map((d) => d.shortFloat);
-        const maxShortFloat = Math.max(...shortFloatValues);
-        const minShortFloat = Math.min(...shortFloatValues);
-        const avgShortFloat =
-            shortFloatValues.reduce((sum, val) => sum + val, 0) /
-            shortFloatValues.length;
+            return {
+                immediate: priceOnDate,
+                nextDay: priceNextDay,
+                nextWeek: priceNextWeek,
+                dayChange:
+                    priceNextDay && priceOnDate
+                        ? ((parseFloat(priceNextDay.price) -
+                              parseFloat(priceOnDate.price)) /
+                              parseFloat(priceOnDate.price)) *
+                          100
+                        : null,
+                weekChange:
+                    priceNextWeek && priceOnDate
+                        ? ((parseFloat(priceNextWeek.price) -
+                              parseFloat(priceOnDate.price)) /
+                              parseFloat(priceOnDate.price)) *
+                          100
+                        : null,
+            };
+        }
 
-        // Calculate standard deviation for better threshold detection
-        const variance =
-            shortFloatValues.reduce(
-                (sum, val) => sum + Math.pow(val - avgShortFloat, 2),
+        // Prepare price series
+        const priceSeries = rawPrices
+            .map((h) => [
+                new Date(h.date).getTime(),
+                safeParseFloat(h.price, null),
+            ])
+            .filter((p) => p[1] !== null);
+
+        // Prepare earnings events with enhanced data
+        const earningsEvents = [];
+        const beatEvents = [];
+        const missEvents = [];
+        const plotBands = [];
+        const annotations = [];
+
+        for (const e of rawData) {
+            const matched = findClosestPrice(e.date);
+            if (!matched) continue;
+
+            const yPrice = safeParseFloat(matched.price, null);
+            if (yPrice === null) continue;
+
+            const epsSurprise = safeParseFloat(e.eps_surprise, 0);
+            const epsSurprisePercent = safeParseFloat(
+                e.eps_surprise_percent,
                 0,
-            ) / shortFloatValues.length;
-        const stdDev = Math.sqrt(variance);
+            );
+            const priceImpact = calculatePriceImpact(e.date, rawPrices);
 
-        // Define thresholds for different severity levels (relative to avg)
-        const extremeThreshold = avgShortFloat + 2 * stdDev;
-        const highThreshold = avgShortFloat + stdDev;
-        const mediumThreshold = avgShortFloat + 0.5 * stdDev;
+            // Determine if beat or miss
+            const isBeat = epsSurprise > 0;
+            const eventTime = new Date(e.date).getTime();
 
-        // Categorize short interest spikes into different severity levels
-        const extremeShortBubbles = [];
-        const highShortBubbles = [];
-        const mediumShortBubbles = [];
-
-        shortFloatData.forEach((item) => {
-            // Create bubble point with proper structure
-            const bubblePoint = {
-                x: item.time,
-                y: item.price,
-                z: item.shortFloat, // Size based on short float percentage
-                shortFloat: item.shortFloat,
-                date: new Date(item.time).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                }),
+            // Create event data point
+            const eventPoint = {
+                x: eventTime,
+                y: yPrice,
+                eps: e.eps,
+                eps_est: e.eps_est,
+                eps_surprise: epsSurprise,
+                eps_surprise_percent: epsSurprisePercent,
+                period: `${e.period} ${e.period_year}`,
+                revenue: e.revenue,
+                revenue_est: e.revenue_est,
+                date: e.date,
+                priceImpact: priceImpact,
+                isBeat: isBeat,
             };
 
-            // Categorize by severity (keeps same thresholds, but used for grouping/visuals)
-            if (item.shortFloat >= extremeThreshold) {
-                extremeShortBubbles.push(bubblePoint);
-            } else if (item.shortFloat >= highThreshold) {
-                highShortBubbles.push(bubblePoint);
-            } else if (item.shortFloat >= mediumThreshold) {
-                mediumShortBubbles.push(bubblePoint);
+            // Separate beat and miss events for different styling
+            if (isBeat) {
+                beatEvents.push({
+                    ...eventPoint,
+                    marker: {
+                        radius: Math.min(
+                            12,
+                            6 + Math.abs(epsSurprisePercent) / 5,
+                        ),
+                        fillColor: "rgba(34, 197, 94, 0.8)",
+                        lineColor: "rgba(34, 197, 94, 1)",
+                        lineWidth: 2,
+                        symbol: "circle",
+                    },
+                });
+            } else {
+                missEvents.push({
+                    ...eventPoint,
+                    marker: {
+                        radius: Math.min(
+                            12,
+                            6 + Math.abs(epsSurprisePercent) / 5,
+                        ),
+                        fillColor: "rgba(239, 68, 68, 0.8)",
+                        lineColor: "rgba(239, 68, 68, 1)",
+                        lineWidth: 2,
+                        symbol: "circle",
+                    },
+                });
             }
-        });
 
-        const fillColorStart = "rgba(70, 129, 244, 0.5)";
-        const fillColorEnd = "rgba(70, 129, 244, 0.001)";
+            // Add plot band for earnings date
+            plotBands.push({
+                from: eventTime - 12 * 60 * 60 * 1000, // 12 hours before
+                to: eventTime + 12 * 60 * 60 * 1000, // 12 hours after
+                color: isBeat
+                    ? "rgba(34, 197, 94, 0.08)"
+                    : "rgba(239, 68, 68, 0.08)",
+                zIndex: 1,
+            });
+
+            // Add annotation for significant surprises
+            if (Math.abs(epsSurprisePercent) > 10) {
+                annotations.push({
+                    labels: [
+                        {
+                            point: {
+                                xAxis: 0,
+                                yAxis: 0,
+                                x: eventTime,
+                                y: yPrice,
+                            },
+                            text: `${isBeat ? "↑" : "↓"} ${Math.abs(epsSurprisePercent).toFixed(0)}%`,
+                            backgroundColor: isBeat
+                                ? "rgba(34, 197, 94, 0.9)"
+                                : "rgba(239, 68, 68, 0.9)",
+                            borderColor: "transparent",
+                            style: {
+                                color: "white",
+                                fontSize: "11px",
+                                fontWeight: "bold",
+                            },
+                            borderRadius: 3,
+                            padding: 3,
+                            y: isBeat ? -25 : 25,
+                        },
+                    ],
+                });
+            }
+        }
+
+        const isDarkMode = $mode === "dark";
+        const textColor = isDarkMode ? "#e5e7eb" : "#374151";
+        const bgColor = isDarkMode ? "#09090B" : "#ffffff";
+        const gridColor = isDarkMode ? "#1f2937" : "#f3f4f6";
 
         const options = {
             credits: { enabled: false },
             chart: {
-                backgroundColor: $mode === "light" ? "#fff" : "#09090B",
-                plotBackgroundColor: $mode === "light" ? "#fff" : "#09090B",
-                height: 400,
+                backgroundColor: bgColor,
+                plotBackgroundColor: bgColor,
+                height: 500,
                 animation: false,
+                zoomType: "x",
+                panning: true,
+                panKey: "shift",
             },
             title: {
-                text: `<h3 class="mt-3 -mb-3 text-[1rem] sm:text-lg">Earnings Impact</h3>`,
+                text: `<div class="mt-3 -mb-3">
+                <h3 class="text-lg sm:text-xl font-semibold">Earnings Impact on Stock Price</h3>
+                <p class="text-xs sm:text-sm opacity-70 mt-1">
+                    <span style="color: #22c55e;">● Earnings Beat</span> 
+                    <span style="color: #ef4444; margin-left: 12px;">● Earnings Miss</span>
+                    <span style="margin-left: 12px; opacity: 0.6;">Bubble size = surprise magnitude</span>
+                </p>
+            </div>`,
                 useHTML: true,
-                style: { color: $mode === "light" ? "black" : "white" },
+                align: "left",
+                style: { color: textColor },
             },
             xAxis: {
                 type: "datetime",
                 crosshair: {
-                    color: $mode === "light" ? "black" : "white",
                     width: 1,
-                    dashStyle: "Solid",
+                    color: isDarkMode
+                        ? "rgba(255, 255, 255, 0.2)"
+                        : "rgba(0, 0, 0, 0.1)",
+                    dashStyle: "ShortDot",
                 },
+                plotBands: plotBands,
                 labels: {
-                    style: { color: $mode === "light" ? "#6b7280" : "#fff" },
-                    formatter: function () {
-                        const date = new Date(this.value);
-                        return `<span class="text-xs">${date.toLocaleDateString(
-                            "en-US",
-                            {
-                                month: "short",
-                                year: "numeric",
-                            },
-                        )}</span>`;
-                    },
+                    style: { color: textColor },
                 },
-                tickPositioner: function () {
-                    const positions = [];
-                    const { min, max } = this.getExtremes();
-                    const tickCount = 5;
-                    const interval = Math.floor((max - min) / tickCount);
-                    for (let i = 0; i <= tickCount; i++) {
-                        positions.push(min + i * interval);
-                    }
-                    return positions;
-                },
+                gridLineWidth: 0,
             },
             yAxis: {
                 title: {
                     text: "Stock Price ($)",
-                    style: {
-                        color: $mode === "light" ? "#6b7280" : "#fff",
-                    },
+                    style: { color: textColor, fontWeight: "500" },
                 },
                 labels: {
-                    style: {
-                        color: $mode === "light" ? "#6b7280" : "#fff",
-                    },
+                    style: { color: textColor },
                     formatter: function () {
-                        return `$${this.value.toFixed(2)}`;
+                        return (
+                            "$" +
+                            (this.value?.toFixed
+                                ? this.value.toFixed(0)
+                                : this.value)
+                        );
                     },
                 },
                 gridLineWidth: 1,
-                gridLineColor: $mode === "light" ? "#e5e7eb" : "#111827",
+                gridLineColor: gridColor,
+                gridLineDashStyle: "ShortDot",
             },
             tooltip: {
                 shared: false,
                 useHTML: true,
-                backgroundColor: "rgba(0, 0, 0, 0.8)",
-                borderColor: "rgba(255, 255, 255, 0.2)",
+                backgroundColor: isDarkMode
+                    ? "rgba(17, 24, 39, 0.95)"
+                    : "rgba(255, 255, 255, 0.95)",
+                borderColor: isDarkMode
+                    ? "rgba(55, 65, 81, 0.5)"
+                    : "rgba(229, 231, 235, 0.8)",
                 borderWidth: 1,
-                style: {
-                    color: "#fff",
-                    fontSize: "14px",
-                    padding: "10px",
+                borderRadius: 8,
+                shadow: {
+                    color: "rgba(0, 0, 0, 0.1)",
+                    offsetX: 0,
+                    offsetY: 2,
+                    opacity: 0.5,
+                    width: 3,
                 },
-                borderRadius: 4,
+                style: {
+                    color: textColor,
+                    fontSize: "13px",
+                    padding: "0",
+                },
                 formatter: function () {
-                    const date = new Date(this.x);
-                    const formattedDate = date.toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                    });
-
-                    if (this.series.type === "bubble") {
-                        // Determine how the short float compares to the average
-                        const val = this.point.shortFloat;
-                        let severityLabel = "";
-                        let severityColor = "";
-
-                        if (val >= extremeThreshold) {
-                            severityLabel = "Well above average";
-                            severityColor = "#dc2626"; // red
-                        } else if (val >= highThreshold) {
-                            severityLabel = "Above average";
-                            severityColor = "#f59e0b"; // orange
-                        } else if (val >= mediumThreshold) {
-                            severityLabel = "Slightly above average";
-                            severityColor = "#fbbf24"; // amber
-                        } else {
-                            severityLabel = "Average or below";
-                            severityColor =
-                                $mode === "light" ? "#10b981" : "#34d399"; // green tones
-                        }
-
-                        return `
-            <span class="text-white text-sm font-normal">${formattedDate}</span><br>
-            <span class="text-white text-sm">Stock Price: $${this.point.y?.toFixed(2)}</span><br>
-            <span class="text-white text-sm">Short Float: ${this.point.shortFloat?.toFixed(2)}%</span><br>
-            <span class="text-white text-sm">Comparison to Avg: <span style="color: ${severityColor}">${severityLabel}</span></span><br>
-          `;
+                    if (this.series.name === "Stock Price") {
+                        return `<div class="p-2">
+                        <div class="font-semibold">${Highcharts.dateFormat("%b %d, %Y", this.x)}</div>
+                        <div class="mt-1">Price: <span class="font-semibold">$${this.y.toFixed(2)}</span></div>
+                    </div>`;
                     } else {
+                        const p = this.point;
+                        const surpriseColor = p.isBeat ? "#22c55e" : "#ef4444";
+                        const surpriseIcon = p.isBeat ? "▲" : "▼";
+                        const dayChangeColor =
+                            p.priceImpact?.dayChange > 0
+                                ? "#22c55e"
+                                : "#ef4444";
+                        const weekChangeColor =
+                            p.priceImpact?.weekChange > 0
+                                ? "#22c55e"
+                                : "#ef4444";
+
                         return `
-            <span class="text-white text-sm font-normal">${formattedDate}</span><br>
-            <span class="text-white text-sm font-[501]">Stock Price: $${this.y?.toFixed(2)}</span>
-          `;
+                        <div class="p-3" style="min-width: 280px;">
+                            <div class="font-bold text-base mb-2" style="color: ${surpriseColor};">
+                                ${surpriseIcon} ${p.period} Earnings ${p.isBeat ? "Beat" : "Miss"}
+                            </div>
+                            <div class="text-xs opacity-60 mb-2">${p.date}</div>
+                            
+                            <div class="border-t pt-2 mb-2" style="border-color: ${isDarkMode ? "#374151" : "#e5e7eb"};">
+                                <div class="flex justify-between mb-1">
+                                    <span>EPS Actual:</span>
+                                    <span class="font-semibold">${p.eps}</span>
+                                </div>
+                                <div class="flex justify-between mb-1">
+                                    <span>EPS Estimate:</span>
+                                    <span>${p.eps_est}</span>
+                                </div>
+                                <div class="flex justify-between mb-1">
+                                    <span>Surprise:</span>
+                                    <span class="font-semibold" style="color: ${surpriseColor};">
+                                        ${p.eps_surprise > 0 ? "+" : ""}${p.eps_surprise} (${p.eps_surprise_percent > 0 ? "+" : ""}${p.eps_surprise_percent.toFixed(1)}%)
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            ${
+                                p.revenue
+                                    ? `
+                            <div class="border-t pt-2 mb-2" style="border-color: ${isDarkMode ? "#374151" : "#e5e7eb"};">
+                                <div class="flex justify-between mb-1">
+                                    <span>Revenue:</span>
+                                    <span class="font-semibold">${abbreviateNumber(p.revenue)}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Rev. Estimate:</span>
+                                    <span>${abbreviateNumber(p.revenue_est || 0)}</span>
+                                </div>
+                            </div>
+                            `
+                                    : ""
+                            }
+                            
+                            ${
+                                p.priceImpact?.dayChange !== null
+                                    ? `
+                            <div class="border-t pt-2" style="border-color: ${isDarkMode ? "#374151" : "#e5e7eb"};">
+                                <div class="font-semibold mb-1">Price Impact:</div>
+                                <div class="flex justify-between mb-1">
+                                    <span>Next Day:</span>
+                                    <span class="font-semibold" style="color: ${dayChangeColor};">
+                                        ${p.priceImpact.dayChange > 0 ? "+" : ""}${p.priceImpact.dayChange.toFixed(2)}%
+                                    </span>
+                                </div>
+                                ${
+                                    p.priceImpact?.weekChange !== null
+                                        ? `
+                                <div class="flex justify-between">
+                                    <span>Next Week:</span>
+                                    <span class="font-semibold" style="color: ${weekChangeColor};">
+                                        ${p.priceImpact.weekChange > 0 ? "+" : ""}${p.priceImpact.weekChange.toFixed(2)}%
+                                    </span>
+                                </div>
+                                `
+                                        : ""
+                                }
+                            </div>
+                            `
+                                    : ""
+                            }
+                        </div>
+                    `;
                     }
                 },
             },
             plotOptions: {
                 series: {
-                    legendSymbol: "rectangle",
                     animation: false,
-                    marker: {
-                        enabled: false,
-                        states: {
-                            hover: { enabled: false },
-                            select: { enabled: false },
+                    turboThreshold: 0,
+                    states: {
+                        hover: {
+                            lineWidthPlus: 0,
                         },
                     },
                 },
-                spline: {
-                    lineWidth: 2.5,
-                    shadow: false,
-                },
-                areaspline: {
-                    lineWidth: 1.5,
-                    fillOpacity: 0.3,
-                    shadow: false,
-                },
-                bubble: {
-                    minSize: 5, // Smaller minimum for small spikes
-                    maxSize: 40, // Larger maximum for biggest spikes
-                    opacity: 0.5,
+                area: {
+                    lineWidth: 2,
+                    fillOpacity: 0.1,
                     marker: {
-                        enabled: true, // Enable markers for bubbles
-                        fillOpacity: 0.8,
-                        lineWidth: 1,
-                        lineColor: $mode === "light" ? "#d97706" : "#f59e0b",
-                    },
-                    dataLabels: {
                         enabled: false,
+                        states: {
+                            hover: {
+                                enabled: true,
+                                radius: 4,
+                            },
+                        },
                     },
-                    sizeBy: "z", // Size bubbles by z-value
-                    zMin: minShortFloat, // Use actual minimum volume for scaling
-                    zMax: maxShortFloat, // Use actual maximum volume for scaling
-                    sizeByAbsoluteValue: false, // Use relative sizing for better proportion
+                },
+                scatter: {
+                    cursor: "pointer",
+                    states: {
+                        hover: {
+                            enabled: true,
+                        },
+                    },
                 },
             },
             legend: {
-                enabled: true,
-                align: "center",
-                verticalAlign: "top",
-                layout: "horizontal",
-                squareSymbol: false,
-                symbolWidth: 20,
-                symbolHeight: 12,
-                symbolRadius: 0,
-                itemStyle: {
-                    color: $mode === "light" ? "black" : "white",
-                },
+                enabled: false,
             },
+            annotations: annotations,
             series: [
                 {
                     name: "Stock Price",
                     type: "area",
                     data: priceSeries,
-                    color: "#4681f4",
-                    lineWidth: 1.5,
+                    color: "#6366f1",
                     fillColor: {
                         linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
                         stops: [
-                            [0, fillColorStart],
-                            [1, fillColorEnd],
+                            [
+                                0,
+                                isDarkMode
+                                    ? "rgba(99, 102, 241, 0.2)"
+                                    : "rgba(99, 102, 241, 0.15)",
+                            ],
+                            [
+                                1,
+                                isDarkMode
+                                    ? "rgba(99, 102, 241, 0.02)"
+                                    : "rgba(99, 102, 241, 0.01)",
+                            ],
                         ],
                     },
-                    animation: false,
                     zIndex: 1,
                 },
                 {
-                    // points >= avg + 2*stdDev
-                    name: "Well above average",
-                    type: "bubble",
-                    data: extremeShortBubbles,
-                    color: "#ef4444", // Red for well above avg
-                    marker: {
-                        lineColor: "#dc2626",
-                    },
-                    animation: false,
-                    zIndex: 4,
-                    showInLegend: extremeShortBubbles.length > 0,
+                    name: "Earnings Beat",
+                    type: "scatter",
+                    data: beatEvents,
+                    color: "#22c55e",
+                    zIndex: 5,
                 },
                 {
-                    // points >= avg + 1*stdDev
-                    name: "Above average",
-                    type: "bubble",
-                    data: highShortBubbles,
-                    color: "#fb923c", // Orange for above avg
-                    marker: {
-                        lineColor: "#f59e0b",
-                    },
-                    animation: false,
-                    zIndex: 3,
-                    showInLegend: highShortBubbles.length > 0,
-                },
-                {
-                    // points >= avg + 0.5*stdDev
-                    name: "Slightly above average",
-                    type: "bubble",
-                    data: mediumShortBubbles,
-                    color: "#fbbf24", // Amber for slightly above avg
-                    marker: {
-                        lineColor: "#fbbf24",
-                    },
-                    animation: false,
-                    zIndex: 2,
-                    showInLegend: mediumShortBubbles.length > 0,
+                    name: "Earnings Miss",
+                    type: "scatter",
+                    data: missEvents,
+                    color: "#ef4444",
+                    zIndex: 5,
                 },
             ],
         };
 
         return options;
     }
+    $: config = plotData();
 
-    let config = null;
-
+    // Table columns & sorting
     let columns = [
-        { key: "recordDate", label: "Date", align: "left" },
-        { key: "totalShortInterest", label: "Short Interest", align: "right" },
-        { key: "shortPriorMo", label: "Short Prior Month", align: "right" },
-        { key: "percentChangeMoMo", label: "% Change", align: "right" },
-        { key: "daysToCover", label: "Day to Cover", align: "right" },
-        { key: "shortPercentOfFloat", label: "Short % Float", align: "right" },
-        { key: "shortPercentOfOut", label: "Short % Out", align: "right" },
+        { key: "date", label: "Date", align: "left" },
+        { key: "period", label: "Quarter", align: "center" },
+        { key: "eps", label: "EPS", align: "right" },
+        { key: "eps_est", label: "EPS Est.", align: "right" },
+        { key: "revenue", label: "Revenue", align: "right" },
+        { key: "revenue_est", label: "Rev Est.", align: "right" },
     ];
 
     let sortOrders = {
-        recordDate: { order: "none", type: "date" },
-        totalShortInterest: { order: "none", type: "number" },
-        shortPriorMo: { order: "none", type: "number" },
-        percentChangeMoMo: { order: "none", type: "number" },
-        daysToCover: { order: "none", type: "number" },
-        shortPercentOfFloat: { order: "none", type: "number" },
-        shortPercentOfOut: { order: "none", type: "number" },
+        date: { order: "none", type: "date" },
+        period: { order: "none", type: "string" },
+        eps: { order: "none", type: "number" },
+        eps_est: { order: "none", type: "number" },
+        revenue: { order: "none", type: "number" },
+        revenue_est: { order: "none", type: "number" },
     };
 
     const sortData = (key) => {
-        // Reset all other keys to 'none' except the current key
+        // reset others
         for (const k in sortOrders) {
-            if (k !== key) {
-                sortOrders[k].order = "none";
-            }
+            if (k !== key) sortOrders[k].order = "none";
         }
 
-        // Cycle through 'none', 'asc', 'desc' for the clicked key
         const orderCycle = ["none", "asc", "desc"];
-
-        let originalData = rawData?.sort(
-            (a, b) => new Date(b?.date) - new Date(a?.date),
-        );
-
-        const currentOrderIndex = orderCycle.indexOf(sortOrders[key].order);
+        const currentIndex = orderCycle.indexOf(sortOrders[key].order);
         sortOrders[key].order =
-            orderCycle[(currentOrderIndex + 1) % orderCycle.length];
-        const sortOrder = sortOrders[key].order;
+            orderCycle[(currentIndex + 1) % orderCycle.length];
+        const order = sortOrders[key].order;
 
-        // Reset to original data when 'none' and stop further sorting
-        if (sortOrder === "none") {
-            tableList = [...originalData]?.slice(0, 20); // Reset to original data (spread to avoid mutation)
+        // original data is sorted descending by date already
+        const originalData = [...rawData];
+
+        if (order === "none") {
+            tableList = originalData.slice(0, 20);
             return;
         }
 
-        // Define a generic comparison function
-        const compareValues = (a, b) => {
-            const { type } = sortOrders[key];
-            let valueA, valueB;
+        const compare = (a, b) => {
+            const type = sortOrders[key].type;
+            let va: any = a[key];
+            let vb: any = b[key];
 
-            switch (type) {
-                case "date":
-                    valueA = new Date(a[key]);
-                    valueB = new Date(b[key]);
-                    break;
-                case "string":
-                    valueA = a[key].toUpperCase();
-                    valueB = b[key].toUpperCase();
-                    return sortOrder === "asc"
-                        ? valueA.localeCompare(valueB)
-                        : valueB.localeCompare(valueA);
-                case "number":
-                default:
-                    valueA = parseFloat(a[key]);
-                    valueB = parseFloat(b[key]);
-                    break;
+            if (key === "period") {
+                // derived key
+                va = `${a.period} ${a.period_year}`;
+                vb = `${b.period} ${b.period_year}`;
             }
 
-            if (sortOrder === "asc") {
-                return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
+            if (type === "date") {
+                va = new Date(va).getTime();
+                vb = new Date(vb).getTime();
+            } else if (type === "number") {
+                va = safeParseFloat(va, 0);
+                vb = safeParseFloat(vb, 0);
             } else {
-                return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
+                va = (va || "").toString().toUpperCase();
+                vb = (vb || "").toString().toUpperCase();
             }
+
+            if (order === "asc") return va < vb ? -1 : va > vb ? 1 : 0;
+            return va > vb ? -1 : va < vb ? 1 : 0;
         };
 
-        // Sort using the generic comparison function
-        tableList = [...originalData]?.sort(compareValues)?.slice(0, 20);
+        tableList = originalData.sort(compare).slice(0, 20);
     };
 
     onMount(() => {
@@ -422,54 +574,14 @@
             window.removeEventListener("scroll", handleScroll);
         };
     });
-
-    $: {
-        if ($mode) {
-            config = plotData();
-        }
-    }
 </script>
 
 <SEO
-    title={`${$displayCompanyName} (${$stockTicker}) Short Interest Analysis | Historical Data & Squeeze Indicators`}
-    description={`Comprehensive short interest analysis for ${$displayCompanyName} (${$stockTicker}). Track short position changes, days to cover, short ratio, float percentage, and historical trends. Advanced short squeeze detection and bearish sentiment analysis tools.`}
-    keywords={`${$stockTicker} short interest, ${$displayCompanyName} short squeeze, days to cover, short float percentage, ${$stockTicker} short ratio, short position analysis, short interest history, bearish sentiment analysis, squeeze indicators`}
+    title={`${$displayCompanyName} (${$stockTicker}) Earnings Overview | Historical EPS & Price`}
+    description={`Historical earnings, EPS surprises and stock price for ${$displayCompanyName} (${$stockTicker}). Visual earnings impact with price overlay.`}
+    keywords={`${$stockTicker} earnings, ${$displayCompanyName} EPS, earnings surprise, historical price`}
     type="website"
-    url={`https://stocknear.com/stocks/${$stockTicker}/statistics/short-interest`}
-    structuredData={{
-        "@context": "https://schema.org",
-        "@type": ["FinancialProduct", "Dataset"],
-        name: `${$displayCompanyName} Short Interest Analysis`,
-        description: `Professional short interest tracking and squeeze analysis for ${$displayCompanyName} (${$stockTicker})`,
-        url: `https://stocknear.com/stocks/${$stockTicker}/statistics/short-interest`,
-        applicationCategory: "FinanceApplication",
-        featureList: [
-            "Short interest tracking",
-            "Days to cover analysis",
-            "Short float percentage",
-            "Historical short data",
-            "Short squeeze indicators",
-            "Bearish sentiment analysis",
-            "Short ratio calculations",
-            "Position change tracking",
-        ],
-        provider: {
-            "@type": "Organization",
-            name: "Stocknear",
-            url: "https://stocknear.com",
-        },
-        mainEntity: {
-            "@type": "Corporation",
-            name: $displayCompanyName,
-            tickerSymbol: $stockTicker,
-        },
-        about: {
-            "@type": "Thing",
-            name: "Short Interest Analysis",
-            description:
-                "Professional analysis of short positions and squeeze potential",
-        },
-    }}
+    url={`https://stocknear.com/stocks/${$stockTicker}/statistics/earnings`}
 />
 
 <section class=" w-full overflow-hidden h-full">
@@ -490,7 +602,7 @@
                         </h1>
                     </div>
 
-                    {#if rawData?.length !== 0}
+                    {#if rawData?.length > 0}
                         <div class="grid grid-cols-1 gap-2">
                             {#if data?.getNextEarnings && Object.keys(data.getNextEarnings).length > 0 && data?.getEarningsSurprise?.date !== data.getNextEarnings?.date}
                                 <div class="mt-3">
@@ -509,37 +621,10 @@
                             <div class="chart-driver">
                                 <div class="grow">
                                     <div class="relative">
-                                        <!-- Apply the blur class to the chart -->
                                         <div
-                                            class="{!['Plus', 'Pro']?.includes(
-                                                data?.user?.tier,
-                                            )
-                                                ? 'blur-[3px]'
-                                                : ''}   border border-gray-300 dark:border-gray-800 rounded"
+                                            class=" border border-gray-300 dark:border-gray-800 rounded"
                                             use:highcharts={config}
                                         ></div>
-                                        <!-- Overlay with "Upgrade to Pro" -->
-                                        {#if !["Plus", "Pro"]?.includes(data?.user?.tier)}
-                                            <div
-                                                class="font-bold text-lg sm:text-xl absolute top-0 bottom-0 left-0 right-0 flex items-center justify-center text-muted dark:text-white"
-                                            >
-                                                <a
-                                                    href="/pricing"
-                                                    class="sm:hover:text-blue-800 dark:sm:hover:text-white dark:text-white flex flex-row items-center"
-                                                >
-                                                    <span>Upgrade to Pro</span>
-                                                    <svg
-                                                        class="ml-1 w-5 h-5 sm:w-6 sm:h-6 inline-block"
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        viewBox="0 0 24 24"
-                                                        ><path
-                                                            fill="currentColor"
-                                                            d="M17 9V7c0-2.8-2.2-5-5-5S7 4.2 7 7v2c-1.7 0-3 1.3-3 3v7c0 1.7 1.3 3 3 3h10c1.7 0 3-1.3 3-3v-7c0-1.7-1.3-3-3-3M9 7c0-1.7 1.3-3 3-3s3 1.3 3 3v2H9z"
-                                                        /></svg
-                                                    >
-                                                </a>
-                                            </div>
-                                        {/if}
                                     </div>
                                 </div>
                             </div>
@@ -559,7 +644,7 @@
                                     <DownloadData
                                         {data}
                                         {rawData}
-                                        title={`short_interest_${$stockTicker}`}
+                                        title={`earnings_${$stockTicker}`}
                                     />
                                 </div>
                             </div>
@@ -576,81 +661,66 @@
                                         />
                                     </thead>
                                     <tbody>
-                                        {#each tableList as item}
-                                            <!-- row -->
-                                            <tr
-                                                class="dark:sm:hover:bg-[#245073]/10 odd:bg-[#F6F7F8] dark:odd:bg-odd"
-                                            >
-                                                <td
-                                                    class=" text-sm sm:text-[1rem] whitespace-nowrap"
+                                        {#each tableList as item, index}
+                                            {#if index !== 0 && !isFutureDate(item.date)}
+                                                <tr
+                                                    class="dark:sm:hover:bg-[#245073]/10 odd:bg-[#F6F7F8] dark:odd:bg-odd"
                                                 >
-                                                    {new Date(
-                                                        item?.recordDate,
-                                                    )?.toLocaleDateString(
-                                                        "en-US",
-                                                        {
-                                                            day: "2-digit", // Include day number
-                                                            month: "short", // Display short month name
-                                                            year: "numeric", // Include year
-                                                            timeZone: "UTC",
-                                                        },
-                                                    )}
-                                                </td>
-
-                                                <td
-                                                    class=" text-sm sm:text-[1rem] text-right whitespace-nowrap"
-                                                >
-                                                    {abbreviateNumber(
-                                                        item?.totalShortInterest,
-                                                    )}
-                                                </td>
-                                                <td
-                                                    class=" text-sm sm:text-[1rem] text-right whitespace-nowrap"
-                                                >
-                                                    {abbreviateNumber(
-                                                        item?.shortPriorMo,
-                                                    )}
-                                                </td>
-                                                <td
-                                                    class=" text-sm sm:text-[1rem] whitespace-nowrap text-end"
-                                                >
-                                                    <span
-                                                        class={item?.percentChangeMoMo &&
-                                                        item?.percentChangeMoMo >=
-                                                            0
-                                                            ? "before:content-['+'] text-green-800 dark:text-[#00FC50]"
-                                                            : "text-red-800 dark:text-[#FF2F1F]"}
+                                                    <td
+                                                        class=" text-sm sm:text-[1rem] whitespace-nowrap"
                                                     >
-                                                        {item?.percentChangeMoMo
-                                                            ? item?.percentChangeMoMo +
-                                                              "%"
+                                                        {new Date(
+                                                            item.date,
+                                                        ).toLocaleDateString(
+                                                            "en-US",
+                                                            {
+                                                                day: "2-digit",
+                                                                month: "short",
+                                                                year: "numeric",
+                                                                timeZone: "UTC",
+                                                            },
+                                                        )}
+                                                    </td>
+
+                                                    <td
+                                                        class=" text-sm sm:text-[1rem] text-center whitespace-nowrap"
+                                                    >
+                                                        {item.period}
+                                                    </td>
+
+                                                    <td
+                                                        class=" text-sm sm:text-[1rem] text-right whitespace-nowrap"
+                                                    >
+                                                        {item?.eps ?? "n/a"}
+                                                    </td>
+
+                                                    <td
+                                                        class=" text-sm sm:text-[1rem] text-right whitespace-nowrap"
+                                                    >
+                                                        {item?.eps_est ?? "n/a"}
+                                                    </td>
+
+                                                    <td
+                                                        class=" text-sm sm:text-[1rem] text-right whitespace-nowrap"
+                                                    >
+                                                        {item.revenue
+                                                            ? abbreviateNumber(
+                                                                  item.revenue,
+                                                              )
                                                             : "n/a"}
-                                                    </span>
-                                                </td>
-                                                <td
-                                                    class=" text-sm sm:text-[1rem] text-right whitespace-nowrap"
-                                                >
-                                                    {abbreviateNumber(
-                                                        item?.daysToCover,
-                                                    )}
-                                                </td>
-                                                <td
-                                                    class=" text-sm sm:text-[1rem] text-right whitespace-nowrap"
-                                                >
-                                                    {item?.shortPercentOfFloat
-                                                        ? item?.shortPercentOfFloat +
-                                                          "%"
-                                                        : "n/a"}
-                                                </td>
-                                                <td
-                                                    class=" text-sm sm:text-[1rem] text-right whitespace-nowrap"
-                                                >
-                                                    {item?.shortPercentOfOut
-                                                        ? item?.shortPercentOfOut +
-                                                          "%"
-                                                        : "n/a"}
-                                                </td>
-                                            </tr>
+                                                    </td>
+
+                                                    <td
+                                                        class=" text-sm sm:text-[1rem] text-right whitespace-nowrap"
+                                                    >
+                                                        {item.revenue_est
+                                                            ? abbreviateNumber(
+                                                                  item.revenue_est,
+                                                              )
+                                                            : "n/a"}
+                                                    </td>
+                                                </tr>
+                                            {/if}
                                         {/each}
                                     </tbody>
                                 </table>
