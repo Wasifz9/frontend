@@ -134,6 +134,8 @@
     { name: "Forward PE", rule: "forwardPE", type: "float" },
     { name: "Forward PS", rule: "forwardPS", type: "float" },
     { name: "Dividend Yield", rule: "dividendYield", type: "percent" },
+    { name: "Dividend Growth", rule: "dividendGrowth", type: "percentSign" },
+    { name: "Payout Ratio", rule: "payoutRatio", type: "percent" },
     { name: "Current Ratio", rule: "currentRatio", type: "float" },
     { name: "Quick Ratio", rule: "quickRatio", type: "float" },
     { name: "Analyst Rating", rule: "analystRating", type: "rating" },
