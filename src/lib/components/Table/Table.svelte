@@ -39,6 +39,9 @@
   ];
 
   export let hideLastRow = false;
+  export let editMode = false;
+  export let deleteTickerList = [];
+  export let onToggleDeleteTicker = null;
 
   let originalData = [...rawData]; // Unaltered copy of raw data
   let ruleOfList = [...defaultList];
@@ -915,14 +918,16 @@
                     on:click|capture={(event) => {
                       event.preventDefault();
                     }}
-                    class=""
+                    class="cursor-pointer"
                   >
                     <input
                       disabled={defaultRules?.includes(item?.rule)
                         ? true
                         : false}
                       type="checkbox"
-                      class="rounded {defaultRules?.includes(item?.rule)
+                      class="cursor-pointer rounded {defaultRules?.includes(
+                        item?.rule,
+                      )
                         ? 'checked:bg-gray-700'
                         : 'checked:bg-blue-700'}"
                       checked={isChecked(item?.name)}
@@ -1021,7 +1026,29 @@
                 {#if item[column.key] === null || item[column.key] === undefined}
                   n/a
                 {:else if column.key === "symbol"}
-                  <HoverStockChart symbol={item[column.key]} />
+                  {#if editMode}
+                    <div class="flex flex-row items-center">
+                      <input
+                        type="checkbox"
+                        checked={deleteTickerList?.includes(item[column.key]) ??
+                          false}
+                        on:click={() =>
+                          onToggleDeleteTicker &&
+                          onToggleDeleteTicker(item[column.key])}
+                        class="dark:bg-[#2E3238] h-[18px] w-[18px] rounded-sm ring-offset-0 mr-3"
+                      />
+                      <label
+                        class="text-blue-800 dark:text-blue-400 sm:hover:text-muted dark:sm:hover:text-white cursor-pointer"
+                      >
+                        {item[column.key]}
+                      </label>
+                    </div>
+                  {:else}
+                    <HoverStockChart
+                      symbol={item[column.key]}
+                      assetType={item?.type || item?.assetType}
+                    />
+                  {/if}
                 {:else if column.key === "name"}
                   {#if item[column.key]?.length > charNumber}
                     {item[column.key]?.slice(0, charNumber) + "..."}

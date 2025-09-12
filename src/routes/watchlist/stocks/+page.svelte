@@ -6,69 +6,42 @@
     compareTimes,
     formatTime,
     abbreviateNumber,
-    calculateChange,
     removeCompanyStrings,
   } from "$lib/utils";
   import { toast } from "svelte-sonner";
   import { mode } from "mode-watcher";
 
-  import { onMount, onDestroy, afterUpdate } from "svelte";
+  import { onMount, afterUpdate } from "svelte";
   import Input from "$lib/components/Input.svelte";
   import * as DropdownMenu from "$lib/components/shadcn/dropdown-menu/index.js";
   import { Button } from "$lib/components/shadcn/button/index.js";
   import { Combobox } from "bits-ui";
   import HoverStockChart from "$lib/components/HoverStockChart.svelte";
-  import { goto } from "$app/navigation";
-  import TableHeader from "$lib/components/Table/TableHeader.svelte";
+  import Table from "$lib/components/Table/Table.svelte";
   import SEO from "$lib/components/SEO.svelte";
   import Infobox from "$lib/components/Infobox.svelte";
 
   export let data;
   let timeoutId;
   let searchBarData = [];
-  let searchQuery = "";
   let switchWatchlist = false;
   let editMode = false;
   let numberOfChecked = 0;
   let activeIdx = 0;
-  let totalCreditCost = 0;
   let rawTabData = [];
+  let originalData = [];
 
   let deleteTickerList = [];
 
   let watchList: any[] = [];
-  let originalData = [];
 
   let news = [];
   let earnings = [];
   let groupedNews = [];
   let groupedEarnings = [];
   let displayList = [];
-  let checkedItems;
   let socket;
 
-  let bulkData = [
-    {
-      name: "Stock Price",
-      selected: true,
-      credit: 1,
-    },
-    {
-      name: "Dividends",
-      selected: true,
-      credit: 1,
-    },
-    {
-      name: "Options",
-      selected: true,
-      credit: 3,
-    },
-    {
-      name: "Dark Pool",
-      selected: true,
-      credit: 2,
-    },
-  ];
   const tabs = [
     {
       title: "News",
@@ -78,224 +51,19 @@
     },
   ];
 
-  let allRows = [
-    { name: "Volume", rule: "volume", type: "decimal" },
-    { name: "Avg. Volume", rule: "avgVolume", type: "decimal" },
-    { name: "Market Cap", rule: "marketCap", type: "int" },
-    { name: "Price", rule: "price", type: "float" },
-    { name: "Change", rule: "changesPercentage", type: "percentSign" },
-    { name: "EPS", rule: "eps", type: "float" },
-    { name: "PE", rule: "pe", type: "float" },
-    { name: "PB Ratio", rule: "priceToBookRatio", type: "float" },
-    { name: "PS Ratio", rule: "priceToSalesRatio", type: "float" },
-    { name: "AI Score", rule: "score", type: "rating" },
-    { name: "Revenue", rule: "revenue", type: "int" },
-    { name: "EBITDA", rule: "ebitda", type: "int" },
-    { name: "Net Income", rule: "netIncome", type: "int" },
-    { name: "FCF", rule: "freeCashFlow", type: "int" },
-    { name: "Industry", rule: "industry", type: "str" },
-    { name: "Sector", rule: "sector", type: "str" },
-    { name: "Price Change 1W", rule: "change1W", type: "percentSign" },
-    { name: "Price Change 1M", rule: "change1M", type: "percentSign" },
-    { name: "Price Change 3M", rule: "change3M", type: "percentSign" },
-    { name: "Price Change 6M", rule: "change6M", type: "percentSign" },
-    { name: "Price Change 1Y", rule: "change1Y", type: "percentSign" },
-    { name: "Enterprise Value", rule: "enterpriseValue", type: "int" },
-    { name: "Forward PE", rule: "forwardPE", type: "float" },
-    { name: "Forward PS", rule: "forwardPS", type: "float" },
-    { name: "Dividend Yield", rule: "dividendYield", type: "percent" },
-    { name: "Current Ratio", rule: "currentRatio", type: "float" },
-    { name: "Quick Ratio", rule: "quickRatio", type: "float" },
-    { name: "Analyst Rating", rule: "analystRating", type: "rating" },
-    { name: "Analyst Count", rule: "analystCounter", type: "int" },
-    { name: "Price Target", rule: "priceTarget", type: "float" },
-    { name: "Price Target Upside", rule: "upside", type: "percentSign" },
-    { name: "Country", rule: "country", type: "str" },
-    { name: "Gross Profit", rule: "grossProfit", type: "int" },
-    { name: "Revenue Growth", rule: "growthRevenue", type: "percentSign" },
-    {
-      name: "Gross Profit Growth",
-      rule: "growthGrossProfit",
-      type: "percentSign",
-    },
-    { name: "Net Income Growth", rule: "growthNetIncome", type: "percentSign" },
-    { name: "EBITDA Growth", rule: "growthEBITDA", type: "percentSign" },
-    { name: "EPS Growth", rule: "growthEPS", type: "percentSign" },
-    { name: "Total Debt", rule: "totalDebt", type: "int" },
-    { name: "Return on Assets", rule: "returnOnAssets", type: "int" },
-    { name: "Return on Equity", rule: "returnOnEquity", type: "int" },
-    { name: "Value-at-Risk", rule: "var", type: "percentSign" },
-    { name: "Asset Turnover", rule: "assetTurnover", type: "int" },
-    { name: "Earnings Yield", rule: "earningsYield", type: "percent" },
-    { name: "Altman-Z-Score Yield", rule: "altmanZScore", type: "float" },
-    { name: "Piotroski F-Score", rule: "piotroskiScore", type: "float" },
-    { name: "Total Liabilities", rule: "totalLiabilities", type: "int" },
-    { name: "Short Ratio", rule: "shortRatio", type: "int" },
-    { name: "Short Interest", rule: "sharesShort", type: "int" },
-    { name: "Short % Float", rule: "shortFloatPercent", type: "percent" },
-    {
-      name: "Short % Shares",
-      rule: "shortOutstandingPercent",
-      type: "percent",
-    },
-    { name: "FCF Yield", rule: "freeCashFlowYield", type: "percent" },
-    { name: "Employees", rule: "employees", type: "decimal" },
-    { name: "Debt Ratio", rule: "debtRatio", type: "float" },
-    { name: "Debt / Equity", rule: "debtToEquityRatio", type: "int" },
-    { name: "Profit Margin", rule: "netProfitMargin", type: "percent" },
-    { name: "FTD Shares", rule: "failToDeliver", type: "int" },
-    { name: "Interest Income", rule: "interestIncome", type: "int" },
-    { name: "Operating Income", rule: "operatingIncome", type: "int" },
-    {
-      name: "Operating Income Growth",
-      rule: "growthOperatingIncome",
-      type: "percentSign",
-    },
-    {
-      name: "Research & Development",
-      rule: "researchAndDevelopmentExpenses",
-      type: "int",
-    },
-    { name: "Shares Outstanding", rule: "sharesOutStanding", type: "int" },
-    { name: "Profit Per Employee", rule: "profitPerEmployee", type: "int" },
-    { name: "Revenue Per Employee", rule: "revenuePerEmployee", type: "int" },
-    {
-      name: "Institutional Ownership",
-      rule: "institutionalOwnership",
-      type: "percent",
-    },
-    { name: "Top Analyst Rating", rule: "topAnalystRating", type: "rating" },
-    { name: "Top Analyst Count", rule: "topAnalystCounter", type: "int" },
-    {
-      name: "Top Analyst Price Target",
-      rule: "topAnalystPriceTarget",
-      type: "float",
-    },
-    {
-      name: "Top Analyst PT Upside",
-      rule: "topAnalystUpside",
-      type: "percentSign",
-    },
-  ];
-
-  let ruleOfList = [
-    { name: "Volume", rule: "volume", type: "decimal" },
-    { name: "Market Cap", rule: "marketCap", type: "int" },
-    { name: "Price", rule: "price", type: "float" },
-    { name: "Change", rule: "changesPercentage", type: "percentSign" },
-  ];
-
-  const defaultRules = ruleOfList?.map((item) => item?.rule);
-
-  const excludedRules = new Set([
-    "volume",
-    "price",
-    "changesPercentage",
-    "marketCap",
-    "eps",
-  ]);
-  const proOnlyItems = new Set(
-    allRows
-      ?.filter((item) => !excludedRules?.has(item?.rule)) // Exclude the items based on the rule
-      ?.map((item) => item?.name), // Map the remaining items to their names
-  );
-
   let isLoaded = false;
-  let downloadWorker: Worker | undefined;
   let displayWatchList;
   let allList = data?.getAllWatchlist;
-  let priceAnimations = {};
-
-  const handleDownloadMessage = (event) => {
-    isLoaded = false;
-    watchList = event?.data?.watchlistData ?? [];
-    originalData = event?.data?.watchlistData ?? [];
-    if (watchList?.length > 0) {
-      columns = generateColumns(watchList);
-      sortOrders = generateSortOrders(watchList);
-    }
-    isLoaded = true;
-  };
-
-  const updateStockScreenerData = async () => {
-    downloadWorker.postMessage({
-      ruleOfList: ruleOfList,
-      tickerList: watchList?.map((item) => item?.symbol),
-    });
-  };
-
-  function sendMessage(message) {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON?.stringify(message));
-    } else {
-      console.error("WebSocket is not open. Unable to send message.");
-    }
-  }
-
-  async function websocketRealtimeData() {
-    try {
-      socket = new WebSocket(data?.wsURL + "/price-data");
-
-      socket.addEventListener("open", () => {
-        console.log("WebSocket connection opened");
-        const tickerList = watchList?.map((item) => item?.symbol) || [];
-        sendMessage(tickerList);
-      });
-
-      socket.addEventListener("message", (event) => {
-        const data = event.data;
-        try {
-          const newList = JSON?.parse(data);
-          if (newList?.length > 0) {
-            // Calculate changes and update watchlist
-            watchList = calculateChange(watchList, newList);
-
-            // Track which items have price changes for animation
-            watchList.forEach((item) => {
-              if (
-                item.previous !== null &&
-                item.previous !== undefined &&
-                Math.abs(item.previous - item.price) >= 0.01
-              ) {
-                // Set animation state to true for this symbol
-                priceAnimations[item.symbol] = true;
-
-                // Remove animation state after animation completes
-                setTimeout(() => {
-                  priceAnimations[item.symbol] = false;
-                  priceAnimations = { ...priceAnimations }; // Trigger reactivity
-                }, 500); // Match animation duration
-              }
-            });
-
-            // Force reactivity update
-            priceAnimations = { ...priceAnimations };
-
-            // Clear previous values after animation
-            setTimeout(() => {
-              watchList = watchList?.map((item) => ({
-                ...item,
-                previous: null,
-              }));
-            }, 800);
-          }
-        } catch (e) {
-          console.error("Error parsing WebSocket message:", e);
-        }
-      });
-
-      socket.addEventListener("close", (event) => {
-        console.log("WebSocket connection closed:", event.reason);
-      });
-    } catch (error) {
-      console.error("WebSocket connection error:", error);
-    }
-  }
 
   async function getWatchlistData() {
     const postData = {
       watchListId: displayWatchList?.id,
-      ruleOfList: ruleOfList?.map((item) => item?.rule),
+      ruleOfList: [
+        { rule: "volume" },
+        { rule: "marketCap" },
+        { rule: "price" },
+        { rule: "changesPercentage" },
+      ]?.map((item) => item?.rule),
     };
     const response = await fetch("/api/get-watchlist", {
       method: "POST",
@@ -323,10 +91,7 @@
       return match ? { ...item, name: match?.name } : { ...item };
     });
     if (watchList?.length > 0) {
-      columns = generateColumns(watchList);
-      sortOrders = generateSortOrders(watchList);
       groupedEarnings = groupEarnings(earnings);
-
       groupedNews = groupNews(news, watchList);
     } else {
       groupedEarnings = [];
@@ -621,39 +386,6 @@
     }
   }
 
-  async function handleResetAll() {
-    searchQuery = "";
-    ruleOfList = [
-      { name: "Volume", rule: "volume", type: "int" },
-      { name: "Market Cap", rule: "marketCap", type: "int" },
-      { name: "Price", rule: "price", type: "float" },
-      { name: "Change", rule: "changesPercentage", type: "percentSign" },
-    ];
-    ruleOfList = [...ruleOfList];
-    checkedItems = new Set(ruleOfList.map((item) => item.name));
-    allRows = sortIndicatorCheckMarks(allRows);
-    await updateStockScreenerData();
-
-    saveRules();
-  }
-
-  async function handleSelectAll() {
-    if (["Pro", "Plus"]?.includes(data?.user?.tier)) {
-      searchQuery = "";
-      ruleOfList = allRows;
-      ruleOfList = [...ruleOfList];
-      checkedItems = new Set(ruleOfList?.map((item) => item.name));
-      allRows = sortIndicatorCheckMarks(allRows);
-      await updateStockScreenerData();
-
-      saveRules();
-    } else {
-      toast.error("Only for Plus & Pro Members", {
-        style: `border-radius: 5px; background: #fff; color: #000; border-color: ${$mode === "light" ? "#F9FAFB" : "#4B5563"}; font-size: 15px;`,
-      });
-    }
-  }
-
   function changeWatchList(newWatchList) {
     displayWatchList = newWatchList;
     switchWatchlist = true;
@@ -662,18 +394,6 @@
       localStorage?.setItem(
         "last-watchlist-id",
         JSON?.stringify(displayWatchList?.id),
-      );
-    } catch (e) {
-      console.log("Failed saving indicator rules: ", e);
-    }
-  }
-
-  function saveRules() {
-    try {
-      // Save the version along with the rules
-      localStorage?.setItem(
-        "watchlist-ruleOfList",
-        JSON?.stringify(ruleOfList),
       );
     } catch (e) {
       console.log("Failed saving indicator rules: ", e);
@@ -712,44 +432,7 @@
 
   onMount(async () => {
     try {
-      const savedRules = localStorage?.getItem("watchlist-ruleOfList");
       const savedLastWatchlistId = localStorage?.getItem("last-watchlist-id");
-
-      if (savedRules) {
-        const parsedRules = JSON.parse(savedRules);
-
-        // Compare and update ruleOfList based on allRows
-        ruleOfList = parsedRules.map((rule) => {
-          const matchingRow = allRows.find((row) => row.name === rule.name);
-          if (matchingRow && matchingRow.type !== rule.type) {
-            return { ...rule, type: matchingRow.type };
-          }
-          return rule;
-        });
-
-        // Check for the user's tier and filter out paywalled features
-        if (!["Pro", "Plus"]?.includes(data?.user?.tier)) {
-          ruleOfList = ruleOfList.filter((item) =>
-            excludedRules.has(item?.rule),
-          );
-        }
-
-        // Save the updated ruleOfList back to localStorage
-        localStorage?.setItem(
-          "watchlist-ruleOfList",
-          JSON.stringify(ruleOfList),
-        );
-      } else {
-        // If no saved rules, initialize with the current ruleOfList
-        localStorage?.setItem(
-          "watchlist-ruleOfList",
-          JSON.stringify(ruleOfList),
-        );
-      }
-
-      // Update checked items and sort the indicators
-      checkedItems = new Set(ruleOfList?.map((item) => item.name));
-      allRows = sortIndicatorCheckMarks(allRows);
 
       // Safely parse savedLastWatchlistId using safeParse
       let parsedLastWatchlistId = null;
@@ -770,21 +453,9 @@
 
       await getWatchlistData();
 
-      // Initialize the download worker if not already done
-      if (!downloadWorker) {
-        const DownloadWorker = await import("./workers/downloadWorker?worker");
-        downloadWorker = new DownloadWorker.default();
-        downloadWorker.onmessage = handleDownloadMessage;
-      }
-
       isLoaded = true;
     } catch (e) {
       console.error("onMount error:", e);
-    }
-
-    if ($isOpen) {
-      await websocketRealtimeData();
-      console.log("WebSocket restarted");
     }
 
     window.addEventListener("scroll", handleScroll);
@@ -811,42 +482,6 @@
     ) {
       // Update previous list
       previousList = watchList;
-
-      try {
-        // Close existing socket if open
-        if (socket && socket.readyState !== WebSocket.CLOSED) {
-          socket.close();
-        }
-
-        // Wait for socket to close
-        await new Promise((resolve) => {
-          socket.addEventListener("close", resolve, { once: true });
-        });
-
-        // Reconnect with new symbols
-        if ($isOpen) {
-          await websocketRealtimeData();
-          console.log("WebSocket restarted due to watchlist changes");
-        }
-      } catch (error) {
-        console.error("Error restarting WebSocket:", error);
-      }
-    }
-  });
-
-  onDestroy(() => {
-    try {
-      // Clear any pending reconnection timeout
-      if (reconnectionTimeout) {
-        clearTimeout(reconnectionTimeout);
-      }
-
-      // Close the WebSocket connection
-      if (socket) {
-        socket.close(1000, "Page unloaded");
-      }
-    } catch (e) {
-      console.log(e);
     }
   });
 
@@ -854,80 +489,6 @@
     const closePopup = document.getElementById("addWatchlist");
     closePopup?.dispatchEvent(new MouseEvent("click"));
   }
-
-  let testList = [];
-
-  function handleInput(event) {
-    searchQuery = event.target.value?.toLowerCase() || "";
-
-    setTimeout(() => {
-      testList = [];
-
-      if (searchQuery.length > 0) {
-        const rawList = allRows;
-        testList =
-          rawList?.filter((item) => {
-            const index = item?.name?.toLowerCase();
-            // Check if country starts with searchQuery
-            return index?.startsWith(searchQuery);
-          }) || [];
-      }
-    }, 50);
-  }
-
-  function isChecked(item) {
-    return checkedItems?.has(item);
-  }
-
-  function sortIndicatorCheckMarks(allRows) {
-    return allRows.sort((a, b) => {
-      const isAChecked = checkedItems.has(a?.name);
-      const isBChecked = checkedItems.has(b?.name);
-
-      // Sort checked items first
-      if (isAChecked !== isBChecked) return isAChecked ? -1 : 1;
-
-      // Prioritize items based on default rules
-      const isADefaultRule = defaultRules?.includes(a?.rule);
-      const isBDefaultRule = defaultRules?.includes(b?.rule);
-      if (isADefaultRule !== isBDefaultRule) {
-        return isADefaultRule ? -1 : 1;
-      }
-
-      // Check if the user is not Pro
-      if (!["Pro", "Plus"]?.includes(data?.user?.tier)) {
-        const isAPriority = proOnlyItems.has(a?.name);
-        const isBPriority = proOnlyItems.has(b?.name);
-
-        // If both are priority items or both are not, sort alphabetically
-        if (isAPriority === isBPriority) return a.name.localeCompare(b.name);
-
-        // Move priority items to the bottom for non-Pro users
-        return isAPriority ? 1 : -1;
-      }
-
-      // If the user is Pro, sort alphabetically
-      return a.name.localeCompare(b.name);
-    });
-  }
-
-  async function handleChangeValue(value) {
-    if (checkedItems.has(value)) {
-      checkedItems.delete(value); // Remove the value if it's already in the Set
-    } else {
-      checkedItems.add(value); // Add the value if it's not in the Set
-      // Update ruleOfList based on checked items from indicatorList
-    }
-    ruleOfList = allRows.filter((item) => checkedItems.has(item.name)); // Assuming each item has a `value` property
-    allRows = [...allRows];
-    ruleOfList = [...ruleOfList];
-
-    await updateStockScreenerData();
-    //allRows = sortIndicatorCheckMarks(allRows);
-    saveRules();
-  }
-
-  $: charNumber = $screenWidth < 640 ? 15 : 20;
 
   $: {
     if (switchWatchlist && typeof window !== "undefined") {
@@ -956,221 +517,6 @@
       );
       searchBarData = await response?.json();
     }, 50); // delay
-  }
-
-  // Function to generate columns based on keys in rawData
-  function generateColumns(data) {
-    const leftAlignKeys = new Set(["rank", "symbol", "name"]);
-
-    // Custom labels for specific keys
-    const customLabels = {
-      changesPercentage: "% Change",
-      score: "AI Score",
-      researchAndDevelopmentExpenses: "R&D",
-      counter: "Ratings Count",
-      // Add more key-label mappings here as needed
-    };
-
-    // Define preferred order for columns
-    const preferredOrder = ["rank", "symbol", "name"];
-
-    // Create a mapping of rule to name and type from allRows
-    const ruleToMetadataMap = Object.fromEntries(
-      allRows.map((row) => [row.rule, { name: row.name, type: row.type }]),
-    );
-
-    // Separate preferred keys and other keys, excluding "type" and "previous"
-    const keys = Object?.keys(data?.at(0))?.filter(
-      (key) => key !== "type" && key !== "previous",
-    );
-
-    // Merge the preferred order with the default list order
-    const orderedKeys = [
-      ...preferredOrder?.filter((key) => keys?.includes(key)),
-      ...ruleOfList
-        ?.map((item) => item?.rule)
-        ?.filter((key) => keys?.includes(key)),
-      ...keys?.filter(
-        (key) =>
-          !preferredOrder?.includes(key) &&
-          !ruleOfList?.some((item) => item?.rule === key),
-      ),
-    ];
-
-    return orderedKeys?.map((key) => ({
-      key,
-      label:
-        customLabels[key] ||
-        ruleToMetadataMap[key]?.name || // Check allRows mapping first
-        key?.charAt(0)?.toUpperCase() +
-          key?.slice(1)?.replace(/([A-Z])/g, " $1"),
-      type: ruleToMetadataMap[key]?.type || "string", // Add type from allRows or default to 'string'
-      align: leftAlignKeys?.has(key) ? "left" : "right",
-    }));
-  }
-
-  // Function to generate sortOrders based on keys in rawData
-  function generateSortOrders(data) {
-    const stringKeys = new Set([
-      "symbol",
-      "name",
-      "industry",
-      "score",
-      "sector",
-      "analystRating",
-    ]);
-
-    return Object.keys(data[0])?.reduce((orders, key) => {
-      orders[key] = {
-        order: "none",
-        type: stringKeys.has(key) ? "string" : "number",
-      };
-      return orders;
-    }, {});
-  }
-
-  // Generate columns and sortOrders
-  let columns;
-  let sortOrders;
-
-  const sortData = (key, input = false) => {
-    // Reset all other keys to 'none' except the current key
-    for (const k in sortOrders) {
-      if (k !== key) {
-        sortOrders[k].order = "none";
-      }
-    }
-
-    // If input is false, cycle through 'none', 'asc', 'desc' for the clicked key
-    const orderCycle = ["none", "asc", "desc"];
-
-    const currentOrderIndex = orderCycle.indexOf(
-      sortOrders[key]?.order || "none",
-    );
-    sortOrders[key] = {
-      ...(sortOrders[key] || {}),
-      order: orderCycle[(currentOrderIndex + 1) % orderCycle.length],
-    };
-
-    const sortOrder = sortOrders[key]?.order;
-
-    // Reset to original data when 'none' and stop further sorting
-    if (sortOrder === "none") {
-      watchList = [...originalData]; // Reset originalData to rawData
-      return;
-    }
-
-    // Generic comparison function
-    const compareValues = (a, b) => {
-      const { type } = sortOrders[key];
-      let valueA, valueB;
-      switch (type) {
-        case "date":
-          valueA = new Date(a[key]);
-          valueB = new Date(b[key]);
-          break;
-        case "rating":
-        case "string":
-          valueA = a[key];
-          valueB = b[key];
-          if (valueA == null && valueB == null) return 0;
-          if (valueA == null) return 1;
-          if (valueB == null) return -1;
-          valueA = valueA?.toUpperCase();
-          valueB = valueB?.toUpperCase();
-          return sortOrder === "asc"
-            ? valueA?.localeCompare(valueB)
-            : valueB?.localeCompare(valueA);
-        case "number":
-        default:
-          valueA = parseFloat(a[key]);
-          valueB = parseFloat(b[key]);
-          break;
-      }
-      return sortOrder === "asc"
-        ? valueA < valueB
-          ? -1
-          : valueA > valueB
-            ? 1
-            : 0
-        : valueA > valueB
-          ? -1
-          : valueA < valueB
-            ? 1
-            : 0;
-    };
-
-    // Sort and update the originalData and stockList
-    watchList = [...originalData].sort(compareValues)?.slice(0, 50);
-  };
-
-  async function handleBulkDownload() {
-    const tickers = watchList?.map((item) => item?.symbol); // example tickers
-
-    if (totalCreditCost === 0 || tickers?.length === 0) {
-      toast.error(
-        `Select at least one ${tickers?.length === 0 ? "symbol" : "bulk data"} to download`,
-        {
-          style: `border-radius: 5px; background: #fff; color: #000; border-color: ${$mode === "light" ? "#F9FAFB" : "#4B5563"}; font-size: 15px;`,
-        },
-      );
-      return;
-    }
-
-    if (data?.user?.credits > totalCreditCost && tickers?.length > 0) {
-      toast.promise(
-        (async () => {
-          data.user.credits = data.user.credits - totalCreditCost;
-
-          const response = await fetch("/api/bulk-download", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ tickers: tickers, bulkData: bulkData }),
-          });
-
-          if (!response.ok) {
-            throw new Error("Download request failed");
-          }
-
-          const blob = await response.blob();
-          const url = URL.createObjectURL(blob);
-
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "historical_data.zip";
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
-        })(),
-        {
-          loading: "Downloading data...",
-          success: "Download complete!",
-          error: "Download failed. Try again.",
-          style: `border-radius: 5px; background: #fff; color: #000; border-color: ${$mode === "light" ? "#F9FAFB" : "#4B5563"}; font-size: 15px;`,
-        },
-      );
-    } else if (tickers?.length === 0) {
-      toast.error("Add tickers first to your watchlist", {
-        style: `border-radius: 5px; background: #fff; color: #000; border-color: ${$mode === "light" ? "#F9FAFB" : "#4B5563"}; font-size: 15px;`,
-      });
-    } else {
-      toast.error("Not enough credits", {
-        style: `border-radius: 5px; background: #fff; color: #000; border-color: ${$mode === "light" ? "#F9FAFB" : "#4B5563"}; font-size: 15px;`,
-      });
-    }
-  }
-
-  $: {
-    if (bulkData) {
-      const tickers = watchList?.map((item) => item?.symbol); // example tickers
-
-      totalCreditCost =
-        tickers?.length *
-        bulkData?.reduce((sum, item) => {
-          return item.selected ? sum + item.credit : sum;
-        }, 0);
-    }
   }
 </script>
 
@@ -1453,279 +799,6 @@
                     </label>
                   </div>
                 </div>
-
-                <div
-                  class="order-0 sm:order-4 w-full sm:mr-3 {displayWatchList?.title ===
-                  undefined
-                    ? 'hidden'
-                    : ''}"
-                >
-                  <DropdownMenu.Root>
-                    <DropdownMenu.Trigger asChild let:builder>
-                      <Button
-                        on:click={() =>
-                          (allRows = sortIndicatorCheckMarks(allRows))}
-                        builders={[builder]}
-                        class=" sm:ml-auto min-w-[110px] w-full sm:w-fit border-gray-300 dark:border-gray-600 border bg-black sm:hover:bg-default text-white dark:bg-primary dark:sm:hover:bg-secondary ease-out flex flex-row justify-between items-center px-3 py-2.5  rounded truncate"
-                      >
-                        <span class="truncate text-[0.85rem] sm:text-sm"
-                          >Indicators</span
-                        >
-                        <svg
-                          class="-mr-1 ml-2 h-5 w-5 inline-block"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                          style="max-width:40px"
-                          aria-hidden="true"
-                        >
-                          <path
-                            fill-rule="evenodd"
-                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                            clip-rule="evenodd"
-                          ></path>
-                        </svg>
-                      </Button>
-                    </DropdownMenu.Trigger>
-
-                    <DropdownMenu.Content
-                      side="bottom"
-                      align="end"
-                      sideOffset={10}
-                      alignOffset={0}
-                      class="w-60 max-h-[400px] overflow-y-auto scroller relative "
-                    >
-                      <!-- Search Input -->
-                      <div
-                        class="sticky fixed -top-1 z-40 bg-white dark:bg-default p-2 border-b border-gray-300 dark:border-gray-600"
-                      >
-                        <div class="relative w-full">
-                          <!-- Input Field -->
-                          <input
-                            bind:value={searchQuery}
-                            on:input={handleInput}
-                            autocomplete="off"
-                            autofocus=""
-                            class="text-sm w-full bg-white dark:bg-default border-0 focus:border-gray-200 focus:ring-0 focus:outline-none placeholder:text-gray-400 dark:placeholder:text-gray-600 pr-8"
-                            type="text"
-                            placeholder="Search indicators..."
-                          />
-
-                          <!-- Clear Button - Shown only when searchQuery has input -->
-                          {#if searchQuery?.length > 0}
-                            <button
-                              on:click={() => (searchQuery = "")}
-                              aria-label="Clear"
-                              title="Clear"
-                              tabindex="0"
-                              class="absolute right-2 top-1/2 transform -translate-y-1/2"
-                            >
-                              <svg
-                                class="h-5 w-5 text-icon cursor-pointer"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="2"
-                                  d="M6 18L18 6M6 6l12 12"
-                                ></path>
-                              </svg>
-                            </button>
-                          {/if}
-                        </div>
-                      </div>
-                      <!-- Dropdown items -->
-                      <DropdownMenu.Group class="pb-2">
-                        <!-- Added padding to avoid overlapping with Reset button -->
-                        {#each searchQuery?.length !== 0 ? testList : allRows as item}
-                          <DropdownMenu.Item
-                            class="sm:hover:bg-gray-200 dark:sm:hover:bg-primary"
-                          >
-                            <div class="flex items-center">
-                              {#if defaultRules?.includes(item?.rule)}
-                                <label
-                                  on:click|capture={(event) => {
-                                    event.preventDefault();
-                                  }}
-                                  class=""
-                                >
-                                  <input
-                                    disabled={defaultRules?.includes(item?.rule)
-                                      ? true
-                                      : false}
-                                    type="checkbox"
-                                    class="rounded {defaultRules?.includes(
-                                      item?.rule,
-                                    )
-                                      ? 'checked:bg-gray-700'
-                                      : 'checked:bg-blue-700'}"
-                                    checked={isChecked(item?.name)}
-                                  />
-                                  <span class="ml-2">{item?.name}</span>
-                                </label>
-                              {:else if ["Pro", "Plus"]?.includes(data?.user?.tier) || excludedRules?.has(item?.rule)}
-                                <label
-                                  on:click|capture={(event) => {
-                                    event.preventDefault();
-                                    handleChangeValue(item?.name);
-                                  }}
-                                  class="cursor-pointer"
-                                  for={item?.name}
-                                >
-                                  <input
-                                    disabled={defaultRules?.includes(item?.rule)
-                                      ? true
-                                      : false}
-                                    type="checkbox"
-                                    class="rounded {defaultRules?.includes(
-                                      item?.rule,
-                                    )
-                                      ? 'checked:bg-gray-800'
-                                      : 'checked:bg-blue-700'}"
-                                    checked={isChecked(item?.name)}
-                                  />
-                                  <span class="ml-2">{item?.name}</span>
-                                </label>
-                              {:else}
-                                <a href="/pricing" class="cursor-pointer">
-                                  <svg
-                                    class="h-[18px] w-[18px] inline-block text-icon group-hover:text-dark-400"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                    style="max-width:40px"
-                                  >
-                                    <path
-                                      fill-rule="evenodd"
-                                      d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                                      clip-rule="evenodd"
-                                    ></path>
-                                  </svg>
-                                  <span class="ml-2">{item?.name}</span>
-                                </a>
-                              {/if}
-                            </div>
-                          </DropdownMenu.Item>
-                        {/each}
-                      </DropdownMenu.Group>
-                      <!-- Reset Selection button -->
-                      <div
-                        class="sticky -bottom-1 bg-white dark:bg-default z-50 p-2 border-t border-gray-300 dark:border-gray-600 w-full flex justify-between items-center"
-                      >
-                        <label
-                          on:click={handleResetAll}
-                          class="w-full dark:sm:hover:text-white text-muted dark:text-gray-300 bg-white dark:bg-default text-start text-sm cursor-pointer"
-                        >
-                          Reset Selection
-                        </label>
-                        <label
-                          on:click={handleSelectAll}
-                          class="w-full flex justify-end dark:sm:hover:text-white text-muted dark:text-gray-300 bg-white dark:bg-default text-start text-sm cursor-pointer"
-                        >
-                          Select All
-                        </label>
-                      </div>
-                    </DropdownMenu.Content>
-                  </DropdownMenu.Root>
-                </div>
-
-                <div
-                  class="order-3 sm:order-last {displayWatchList?.title ===
-                  undefined
-                    ? 'hidden'
-                    : ''}"
-                >
-                  <DropdownMenu.Root>
-                    <DropdownMenu.Trigger asChild let:builder>
-                      <Button
-                        builders={[builder]}
-                        class=" min-w-[110px] w-full sm:w-fit border-gray-300 dark:border-gray-600 border bg-black sm:hover:bg-default text-white dark:bg-primary dark:sm:hover:bg-secondary ease-out flex flex-row justify-between items-center px-3 py-2.5  rounded truncate"
-                      >
-                        <span class="truncate text-[0.85rem] sm:text-sm"
-                          >Bulk Download</span
-                        >
-                        <svg
-                          class="-mr-1 ml-2 h-5 w-5 inline-block"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                          style="max-width:40px"
-                          aria-hidden="true"
-                        >
-                          <path
-                            fill-rule="evenodd"
-                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                            clip-rule="evenodd"
-                          ></path>
-                        </svg>
-                      </Button>
-                    </DropdownMenu.Trigger>
-
-                    <DropdownMenu.Content
-                      side="bottom"
-                      align="end"
-                      sideOffset={10}
-                      alignOffset={0}
-                      class="w-auto min-w-64 max-w-80 max-h-[400px] overflow-y-auto scroller relative"
-                    >
-                      <DropdownMenu.Label
-                        class="text-muted dark:text-gray-400 font-semibold dark:font-normal text-xs"
-                      >
-                        {data?.user?.credits} Credits left
-                      </DropdownMenu.Label>
-                      <!-- Dropdown items -->
-                      <DropdownMenu.Group class="pb-2">
-                        {#each bulkData as item}
-                          <DropdownMenu.Item
-                            class="sm:hover:bg-gray-200 dark:sm:hover:bg-primary"
-                          >
-                            <label
-                              on:click|capture={(event) => {
-                                event.preventDefault();
-                                item.selected = !item?.selected;
-                              }}
-                              class="inline-flex justify-between w-full items-center cursor-pointer"
-                            >
-                              <span class="mr-1 text-sm">{item?.name}</span>
-                              <span class="mr-2 text-xs inline-block"
-                                >({item?.credit} Credits)</span
-                              >
-                              <div class="relative ml-auto">
-                                <input
-                                  type="checkbox"
-                                  checked={item?.selected}
-                                  class="sr-only peer"
-                                />
-                                <div
-                                  class="w-9 h-5 bg-gray-400 rounded-full peer peer-checked:bg-blue-600
-      after:content-[''] after:absolute after:top-0.5 after:left-[2px]
-      after:bg-white after:border-gray-300 after:border
-      after:rounded-full after:h-4 after:w-4 after:transition-all
-      peer-checked:after:translate-x-full"
-                                ></div>
-                              </div></label
-                            >
-                          </DropdownMenu.Item>
-                        {/each}
-                      </DropdownMenu.Group>
-                      <div
-                        class="sticky -bottom-1 bg-white dark:bg-default z-50 p-2 border-t border-gray-300 dark:border-gray-600 w-full flex justify-between items-center"
-                      >
-                        <span
-                          class="w-full text-muted dark:text-gray-300 bg-white dark:bg-default font-semibold dark:font-normal text-start text-xs select-none"
-                        >
-                          = Credit Cost {totalCreditCost}
-                        </span>
-                        <button
-                          on:click={handleBulkDownload}
-                          class="whitespace-nowrap w-full flex justify-end dark:sm:hover:text-white text-muted dark:text-gray-300 bg-white dark:bg-default text-start text-sm cursor-pointer"
-                        >
-                          Bulk Download
-                        </button>
-                      </div>
-                    </DropdownMenu.Content>
-                  </DropdownMenu.Root>
-                </div>
               </div>
             </div>
 
@@ -1769,186 +842,150 @@
               </div>
             {:else}
               <!--Start Table of Watchlist-->
-              {#if watchList?.length !== 0}
-                <div class="w-full">
-                  <h2 class="font-semibold text-xl">
-                    {watchList?.length} Stocks
-                  </h2>
+              {#key watchList}
+                {#if watchList?.length > 0}
+                  <div class="w-full">
+                    <Table
+                      {data}
+                      rawData={watchList}
+                      title="{watchList?.length} Stocks"
+                      excludedRules={new Set([
+                        "volume",
+                        "price",
+                        "changesPercentage",
+                        "marketCap",
+                        "eps",
+                      ])}
+                      defaultList={[
+                        { name: "Volume", rule: "volume", type: "decimal" },
+                        { name: "Market Cap", rule: "marketCap", type: "int" },
+                        { name: "Price", rule: "price", type: "float" },
+                        {
+                          name: "% Change",
+                          rule: "changesPercentage",
+                          type: "percentSign",
+                        },
+                      ]}
+                      {editMode}
+                      {deleteTickerList}
+                      onToggleDeleteTicker={handleFilter}
+                    />
 
-                  <div class="w-full overflow-x-auto">
-                    <table
-                      class="table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto mt-4"
-                    >
-                      <!-- head -->
-                      <thead>
-                        <TableHeader {columns} {sortOrders} {sortData} />
-                      </thead>
-                      <tbody class="p-0">
-                        {#each watchList as item}
-                          <tr
-                            class="dark:sm:hover:bg-[#245073]/10 odd:bg-[#F6F7F8] dark:odd:bg-odd"
-                          >
-                            <td
-                              on:click={() => handleFilter(item?.symbol)}
-                              class="text-blue-800 dark:text-blue-400 text-sm sm:text-[1rem] whitespace-nowrap text-start flex flex-row items-center"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={deleteTickerList?.includes(
-                                  item?.symbol,
-                                ) ?? false}
-                                class="{!editMode
-                                  ? 'hidden'
-                                  : ''}  dark:bg-[#2E3238] h-[18px] w-[18px] rounded-sm ring-offset-0 mr-3"
-                              />
-                              {#if editMode}
-                                <label
-                                  class="text-blue-800 dark:text-blue-400 sm:hover:text-muted dark:sm:hover:text-white cursor-pointer"
-                                >
-                                  {item?.symbol}
-                                </label>
-                              {:else}
-                                <HoverStockChart
-                                  symbol={item?.symbol}
-                                  assetType={item?.type}
-                                />
-                              {/if}
-                            </td>
-
-                            <td
-                              class=" text-sm sm:text-[1rem] whitespace-nowrap"
-                            >
-                              {item?.name?.length > charNumber
-                                ? item?.name?.slice(0, charNumber) + "..."
-                                : item?.name}
-                            </td>
-                            {#each ruleOfList as row}
-                              {#if isChecked(row?.name)}
-                                <td
-                                  id={item?.symbol}
-                                  class="whitespace-nowrap text-sm sm:text-[1rem] text-end"
-                                >
-                                  {#if item?.[row?.rule] !== undefined && item?.[row?.rule] !== null}
-                                    {#if row?.type === "int"}
-                                      {abbreviateNumber(item[row?.rule])}
-                                    {:else if row?.type === "decimal"}
-                                      {item[row?.rule]?.toLocaleString("en-US")}
-                                    {:else if row?.type === "str"}
-                                      {item[row?.rule] !== null
-                                        ? item[row?.rule]
-                                        : "n/a"}
-                                    {:else if row?.type === "float"}
-                                      <div
-                                        class="relative flex items-center justify-end"
-                                      >
-                                        {#if item?.previous !== null && item?.previous !== undefined && Math.abs(item?.previous - item[row?.rule]) >= 0.01 && row?.rule === "price"}
-                                          <span
-                                            class="absolute h-1 w-1 {item[
-                                              row?.rule
-                                            ] < 10
-                                              ? 'right-[35px] sm:right-[40px]'
-                                              : item[row?.rule] < 100
-                                                ? 'right-[40px] sm:right-[45px]'
-                                                : 'right-[45px] sm:right-[55px]'} bottom-0 -top-0.5 sm:-top-1"
-                                          >
-                                            <span
-                                              class="inline-flex rounded-full h-1 w-1 {item?.previous >
-                                              item[row?.rule]
-                                                ? 'bg-[#FF2F1F]'
-                                                : 'bg-[#00FC50]'} pulse-dot"
-                                            ></span>
-                                          </span>
-                                        {/if}
-
-                                        {item[row?.rule] !== null
-                                          ? item[row?.rule]?.toFixed(2)
-                                          : "n/a"}
-                                      </div>
-                                    {:else if row?.type === "percent"}
-                                      {item[row?.rule] !== null
-                                        ? item[row?.rule]?.toFixed(2) + "%"
-                                        : "n/a"}
-                                    {:else if row?.type === "percentSign"}
-                                      {#if item[row?.rule] >= 0}
-                                        <span
-                                          class="text-green-800 dark:text-[#00FC50]"
-                                          >+{item[row?.rule]?.toFixed(2)}%</span
-                                        >
-                                      {:else}
-                                        <span
-                                          class="text-red-800 dark:text-[#FF2F1F]"
-                                          >{item[row?.rule]?.toFixed(2)}%</span
-                                        >
-                                      {/if}
-                                    {:else if row?.type === "rating"}
-                                      {#if ["Strong Buy", "Buy"].includes(item[row?.rule])}
-                                        <span
-                                          class="text-green-800 dark:text-[#00FC50]"
-                                          >{item[row?.rule]}</span
-                                        >
-                                      {:else if ["Strong Sell", "Sell"].includes(item[row?.rule])}
-                                        <span
-                                          class="text-red-800 dark:text-[#FF2F1F]"
-                                          >{item[row?.rule]}</span
-                                        >
-                                      {:else if item[row?.rule] === "Hold"}
-                                        <span
-                                          class="text-orange-700 dark:text-[#FFA838]"
-                                          >{item[row?.rule]}</span
-                                        >
-                                      {/if}
-                                    {/if}
-                                  {:else}
-                                    n/a
-                                  {/if}
-                                </td>
-                              {/if}
-                            {/each}
-                          </tr>
-                        {/each}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div
-                    class="w-full m-auto border-b border-gray-300 dark:border-gray-600 mt-10 mb-5"
-                  ></div>
-
-                  <div class=" ">
                     <div
-                      class="inline-flex justify-center w-full rounded sm:w-auto mb-3"
-                    >
+                      class="w-full m-auto border-b border-gray-300 dark:border-gray-600 mt-10 mb-5"
+                    ></div>
+
+                    <div class=" ">
                       <div
-                        class=" flex flex-col sm:flex-row items-start sm:items-center w-full justify-between"
+                        class="inline-flex justify-center w-full rounded sm:w-auto mb-3"
                       >
-                        <div class="">
-                          <div class="inline-flex">
-                            <div class="inline-flex rounded-lg shadow-sm">
-                              {#each tabs as item, i}
-                                <button
-                                  on:click={() => changeTab(i)}
-                                  class="cursor-pointer px-4 py-2 text-sm font-medium focus:z-10 focus:outline-none transition-colors duration-50
+                        <div
+                          class=" flex flex-col sm:flex-row items-start sm:items-center w-full justify-between"
+                        >
+                          <div class="">
+                            <div class="inline-flex">
+                              <div class="inline-flex rounded-lg shadow-sm">
+                                {#each tabs as item, i}
+                                  <button
+                                    on:click={() => changeTab(i)}
+                                    class="cursor-pointer px-4 py-2 text-sm font-medium focus:z-10 focus:outline-none transition-colors duration-50
                           {i === 0 ? 'rounded-l border' : ''}
                           {i === tabs?.length - 1
-                                    ? 'rounded-r border-t border-r border-b'
-                                    : ''}
+                                      ? 'rounded-r border-t border-r border-b'
+                                      : ''}
                           {i !== 0 && i !== tabs?.length - 1
-                                    ? 'border-t border-b'
-                                    : ''}
+                                      ? 'border-t border-b'
+                                      : ''}
                           {activeIdx === i
-                                    ? 'bg-black dark:bg-white text-white dark:text-black'
-                                    : 'bg-white  border-gray-300 sm:hover:bg-gray-100 dark:bg-primary dark:border-gray-800'}"
-                                >
-                                  {item.title}
-                                </button>
-                              {/each}
+                                      ? 'bg-black dark:bg-white text-white dark:text-black'
+                                      : 'bg-white  border-gray-300 sm:hover:bg-gray-100 dark:bg-primary dark:border-gray-800'}"
+                                  >
+                                    {item.title}
+                                  </button>
+                                {/each}
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                    {#if activeIdx === 0}
-                      {#if groupedNews?.length > 0}
+                      {#if activeIdx === 0}
+                        {#if groupedNews?.length > 0}
+                          {#each displayList as [date, titleGroups]}
+                            <h3 class="mb-1.5 mt-3 font-semibold text-faded">
+                              {date}
+                            </h3>
+                            <div
+                              class="border border-gray-300 dark:border-gray-700"
+                            >
+                              {#each titleGroups as { title, items, symbols }, index}
+                                <div
+                                  class="flex border-gray-300 {index > 0
+                                    ? 'border-t'
+                                    : ''} dark:border-gray-600 text-small"
+                                >
+                                  <div
+                                    class="hidden min-w-[100px] items-center justify-center bg-gray-200 dark:bg-primary p-1 lg:flex"
+                                  >
+                                    {new Date(
+                                      items[0].publishedDate,
+                                    ).toLocaleTimeString("en-US", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      hour12: true,
+                                    })}
+                                  </div>
+                                  <div class="grow px-3 py-2 lg:py-1">
+                                    <a
+                                      href={items[0].url}
+                                      target="_blank"
+                                      rel="nofollow noopener noreferrer"
+                                      class="sm:hover:text-blue-800 dark:sm:hover:text-blue-400"
+                                    >
+                                      <h4
+                                        class="text-sm font-semibold lg:text-[1rem]"
+                                      >
+                                        {title}
+                                      </h4>
+                                    </a>
+                                    <div
+                                      class="flex flex-wrap gap-x-2 pt-2 text-sm lg:pt-0.5"
+                                    >
+                                      <div class=" lg:hidden">
+                                        {new Date(
+                                          items[0].publishedDate,
+                                        ).toLocaleTimeString("en-US", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                          hour12: true,
+                                        })}
+                                      </div>
+                                      <div class="">
+                                        {items[0].site}
+                                      </div>
+                                      &#183;
+                                      <div class="flex flex-wrap gap-x-2">
+                                        {#each symbols as symbol}
+                                          <a
+                                            href={`/${items[0].type}/${symbol}`}
+                                            class="text-blue-800 sm:hover:text-muted dark:sm:hover:text-white dark:text-blue-400"
+                                          >
+                                            {symbol}
+                                          </a>
+                                        {/each}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              {/each}
+                            </div>
+                          {/each}
+                        {:else}
+                          <span class="text-sm sm:text-[1rem]">
+                            No news yet. Add some stocks to the watchlist to see
+                            the latest news.
+                          </span>
+                        {/if}
+                      {:else if groupedEarnings?.length > 0}
                         {#each displayList as [date, titleGroups]}
                           <h3 class="mb-1.5 mt-3 font-semibold text-faded">
                             {date}
@@ -1956,61 +993,54 @@
                           <div
                             class="border border-gray-300 dark:border-gray-700"
                           >
-                            {#each titleGroups as { title, items, symbols }, index}
+                            {#each titleGroups as item, index}
                               <div
-                                class="flex border-gray-300 {index > 0
-                                  ? 'border-t'
-                                  : ''} dark:border-gray-600 text-small"
+                                class="flex border-gray-300 dark:border-gray-600 text-small"
                               >
                                 <div
                                   class="hidden min-w-[100px] items-center justify-center bg-gray-200 dark:bg-primary p-1 lg:flex"
                                 >
-                                  {new Date(
-                                    items[0].publishedDate,
-                                  ).toLocaleTimeString("en-US", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    hour12: true,
-                                  })}
+                                  {formatTime(item?.time)}
                                 </div>
-                                <div class="grow px-3 py-2 lg:py-1">
-                                  <a
-                                    href={items[0].url}
-                                    target="_blank"
-                                    rel="nofollow noopener noreferrer"
-                                    class="sm:hover:text-blue-800 dark:sm:hover:text-blue-400"
-                                  >
-                                    <h4
-                                      class="text-sm font-semibold lg:text-[1rem]"
-                                    >
-                                      {title}
-                                    </h4>
-                                  </a>
+                                <div
+                                  class="grow px-3 py-2 lg:py-1 {index > 0
+                                    ? 'border-t'
+                                    : ''} border-gray-300 dark:border-gray-700"
+                                >
+                                  <div>
+                                    {removeCompanyStrings(item?.name)}
+                                    (<HoverStockChart symbol={item?.symbol} />)
+                                    will report
+
+                                    {#if item?.time}
+                                      {#if compareTimes(item?.time, "16:00") >= 0}
+                                        after market closes.
+                                      {:else if compareTimes(item?.time, "09:30") <= 0}
+                                        before market opens.
+                                      {:else}
+                                        during market.
+                                      {/if}
+                                    {/if}
+                                    Analysts estimate {abbreviateNumber(
+                                      item?.revenueEst,
+                                    )} in revenue ({(
+                                      (item?.revenueEst / item?.revenuePrior -
+                                        1) *
+                                      100
+                                    )?.toFixed(2)}% YoY) and {item?.epsEst} in earnings
+                                    per share {#if item?.epsPrior !== 0}
+                                      ({(
+                                        (item?.epsEst / item?.epsPrior - 1) *
+                                        100
+                                      )?.toFixed(2)}% YoY).
+                                    {/if}
+                                  </div>
+
                                   <div
                                     class="flex flex-wrap gap-x-2 pt-2 text-sm lg:pt-0.5"
                                   >
                                     <div class=" lg:hidden">
-                                      {new Date(
-                                        items[0].publishedDate,
-                                      ).toLocaleTimeString("en-US", {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        hour12: true,
-                                      })}
-                                    </div>
-                                    <div class="">
-                                      {items[0].site}
-                                    </div>
-                                    &#183;
-                                    <div class="flex flex-wrap gap-x-2">
-                                      {#each symbols as symbol}
-                                        <a
-                                          href={`/${items[0].type}/${symbol}`}
-                                          class="text-blue-800 sm:hover:text-muted dark:sm:hover:text-white dark:text-blue-400"
-                                        >
-                                          {symbol}
-                                        </a>
-                                      {/each}
+                                      {formatTime(item?.time)}
                                     </div>
                                   </div>
                                 </div>
@@ -2019,99 +1049,33 @@
                           </div>
                         {/each}
                       {:else}
-                        <span class="text-sm sm:text-[1rem]">
-                          No news yet. Add some stocks to the watchlist to see
-                          the latest news.
-                        </span>
-                      {/if}
-                    {:else if groupedEarnings?.length > 0}
-                      {#each displayList as [date, titleGroups]}
-                        <h3 class="mb-1.5 mt-3 font-semibold text-faded">
-                          {date}
-                        </h3>
-                        <div
-                          class="border border-gray-300 dark:border-gray-700"
-                        >
-                          {#each titleGroups as item, index}
-                            <div
-                              class="flex border-gray-300 dark:border-gray-600 text-small"
-                            >
-                              <div
-                                class="hidden min-w-[100px] items-center justify-center bg-gray-200 dark:bg-primary p-1 lg:flex"
-                              >
-                                {formatTime(item?.time)}
-                              </div>
-                              <div
-                                class="grow px-3 py-2 lg:py-1 {index > 0
-                                  ? 'border-t'
-                                  : ''} border-gray-300 dark:border-gray-700"
-                              >
-                                <div>
-                                  {removeCompanyStrings(item?.name)}
-                                  (<HoverStockChart symbol={item?.symbol} />)
-                                  will report
-
-                                  {#if item?.time}
-                                    {#if compareTimes(item?.time, "16:00") >= 0}
-                                      after market closes.
-                                    {:else if compareTimes(item?.time, "09:30") <= 0}
-                                      before market opens.
-                                    {:else}
-                                      during market.
-                                    {/if}
-                                  {/if}
-                                  Analysts estimate {abbreviateNumber(
-                                    item?.revenueEst,
-                                  )} in revenue ({(
-                                    (item?.revenueEst / item?.revenuePrior -
-                                      1) *
-                                    100
-                                  )?.toFixed(2)}% YoY) and {item?.epsEst} in earnings
-                                  per share {#if item?.epsPrior !== 0}
-                                    ({(
-                                      (item?.epsEst / item?.epsPrior - 1) *
-                                      100
-                                    )?.toFixed(2)}% YoY).
-                                  {/if}
-                                </div>
-
-                                <div
-                                  class="flex flex-wrap gap-x-2 pt-2 text-sm lg:pt-0.5"
-                                >
-                                  <div class=" lg:hidden">
-                                    {formatTime(item?.time)}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          {/each}
-                        </div>
-                      {/each}
-                    {:else}
-                      <br />
-                      <div class="mt-3 sm:mt-0">
-                        <Infobox
-                          text="No earnings data available. Add some stocks to the watchlist to see
+                        <br />
+                        <div class="mt-3 sm:mt-0">
+                          <Infobox
+                            text="No earnings data available. Add some stocks to the watchlist to see
                         the latest earnings data."
-                        />
-                      </div>
-                    {/if}
+                          />
+                        </div>
+                      {/if}
+                    </div>
                   </div>
-                </div>
-              {:else}
-                <div
-                  class="flex flex-col justify-center items-center m-auto pt-5 z-0"
-                >
-                  <span class=" font-bold text-xl sm:text-3xl">
-                    Empty Watchlist
-                  </span>
+                {:else}
+                  <div
+                    class="flex flex-col justify-center items-center m-auto pt-5 z-0"
+                  >
+                    <span class=" font-bold text-xl sm:text-3xl">
+                      Empty Watchlist
+                    </span>
 
-                  <span class=" text-sm sm:text-lg pt-5 m-auto p-4 text-center">
-                    Fill it up with your favorite stocks and get realtime data
-                    and the latest news in one place!
-                  </span>
-                </div>
-              {/if}
+                    <span
+                      class=" text-sm sm:text-lg pt-5 m-auto p-4 text-center"
+                    >
+                      Fill it up with your favorite stocks and get realtime data
+                      and the latest news in one place!
+                    </span>
+                  </div>
+                {/if}
+              {/key}
               <!--End Table of Watchlist-->
             {/if}
           {:else}
