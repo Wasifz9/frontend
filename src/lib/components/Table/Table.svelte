@@ -38,13 +38,53 @@
     { name: "Revenue", rule: "revenue" },
   ];
 
+  // Navigation tabs and predefined rule sets
+  let displayTableTab = "general";
+
+  const tabRuleSets = {
+    general: [
+      { name: "Market Cap", rule: "marketCap", type: "int" },
+      { name: "Price", rule: "price", type: "float" },
+      { name: "% Change", rule: "changesPercentage", type: "percentSign" },
+    ],
+    performance: [
+      { name: "Price Change 1W", rule: "change1W", type: "percentSign" },
+      { name: "Price Change 1M", rule: "change1M", type: "percentSign" },
+      { name: "Price Change 3M", rule: "change3M", type: "percentSign" },
+      { name: "Price Change 6M", rule: "change6M", type: "percentSign" },
+      { name: "Price Change 1Y", rule: "change1Y", type: "percentSign" },
+    ],
+    financials: [
+      { name: "Revenue", rule: "revenue", type: "int" },
+      { name: "EBITDA", rule: "ebitda", type: "int" },
+      { name: "Net Income", rule: "netIncome", type: "int" },
+      { name: "FCF", rule: "freeCashFlow", type: "int" },
+      { name: "EPS", rule: "eps", type: "float" },
+      { name: "PE Ratio", rule: "priceToEarningsRatio", type: "float" },
+      { name: "PB Ratio", rule: "priceToBookRatio", type: "float" },
+    ],
+    analysts: [
+      { name: "Price", rule: "price", type: "float" },
+      { name: "Analyst Rating", rule: "analystRating", type: "rating" },
+      { name: "Analyst Count", rule: "analystCounter", type: "int" },
+      { name: "Price Target", rule: "priceTarget", type: "float" },
+      { name: "Upside", rule: "upside", type: "percentSign" },
+    ],
+    dividends: [
+      { name: "Price", rule: "price", type: "float" },
+      { name: "Dividend Yield", rule: "dividendYield", type: "percent" },
+      { name: "Revenue Growth", rule: "growthRevenue", type: "percentSign" },
+      { name: "EPS Growth", rule: "growthEPS", type: "percentSign" },
+    ],
+  };
+
   export let hideLastRow = false;
   export let editMode = false;
   export let deleteTickerList = [];
   export let onToggleDeleteTicker = null;
 
   let originalData = [...rawData]; // Unaltered copy of raw data
-  let ruleOfList = [...defaultList];
+  let ruleOfList = [...tabRuleSets.general];
   let socket;
   let sortMode = false;
   let inputValue = "";
@@ -308,9 +348,10 @@
         return;
       }
 
-      // Save the rules to localStorage
+      // Save the rules to localStorage with tab-specific key
+      const tabKey = `${pagePathName}_${displayTableTab}`;
       const serializedRules = JSON.stringify(ruleOfList);
-      localStorage.setItem(pagePathName, serializedRules);
+      localStorage.setItem(tabKey, serializedRules);
     } catch (e) {
       console.error("Failed saving indicator rules:", e);
 
@@ -321,7 +362,8 @@
           rule: rule.rule,
           type: rule.type || "string",
         }));
-        localStorage.setItem(pagePathName, JSON.stringify(simplifiedRules));
+        const tabKey = `${pagePathName}_${displayTableTab}`;
+        localStorage.setItem(tabKey, JSON.stringify(simplifiedRules));
         console.info("Saved simplified rules as fallback");
       } catch (fallbackError) {
         console.error("Failed saving even simplified rules:", fallbackError);
@@ -410,6 +452,42 @@
       // If the user is Pro, sort alphabetically
       return a?.name?.localeCompare(b.name);
     });
+  }
+
+  async function changeTab(tabName) {
+    // Save current tab's indicators before switching
+    if (pagePathName && displayTableTab && ruleOfList?.length > 0) {
+      const currentTabKey = `${pagePathName}_${displayTableTab}`;
+      localStorage?.setItem(currentTabKey, JSON.stringify(ruleOfList));
+    }
+
+    displayTableTab = tabName;
+
+    // Load saved indicators for this tab, or use predefined rules
+    const tabKey = `${pagePathName}_${tabName}`;
+    const savedTabRules = localStorage?.getItem(tabKey);
+
+    if (savedTabRules) {
+      try {
+        const parsedRules = JSON.parse(savedTabRules);
+        if (parsedRules && Array.isArray(parsedRules)) {
+          ruleOfList = parsedRules;
+        } else {
+          ruleOfList = [...tabRuleSets[tabName]] || [...tabRuleSets.general];
+        }
+      } catch (e) {
+        ruleOfList = [...tabRuleSets[tabName]] || [...tabRuleSets.general];
+      }
+    } else if (tabRuleSets[tabName]) {
+      ruleOfList = [...tabRuleSets[tabName]];
+    }
+
+    checkedItems = new Set(ruleOfList.map((item) => item.name));
+    allRows = sortIndicatorCheckMarks(allRows);
+
+    if (downloadWorker) {
+      await updateStockScreenerData();
+    }
   }
 
   async function handleChangeValue(value) {
@@ -509,8 +587,16 @@
 
   // Reactive statement to validate and clean rules when rawData changes
   $: if (rawData && rawData.length > 0) {
-    const wasCleanedUp = validateAndCleanRules(isInitialLoad);
+    // Only validate custom indicator rules, not predefined tab rules
+    const wasCleanedUp =
+      displayTableTab === "general"
+        ? validateAndCleanRules(isInitialLoad)
+        : false;
     if (wasCleanedUp) {
+      columns = generateColumns(rawData);
+      sortOrders = generateSortOrders(rawData);
+    } else {
+      // Always regenerate columns when data changes
       columns = generateColumns(rawData);
       sortOrders = generateSortOrders(rawData);
     }
@@ -561,8 +647,9 @@
     try {
       // derive pagePathName and storageKey from the page store
 
-      // Load saved rules (if any)
-      const savedRules = localStorage?.getItem(pagePathName);
+      // Load saved rules for current tab (if any)
+      const tabKey = `${pagePathName}_${displayTableTab}`;
+      const savedRules = localStorage?.getItem(tabKey);
       if (savedRules) {
         let parsedRules;
         try {
@@ -597,12 +684,14 @@
           }
 
           // Persist potentially reconciled rules back to storage
-          localStorage?.setItem(pagePathName, JSON.stringify(ruleOfList));
+          const tabKey = `${pagePathName}_${displayTableTab}`;
+          localStorage?.setItem(tabKey, JSON.stringify(ruleOfList));
         }
       } else {
-        // If no saved rules, initialize with the current ruleOfList (and persist)
-        pagePathName &&
-          localStorage?.setItem(pagePathName, JSON.stringify(ruleOfList));
+        // If no saved rules, use predefined rules for current tab
+        ruleOfList = [...tabRuleSets[displayTableTab]] || [
+          ...tabRuleSets.general,
+        ];
       }
 
       // Update checked items and sort the indicators (validation will happen reactively)
@@ -718,22 +807,22 @@
       (key) => key !== "type",
     );
 
-    // Filter ruleOfList to only include rules that exist in availableKeys
-    const validRulesList = ruleOfList.filter((item) =>
-      availableKeys.includes(item.rule),
-    );
+    // For predefined tabs, include all rules even if data is missing
+    // For general tab (custom indicators), only include rules that exist in data
+    const validRulesList =
+      displayTableTab === "general"
+        ? ruleOfList.filter((item) => availableKeys.includes(item.rule))
+        : ruleOfList;
 
-    // Merge the preferred order with the valid rules list
+    // Only use columns from ruleOfList and preferred order that exist in data
     const orderedKeys = [
       ...preferredOrder?.filter((key) => availableKeys?.includes(key)),
       ...validRulesList
         ?.map((item) => item.rule)
-        .filter((key) => availableKeys?.includes(key)),
-      ...availableKeys?.filter(
-        (key) =>
-          !preferredOrder?.includes(key) &&
-          !validRulesList?.some((item) => item.rule === key),
-      ),
+        .filter(
+          (key) =>
+            availableKeys?.includes(key) && !preferredOrder.includes(key),
+        ),
     ];
 
     return orderedKeys?.map((key) => ({
@@ -1084,6 +1173,69 @@
     </DropdownMenu.Root>
   </div>
 </div>
+
+<!-- Navigation Tabs -->
+<nav class="w-full flex flex-row items-center mt-3">
+  <ul
+    class="flex flex-row overflow-x-auto items-center space-x-2 whitespace-nowrap"
+  >
+    <li>
+      <button
+        on:click={() => changeTab("general")}
+        class="cursor-pointer text-[1rem] block rounded px-2 py-0.5 focus:outline-hidden sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-gray-100 dark:sm:hover:bg-primary {displayTableTab ===
+        'general'
+          ? 'font-semibold bg-gray-100 text-muted dark:text-white dark:bg-primary'
+          : ''}"
+      >
+        General
+      </button>
+    </li>
+    <li>
+      <button
+        on:click={() => changeTab("performance")}
+        class="cursor-pointer text-[1rem] block rounded px-2 py-0.5 focus:outline-hidden sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-gray-100 dark:sm:hover:bg-primary {displayTableTab ===
+        'performance'
+          ? 'font-semibold bg-gray-100 text-muted dark:text-white dark:bg-primary'
+          : ''}"
+      >
+        Performance
+      </button>
+    </li>
+    <li>
+      <button
+        on:click={() => changeTab("financials")}
+        class="cursor-pointer text-[1rem] block rounded px-2 py-0.5 focus:outline-hidden sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-gray-100 dark:sm:hover:bg-primary {displayTableTab ===
+        'financials'
+          ? 'font-semibold bg-gray-100 text-muted dark:text-white dark:bg-primary'
+          : ''}"
+      >
+        Financials
+      </button>
+    </li>
+    <li>
+      <button
+        on:click={() => changeTab("analysts")}
+        class="cursor-pointer text-[1rem] block rounded px-2 py-0.5 focus:outline-hidden sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-gray-100 dark:sm:hover:bg-primary {displayTableTab ===
+        'analysts'
+          ? 'font-semibold bg-gray-100 text-muted dark:text-white dark:bg-primary'
+          : ''}"
+      >
+        Analysts
+      </button>
+    </li>
+    <li>
+      <button
+        on:click={() => changeTab("dividends")}
+        class="cursor-pointer text-[1rem] block rounded px-2 py-0.5 focus:outline-hidden sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-gray-100 dark:sm:hover:bg-primary {displayTableTab ===
+        'dividends'
+          ? 'font-semibold bg-gray-100 text-muted dark:text-white dark:bg-primary'
+          : ''}"
+      >
+        Dividends
+      </button>
+    </li>
+  </ul>
+</nav>
 
 {#if stockList?.length > 0}
   <div class="w-full overflow-x-auto text-muted dark:text-white">
