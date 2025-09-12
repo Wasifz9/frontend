@@ -71,10 +71,10 @@
       { name: "Upside", rule: "upside", type: "percentSign" },
     ],
     dividends: [
-      { name: "Price", rule: "price", type: "float" },
       { name: "Dividend Yield", rule: "dividendYield", type: "percent" },
+      { name: "Dividend Growth", rule: "dividendGrowth", type: "percentSign" },
+      { name: "Payout Ratio", rule: "payoutRatio", type: "percent" },
       { name: "Payout Frequency", rule: "payoutFrequency", type: "str" },
-      { name: "Payout Ratio", rule: "payoutRatio", type: "percentSign" },
     ],
   };
 
@@ -1343,7 +1343,7 @@
                 class:text-right={column.align === "right"}
               >
                 {#if item[column.key] === null || item[column.key] === undefined}
-                  n/a
+                  -
                 {:else if column.key === "symbol"}
                   {#if editMode}
                     <div class="flex flex-row items-center">
@@ -1382,7 +1382,7 @@
                   })}
                 {:else if column?.type === "int"}
                   {@html column.key === "marketCap" && item[column.key] === 0
-                    ? "n/a"
+                    ? "-"
                     : abbreviateNumber(item[column.key], false, true)}
                 {:else if column?.type === "decimal"}
                   {item[column.key]?.toLocaleString("en-US")}
@@ -1416,7 +1416,7 @@
                     {/if}
                     {item[column.key] !== null
                       ? item[column.key]?.toFixed(2)
-                      : "n/a"}
+                      : "-"}
                   </div>
                 {:else if column.type === "percent"}
                   {item[column.key] > 0.01
