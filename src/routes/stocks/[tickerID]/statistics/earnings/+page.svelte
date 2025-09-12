@@ -299,8 +299,8 @@
 
     // Table columns & sorting
     let columns = [
-        { key: "date", label: "Date", align: "left" },
-        { key: "period", label: "Quarter", align: "center" },
+        { key: "period_year", label: "Period", align: "left" },
+        { key: "date", label: "Date", align: "right" },
         { key: "eps", label: "EPS", align: "right" },
         { key: "eps_est", label: "EPS Est.", align: "right" },
         { key: "revenue", label: "Revenue", align: "right" },
@@ -308,6 +308,7 @@
     ];
 
     let sortOrders = {
+        period_year: { order: "none", type: "string" },
         date: { order: "none", type: "date" },
         period: { order: "none", type: "string" },
         eps: { order: "none", type: "number" },
@@ -573,7 +574,16 @@
                                                     class="dark:sm:hover:bg-[#245073]/10 odd:bg-[#F6F7F8] dark:odd:bg-odd"
                                                 >
                                                     <td
-                                                        class=" text-sm sm:text-[1rem] whitespace-nowrap"
+                                                        class=" text-sm sm:text-[1rem] text-start whitespace-nowrap"
+                                                    >
+                                                        FY{String(
+                                                            item?.period_year,
+                                                        )?.slice(-2)}
+                                                        {item.period}
+                                                    </td>
+
+                                                    <td
+                                                        class=" text-sm text-end sm:text-[1rem] whitespace-nowrap"
                                                     >
                                                         {new Date(
                                                             item.date,
@@ -586,12 +596,6 @@
                                                                 timeZone: "UTC",
                                                             },
                                                         )}
-                                                    </td>
-
-                                                    <td
-                                                        class=" text-sm sm:text-[1rem] text-center whitespace-nowrap"
-                                                    >
-                                                        {item.period}
                                                     </td>
 
                                                     <td
