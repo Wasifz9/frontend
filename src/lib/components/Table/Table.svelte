@@ -92,15 +92,6 @@
   const defaultRules = defaultList?.map((item) => item?.rule);
 
   let searchWorker: Worker | undefined;
-  let syncWorker: Worker | undefined = undefined;
-
-  // Handling messages from the worker
-  const handleMessage = async (event) => {
-    const filterData = event.data?.output;
-
-    rawData = filterData;
-    stockList = [...filterData]?.slice(0, 50);
-  };
 
   let pagePathName = $page?.url?.pathname;
 
@@ -344,7 +335,8 @@
     });
 
     // Trigger reactivity by creating a new reference
-    rawData = [...updatedRawData];
+    originalData = [...updatedRawData];
+    rawData = originalData;
     stockList = rawData?.slice(0, 100);
 
     // Validate and clean rules after updating data
@@ -703,7 +695,7 @@
   const loadSearchWorker = async () => {
     if (searchWorker && rawData?.length > 0) {
       searchWorker.postMessage({
-        rawData: originalData,
+        rawData: rawData,
         inputValue: inputValue,
       });
     }
@@ -731,6 +723,7 @@
   const handleSearchMessage = (event) => {
     if (event.data?.message === "success") {
       rawData = event.data?.output ?? [];
+
       stockList = rawData?.slice(0, 50);
     }
   };
@@ -913,10 +906,10 @@
       "putCallShare",
     ]);
 
-    return Object.keys(data[0])?.reduce((orders, key) => {
+    return Object?.keys(data[0])?.reduce((orders, key) => {
       orders[key] = {
         order: "none",
-        type: stringKeys.has(key) ? "string" : "number",
+        type: stringKeys?.has(key) ? "string" : "number",
       };
       return orders;
     }, {});

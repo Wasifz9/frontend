@@ -4,6 +4,7 @@ onmessage = (event: MessageEvent) => {
   const rawData = event.data?.rawData;
   const filterQueryRaw = event.data?.inputValue;
 
+
   if (!rawData || !filterQueryRaw) {
     postMessage({ message: "success", output: [] });
     return;
