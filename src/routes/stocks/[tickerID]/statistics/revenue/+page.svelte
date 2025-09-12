@@ -6,7 +6,6 @@
   import * as DropdownMenu from "$lib/components/shadcn/dropdown-menu/index.js";
   import { Button } from "$lib/components/shadcn/button/index.js";
 
-  import { goto } from "$app/navigation";
   import highcharts from "$lib/highcharts.ts";
 
   import Infobox from "$lib/components/Infobox.svelte";
