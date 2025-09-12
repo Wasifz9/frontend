@@ -578,7 +578,7 @@
                 : 'md:block'} border-t border-b border-gray-300 dark:border-gray-800 py-2"
             >
               <div
-                class="grid grid-cols-2 gap-3 sm:gap-0 sm:flex sm:flex-row sm:items-center"
+                class="w-full grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-0 sm:flex sm:flex-row sm:items-center"
               >
                 <div class="order-0 w-full sm:w-fit">
                   <DropdownMenu.Root>
@@ -695,9 +695,9 @@
                     <div class="relative sm:ml-3 w-full">
                       <Combobox.Input
                         on:input={search}
-                        class="py-[7px] text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow-xs focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-600 grow w-full sm:min-w-56"
-                        placeholder="Find..."
-                        aria-label="Find..."
+                        class="py-[7px] text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow-xs focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-600 grow w-full "
+                        placeholder="Add stock..."
+                        aria-label="Add stock..."
                       />
                     </div>
 
@@ -746,16 +746,16 @@
                 </div>
 
                 <div
-                  class="order-4 w-fit flex justify-end sm:ml-3 {displayWatchList?.title ===
+                  class="order-1 sm:order-last w-full sm:w-fit flex justify-end sm:ml-3 {displayWatchList?.title ===
                   undefined
                     ? 'hidden'
                     : ''}"
                 >
-                  <div class="flex flex-row items-center justify-end">
+                  <div class="flex flex-row items-center justify-end w-full">
                     {#if editMode}
                       <label
                         on:click={handleDeleteTickers}
-                        class="border text-sm border-gray-300 dark:border-gray-600 mr-2 sm:ml-3 sm:mr-0 cursor-pointer inline-flex items-center justify-center space-x-1 whitespace-nowrap rounded py-1.5 pl-3 pr-4 font-semibold dark:bg-default bg-black sm:hover:bg-default text-white dark:sm:hover:bg-default/60 ease-out sm:hover:text-red-500"
+                        class="w-full border text-sm border-gray-300 dark:border-gray-600 mr-2 sm:ml-3 sm:mr-0 cursor-pointer inline-flex items-center justify-center space-x-1 whitespace-nowrap rounded py-1.5 pl-3 pr-4 font-semibold dark:bg-default bg-black sm:hover:bg-default text-white dark:sm:hover:bg-default/60 ease-out sm:hover:text-red-500"
                       >
                         <svg
                           class="inline-block w-5 h-5"
@@ -773,7 +773,7 @@
                     {/if}
                     <label
                       on:click={handleEditMode}
-                      class=" border text-sm border-gray-300 dark:border-gray-600 sm:ml-3 cursor-pointer inline-flex items-center justify-center space-x-1 whitespace-nowrap rounded py-1.5 px-3 dark:bg-primary dark:sm:hover:bg-secondary bg-black sm:hover:bg-default text-white ease-out"
+                      class=" w-full border text-sm border-gray-300 dark:border-gray-600 sm:ml-3 cursor-pointer inline-flex items-center justify-start space-x-1 whitespace-nowrap rounded py-1.5 px-3 dark:bg-primary dark:sm:hover:bg-secondary bg-black sm:hover:bg-default text-white ease-out"
                     >
                       <svg
                         class="inline-block w-5 h-5"
