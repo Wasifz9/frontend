@@ -73,8 +73,8 @@
     dividends: [
       { name: "Price", rule: "price", type: "float" },
       { name: "Dividend Yield", rule: "dividendYield", type: "percent" },
-      { name: "Revenue Growth", rule: "growthRevenue", type: "percentSign" },
-      { name: "EPS Growth", rule: "growthEPS", type: "percentSign" },
+      { name: "Payout Frequency", rule: "payoutFrequency", type: "str" },
+      { name: "Payout Ratio", rule: "payoutRatio", type: "percentSign" },
     ],
   };
 
@@ -244,14 +244,23 @@
   let indicatorsTabRules = [];
   let indicatorsTabCheckedItems = new Set();
 
+  // Helper function to check if two arrays have the same rules
+  function arraysEqual(arr1, arr2) {
+    if (!arr1 || !arr2) return false;
+    if (arr1.length !== arr2.length) return false;
+    const rules1 = arr1.map((item) => item.rule).sort();
+    const rules2 = arr2.map((item) => item.rule).sort();
+    return rules1.every((rule, index) => rule === rules2[index]);
+  }
+
   // Function to load indicators tab rules from localStorage
   function loadIndicatorsTabRules() {
     // Get current page path
     const currentPath = pagePathName || $page?.url?.pathname;
 
     if (!currentPath || typeof localStorage === "undefined") {
-      indicatorsTabRules = [...defaultList];
-      indicatorsTabCheckedItems = new Set(defaultList.map((item) => item.name));
+      indicatorsTabRules = [];
+      indicatorsTabCheckedItems = new Set();
       return;
     }
 
@@ -277,9 +286,9 @@
       }
     }
 
-    // Fallback to defaults if no saved rules or parsing failed
-    indicatorsTabRules = [...defaultList];
-    indicatorsTabCheckedItems = new Set(defaultList.map((item) => item.name));
+    // If no saved rules or parsing failed, leave empty
+    indicatorsTabRules = [];
+    indicatorsTabCheckedItems = new Set();
   }
 
   // Load indicators rules immediately when component initializes
@@ -415,11 +424,11 @@
   async function handleResetAll() {
     searchQuery = "";
 
-    // Reset indicators tab rules
+    // Reset indicators tab rules to defaults (keep default indicators checked)
     indicatorsTabRules = [...defaultList];
     indicatorsTabCheckedItems = new Set(defaultList.map((item) => item.name));
 
-    // If we're currently on indicators tab, also update the display
+    // If we're currently on indicators tab, update display to show defaults
     if (displayTableTab === "indicators") {
       ruleOfList = [...defaultList];
       checkedItems = new Set(defaultList.map((item) => item.name));
@@ -428,7 +437,7 @@
 
     allRows = sortIndicatorCheckMarks(allRows);
 
-    // Save the reset rules to localStorage
+    // Save the default rules to localStorage
     if (pagePathName && typeof localStorage !== "undefined") {
       const indicatorsTabKey = `${pagePathName}_indicators`;
       localStorage.setItem(indicatorsTabKey, JSON.stringify(defaultList));
