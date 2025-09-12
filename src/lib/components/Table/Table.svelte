@@ -237,7 +237,47 @@
       ?.map((item) => item?.name), // Map the remaining items to their names
   );
 
-  checkedItems = new Set(ruleOfList?.map((item) => item.name));
+  // Initialize with just defaultList items checked
+  checkedItems = new Set(defaultList.map((item) => item.name));
+
+  // Store indicators tab rules separately from display tab rules - loaded from localStorage
+  let indicatorsTabRules = [];
+  let indicatorsTabCheckedItems = new Set();
+
+  // Function to load indicators tab rules from localStorage
+  function loadIndicatorsTabRules() {
+    // Get current page path
+    const currentPath = pagePathName || $page?.url?.pathname;
+    
+    if (!currentPath || typeof localStorage === "undefined") {
+      indicatorsTabRules = [...defaultList];
+      indicatorsTabCheckedItems = new Set(defaultList.map(item => item.name));
+      return;
+    }
+    
+    const indicatorsTabKey = `${currentPath}_indicators`;
+    const savedRules = localStorage?.getItem(indicatorsTabKey);
+    
+    if (savedRules) {
+      try {
+        const parsedRules = JSON.parse(savedRules);
+        if (parsedRules && Array.isArray(parsedRules) && parsedRules.length > 0) {
+          indicatorsTabRules = parsedRules;
+          indicatorsTabCheckedItems = new Set(parsedRules.map(rule => rule.name));
+          return;
+        }
+      } catch (e) {
+        console.warn("Error parsing saved indicators rules:", e);
+      }
+    }
+    
+    // Fallback to defaults if no saved rules or parsing failed
+    indicatorsTabRules = [...defaultList];
+    indicatorsTabCheckedItems = new Set(defaultList.map(item => item.name));
+  }
+
+  // Load indicators rules immediately when component initializes
+  loadIndicatorsTabRules();
 
   allRows = sortIndicatorCheckMarks(allRows);
 
@@ -307,34 +347,14 @@
   };
 
   function validateAndCleanRules(skipAutoSave = false) {
-    if (!rawData || rawData.length === 0) return false;
-
-    // Get available keys from the first item in rawData
-    const availableKeys = new Set(Object.keys(rawData[0]));
-
-    // Filter ruleOfList to only include rules that exist in rawData
-    const validRules = ruleOfList.filter((rule) =>
-      availableKeys.has(rule.rule),
-    );
-
-    // Update ruleOfList if any rules were removed
-    if (validRules.length !== ruleOfList.length) {
-      ruleOfList = validRules;
-      checkedItems = new Set(ruleOfList.map((item) => item.name));
-      allRows = sortIndicatorCheckMarks(allRows);
-
-      // Only auto-save if explicitly allowed
-      if (!skipAutoSave) {
-        saveRules();
-      }
-      return true; // Indicates that cleanup was performed
-    }
-    return false; // No cleanup needed
+    // DISABLED - This function was causing indicators to reset
+    // Only validate if there are actual missing data fields, not just because data changed
+    return false;
   }
 
   function saveRules() {
-    // Only save rules for the general tab - other tabs are fixed
-    if (displayTableTab !== "general") {
+    // Only save rules for the indicators tab - other tabs are fixed
+    if (displayTableTab !== "indicators") {
       return;
     }
 
@@ -353,10 +373,14 @@
         return;
       }
 
-      // Save the rules to localStorage for general tab only
-      const generalTabKey = `${pagePathName}_general`;
+      // Save the rules to localStorage for indicators tab only
+      const indicatorsTabKey = `${pagePathName}_indicators`;
       const serializedRules = JSON.stringify(ruleOfList);
-      localStorage.setItem(generalTabKey, serializedRules);
+      localStorage.setItem(indicatorsTabKey, serializedRules);
+      
+      // Also update in-memory indicators tab state
+      indicatorsTabRules = [...ruleOfList];
+      indicatorsTabCheckedItems = new Set(ruleOfList.map(rule => rule.name));
     } catch (e) {
       console.error("Failed saving indicator rules:", e);
 
@@ -367,8 +391,12 @@
           rule: rule.rule,
           type: rule.type || "string",
         }));
-        const generalTabKey = `${pagePathName}_general`;
-        localStorage.setItem(generalTabKey, JSON.stringify(simplifiedRules));
+        const indicatorsTabKey = `${pagePathName}_indicators`;
+        localStorage.setItem(indicatorsTabKey, JSON.stringify(simplifiedRules));
+        
+        // Also update in-memory indicators tab state with simplified rules
+        indicatorsTabRules = [...simplifiedRules];
+        indicatorsTabCheckedItems = new Set(simplifiedRules.map(rule => rule.name));
         console.info("Saved simplified rules as fallback");
       } catch (fallbackError) {
         console.error("Failed saving even simplified rules:", fallbackError);
@@ -377,14 +405,14 @@
   }
 
   async function handleResetAll() {
-    // Only allow reset on general tab
-    if (displayTableTab !== "general") {
+    // Only allow reset on indicators tab
+    if (displayTableTab !== "indicators") {
       return;
     }
 
     searchQuery = "";
     ruleOfList = [...defaultList];
-    checkedItems = new Set(ruleOfList.map((item) => item.name));
+    checkedItems = new Set(defaultList.map((item) => item.name));
     allRows = sortIndicatorCheckMarks(allRows);
     await updateStockScreenerData();
 
@@ -393,16 +421,15 @@
   }
 
   async function handleSelectAll() {
-    // Only allow select all on general tab
-    if (displayTableTab !== "general") {
+    // Only allow select all on indicators tab
+    if (displayTableTab !== "indicators") {
       return;
     }
 
     if (["Pro", "Plus"]?.includes(data?.user?.tier)) {
       searchQuery = "";
-      ruleOfList = allRows;
-      ruleOfList = [...ruleOfList];
-      checkedItems = new Set(ruleOfList?.map((item) => item.name));
+      ruleOfList = [...allRows]; // Select all available indicators
+      checkedItems = new Set(allRows.map((item) => item.name));
       allRows = sortIndicatorCheckMarks(allRows);
       await updateStockScreenerData();
 
@@ -438,8 +465,8 @@
 
   function sortIndicatorCheckMarks(allRows) {
     return allRows?.sort((a, b) => {
-      const isAChecked = checkedItems.has(a?.name);
-      const isBChecked = checkedItems.has(b?.name);
+      const isAChecked = indicatorsTabCheckedItems && indicatorsTabCheckedItems.has(a?.name);
+      const isBChecked = indicatorsTabCheckedItems && indicatorsTabCheckedItems.has(b?.name);
 
       // Sort checked items first
       if (isAChecked !== isBChecked) return isAChecked ? -1 : 1;
@@ -469,45 +496,37 @@
   }
 
   async function changeTab(tabName) {
-    // Save current indicators ONLY if we're on the general tab
+    // Save current indicators ONLY if we're on the indicators tab
     if (
       pagePathName &&
-      displayTableTab === "general" &&
+      displayTableTab === "indicators" &&
       ruleOfList?.length > 0
     ) {
-      const generalTabKey = `${pagePathName}_general`;
-      localStorage?.setItem(generalTabKey, JSON.stringify(ruleOfList));
+      const indicatorsTabKey = `${pagePathName}_indicators`;
+      localStorage?.setItem(indicatorsTabKey, JSON.stringify(ruleOfList));
+      // Also update our in-memory copy
+      indicatorsTabRules = [...ruleOfList];
+      indicatorsTabCheckedItems = new Set(ruleOfList.map((rule) => rule.name));
     }
 
     displayTableTab = tabName;
 
     if (tabName === "general") {
-      // For general tab, load saved custom indicators
-      const generalTabKey = `${pagePathName}_general`;
-      const savedGeneralRules = localStorage?.getItem(generalTabKey);
-
-      if (savedGeneralRules) {
-        try {
-          const parsedRules = JSON.parse(savedGeneralRules);
-          if (parsedRules && Array.isArray(parsedRules)) {
-            ruleOfList = parsedRules;
-          } else {
-            ruleOfList = [...defaultList];
-          }
-        } catch (e) {
-          ruleOfList = [...defaultList];
-        }
-      } else {
-        ruleOfList = [...defaultList];
-      }
+      // General tab always uses defaultList only
+      ruleOfList = [...defaultList];
+      checkedItems = new Set(defaultList.map((item) => item.name));
+    } else if (tabName === "indicators") {
+      // For indicators tab, load saved custom indicators or use in-memory copy
+      ruleOfList = [...indicatorsTabRules];
+      checkedItems = new Set([...indicatorsTabCheckedItems]);
     } else {
       // For all other tabs, always use their hardcoded predefined rules
       if (tabRuleSets[tabName]) {
         ruleOfList = [...tabRuleSets[tabName]];
+        checkedItems = new Set(ruleOfList.map((item) => item.name));
       }
     }
 
-    checkedItems = new Set(ruleOfList.map((item) => item.name));
     allRows = sortIndicatorCheckMarks(allRows);
 
     if (downloadWorker) {
@@ -516,23 +535,32 @@
   }
 
   async function handleChangeValue(value) {
-    // Only allow indicator changes on general tab
-    if (displayTableTab !== "general") {
+    // Only allow indicator changes on indicators tab
+    if (displayTableTab !== "indicators") {
       return;
     }
 
-    if (checkedItems.has(value)) {
-      checkedItems.delete(value); // Remove the value if it's already in the Set
+    // Toggle indicator in indicators tab
+    if (indicatorsTabCheckedItems.has(value)) {
+      indicatorsTabCheckedItems.delete(value);
     } else {
-      checkedItems.add(value); // Add the value if it's not in the Set
-      // Update ruleOfList based on checked items from indicatorList
+      indicatorsTabCheckedItems.add(value);
     }
-    ruleOfList = allRows.filter((item) => checkedItems.has(item.name)); // Assuming each item has a `value` property
+
+    // Update indicators tab rules
+    indicatorsTabRules = allRows.filter((item) =>
+      indicatorsTabCheckedItems.has(item.name),
+    );
+
+    // If we're currently on indicators tab, also update the display
+    if (displayTableTab === "indicators") {
+      checkedItems = new Set([...indicatorsTabCheckedItems]);
+      ruleOfList = [...indicatorsTabRules];
+    }
+
     allRows = [...allRows];
-    ruleOfList = [...ruleOfList];
 
     await updateStockScreenerData();
-    //allRows = sortIndicatorCheckMarks(allRows);
     saveRules();
   }
 
@@ -613,23 +641,23 @@
 
   $: stockList = [...stockList];
 
+  // Reactive statement to load indicators when page changes
+  $: if ($page?.url?.pathname && $page?.url?.pathname !== pagePathName) {
+    pagePathName = $page?.url?.pathname;
+    loadIndicatorsTabRules();
+  }
+
   let isInitialLoad = true;
 
   // Reactive statement to validate and clean rules when rawData changes
   $: if (rawData && rawData.length > 0) {
-    // Only validate custom indicator rules, not predefined tab rules
-    const wasCleanedUp =
-      displayTableTab === "general"
-        ? validateAndCleanRules(isInitialLoad)
-        : false;
-    if (wasCleanedUp) {
-      columns = generateColumns(rawData);
-      sortOrders = generateSortOrders(rawData);
-    } else {
-      // Always regenerate columns when data changes
-      columns = generateColumns(rawData);
-      sortOrders = generateSortOrders(rawData);
-    }
+    // Validate indicator rules but don't let it reset everything
+    const wasCleanedUp = validateAndCleanRules(isInitialLoad);
+    
+    // Always regenerate columns when data changes
+    columns = generateColumns(rawData);
+    sortOrders = generateSortOrders(rawData);
+    
     // After the first reactive run, allow auto-saving
     isInitialLoad = false;
   }
@@ -677,60 +705,27 @@
     try {
       // derive pagePathName and storageKey from the page store
 
-      // Load saved rules only for general tab
+      // Load indicators tab rules first - this is critical!
+      loadIndicatorsTabRules();
+
+      // Set current tab rules based on the active tab
       if (displayTableTab === "general") {
-        const generalTabKey = `${pagePathName}_general`;
-        const savedRules = localStorage?.getItem(generalTabKey);
-        if (savedRules) {
-          let parsedRules;
-          try {
-            parsedRules = JSON?.parse(savedRules);
-          } catch (err) {
-            console.warn("Saved rules parse error, ignoring saved rules:", err);
-            parsedRules = null;
-          }
-
-          if (parsedRules && Array.isArray(parsedRules)) {
-            // Reconcile parsed rules with the current allRows list (update types if changed)
-            ruleOfList = parsedRules.map((rule) => {
-              const matchingRow = allRows.find(
-                (row) => row.name === rule.name || row.rule === rule.rule,
-              );
-              if (matchingRow && matchingRow.type !== rule.type) {
-                return {
-                  ...rule,
-                  type: matchingRow.type,
-                  rule: matchingRow.rule,
-                  name: matchingRow.name,
-                };
-              }
-              return rule;
-            });
-
-            // If user is not Pro/Plus, keep only free rules (your existing logic used excludedRules as the free-list)
-            if (!["Pro", "Plus"]?.includes(data?.user?.tier)) {
-              ruleOfList = ruleOfList.filter((item) =>
-                excludedRules.has(item?.rule),
-              );
-            }
-
-            // Persist potentially reconciled rules back to storage
-            const generalTabKey = `${pagePathName}_general`;
-            localStorage?.setItem(generalTabKey, JSON.stringify(ruleOfList));
-          }
-        } else {
-          // If no saved rules for general tab, use defaultList prop
-          ruleOfList = [...defaultList];
-        }
+        // General tab always uses defaultList
+        ruleOfList = [...defaultList];
+        checkedItems = new Set(defaultList.map((item) => item.name));
+      } else if (displayTableTab === "indicators") {
+        // Use the loaded indicators tab rules
+        ruleOfList = [...indicatorsTabRules];
+        checkedItems = new Set([...indicatorsTabCheckedItems]);
       } else {
         // For all other tabs, always use their hardcoded predefined rules
         if (tabRuleSets[displayTableTab]) {
           ruleOfList = [...tabRuleSets[displayTableTab]];
+          checkedItems = new Set(ruleOfList.map((item) => item.name));
         }
       }
 
-      // Update checked items and sort the indicators (validation will happen reactively)
-      checkedItems = new Set(ruleOfList.map((item) => item.name));
+      // Sort the indicators (checkedItems already set above)
       allRows = sortIndicatorCheckMarks(allRows);
 
       if (!downloadWorker) {
@@ -843,9 +838,9 @@
     );
 
     // For predefined tabs, include all rules even if data is missing
-    // For general tab (custom indicators), only include rules that exist in data
+    // For indicators tab (custom indicators), only include rules that exist in data
     const validRulesList =
-      displayTableTab === "general"
+      displayTableTab === "indicators"
         ? ruleOfList.filter((item) => availableKeys.includes(item.rule))
         : ruleOfList;
 
@@ -1132,16 +1127,12 @@
                     class="cursor-pointer"
                   >
                     <input
-                      disabled={defaultRules?.includes(item?.rule)
-                        ? true
-                        : false}
+                      disabled={true}
                       type="checkbox"
-                      class="cursor-pointer rounded {defaultRules?.includes(
-                        item?.rule,
-                      )
-                        ? 'checked:bg-gray-700'
-                        : 'checked:bg-blue-700'}"
-                      checked={isChecked(item?.name)}
+                      class="cursor-pointer rounded checked:bg-gray-700"
+                      checked={displayTableTab === "indicators"
+                        ? isChecked(item?.name)
+                        : (indicatorsTabCheckedItems && indicatorsTabCheckedItems.has(item?.name))}
                     />
                     <span class="ml-2">{item?.name}</span>
                   </label>
@@ -1149,20 +1140,24 @@
                   <label
                     on:click|capture={(event) => {
                       event.preventDefault();
-                      handleChangeValue(item?.name);
+                      if (displayTableTab === "indicators") {
+                        handleChangeValue(item?.name);
+                      }
                     }}
                     class="cursor-pointer"
                     for={item?.name}
                   >
                     <input
                       disabled={defaultRules?.includes(item?.rule) ||
-                        displayTableTab !== "general"}
+                        displayTableTab !== "indicators"}
                       type="checkbox"
                       class="rounded {defaultRules?.includes(item?.rule) ||
-                      displayTableTab !== 'general'
+                      displayTableTab !== 'indicators'
                         ? 'checked:bg-gray-800'
                         : 'checked:bg-blue-700'}"
-                      checked={isChecked(item?.name)}
+                      checked={displayTableTab === "indicators"
+                        ? isChecked(item?.name)
+                        : (indicatorsTabCheckedItems && indicatorsTabCheckedItems.has(item?.name))}
                     />
                     <span class="ml-2">{item?.name}</span>
                   </label>
@@ -1267,6 +1262,24 @@
           : ''}"
       >
         Dividends
+      </button>
+    </li>
+    <li>
+      <button
+        on:click={() => changeTab("indicators")}
+        class="cursor-pointer text-[1rem] flex flex-row items-center relative block rounded px-2 py-1 sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-gray-100 dark:sm:hover:bg-primary {displayTableTab ===
+        'indicators'
+          ? 'font-semibold bg-gray-100 text-muted dark:text-white dark:bg-primary'
+          : ''} focus:outline-hidden"
+      >
+        Indicators
+        {#if indicatorsTabRules && indicatorsTabRules.length > defaultList.length && displayTableTab !== "indicators"}
+          <div
+            class="ml-1 flex items-center justify-center h-4 w-4 bg-blue-800 dark:bg-white text-white dark:text-black rounded-full text-xs font-bold"
+          >
+            {indicatorsTabRules.length - defaultList.length}
+          </div>
+        {/if}
       </button>
     </li>
   </ul>
