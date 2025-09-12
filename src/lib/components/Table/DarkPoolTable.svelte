@@ -133,7 +133,7 @@
     >
       <div
         on:click={() => sortData("date")}
-        class="cursor-pointer p-2 text-center select-none whitespace-nowrap"
+        class="cursor-pointer p-2 text-start select-none whitespace-nowrap"
       >
         Date
       </div>
@@ -161,7 +161,7 @@
 
       <div
         on:click={() => sortData("price")}
-        class="cursor-pointer p-2 text-center select-none whitespace-nowrap"
+        class="cursor-pointer p-2 text-start select-none whitespace-nowrap"
       >
         Price
         <svg
@@ -182,7 +182,7 @@
       </div>
       <div
         on:click={() => sortData("premium")}
-        class="cursor-pointer p-2 text-center select-none whitespace-nowrap"
+        class="cursor-pointer p-2 text-start select-none whitespace-nowrap"
       >
         Avg. Paid
         <svg
@@ -203,7 +203,7 @@
       </div>
       <div
         on:click={() => sortData("size")}
-        class="cursor-pointer p-2 text-center select-none whitespace-nowrap"
+        class="cursor-pointer p-2 text-start select-none whitespace-nowrap"
       >
         Size
         <svg
@@ -224,7 +224,7 @@
       </div>
       <div
         on:click={() => sortData("volume")}
-        class="cursor-pointer p-2 text-center select-none whitespace-nowrap"
+        class="cursor-pointer p-2 text-start select-none whitespace-nowrap"
       >
         Volume
         <svg
@@ -246,7 +246,7 @@
 
       <div
         on:click={() => sortData("sizeVolRatio")}
-        class="cursor-pointer p-2 text-center select-none whitespace-nowrap"
+        class="cursor-pointer p-2 text-start select-none whitespace-nowrap"
       >
         % Size / Vol
         <svg
@@ -268,7 +268,7 @@
 
       <div
         on:click={() => sortData("sizeAvgVolRatio")}
-        class="cursor-pointer p-2 text-center select-none whitespace-nowrap"
+        class="cursor-pointer p-2 text-start select-none whitespace-nowrap"
       >
         % Size / Avg Vol
         <svg
@@ -290,7 +290,7 @@
 
       <div
         on:click={() => sortData("sector")}
-        class="cursor-pointer p-2 text-center select-none whitespace-nowrap"
+        class="cursor-pointer p-2 text-start select-none whitespace-nowrap"
       >
         Sector
         <svg
@@ -311,7 +311,7 @@
       </div>
       <div
         on:click={() => sortData("assetType")}
-        class="cursor-pointer p-2 text-center select-none whitespace-nowrap"
+        class="cursor-pointer p-2 text-end select-none whitespace-nowrap"
       >
         Asset type
         <svg
@@ -365,13 +365,18 @@
           {@const isHugeSize = item?.size >= 50000}
           {@const isHighVolRatio = item?.sizeVolRatio >= 5}
           {@const isHighAvgVolRatio = item?.sizeAvgVolRatio >= 10}
-          
+
           {#if isLargeSize || isHighVolRatio || isHighAvgVolRatio}
-            {@const baseColor = $mode === 'light' 
-              ? (index % 2 === 0 ? '#ffffff' : '#F6F7F8')
-              : (index % 2 === 0 ? '#09090B' : '#121217')}
-            
-            <div 
+            {@const baseColor =
+              $mode === "light"
+                ? index % 2 === 0
+                  ? "#ffffff"
+                  : "#F6F7F8"
+                : index % 2 === 0
+                  ? "#09090B"
+                  : "#121217"}
+
+            <div
               class="absolute inset-0 pointer-events-none z-0"
               style="background: {(() => {
                 if ($mode === 'light') {
@@ -402,7 +407,9 @@
           {/if}
         {/if}
         <!-- Date Column -->
-        <div class="p-2 text-center text-xs sm:text-sm whitespace-nowrap relative z-10">
+        <div
+          class="p-2 text-start text-xs sm:text-sm whitespace-nowrap relative z-10"
+        >
           {$screenWidth < 640
             ? formatToNewYorkTime(displayedData[index]?.date)?.slice(0, -3)
             : formatToNewYorkTime(displayedData[index]?.date)}
@@ -415,51 +422,53 @@
           />
         </div>
         <!-- Price Column -->
-        <div class="p-2 text-center text-sm sm:text-[1rem] relative z-10">
+        <div class="p-2 text-start text-sm sm:text-[1rem] relative z-10">
           {displayedData[index]?.price}
         </div>
         <!-- Premium Column -->
-        <div class="p-2 text-center text-sm sm:text-[1rem] relative z-10">
+        <div class="p-2 text-start text-sm sm:text-[1rem] relative z-10">
           {abbreviateNumber(displayedData[index]?.premium, true, true)}
         </div>
         <!-- Size Column -->
-        <div class="p-2 text-center text-sm sm:text-[1rem] relative z-10">
+        <div class="p-2 text-start text-sm sm:text-[1rem] relative z-10">
           {new Intl.NumberFormat("en", {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
           }).format(displayedData[index]?.size)}
         </div>
         <!-- Volume Column -->
-        <div class="p-2 text-center text-sm sm:text-[1rem] relative z-10">
-          {abbreviateNumber(displayedData[index]?.volume, false, true)}
+        <div class="p-2 text-start text-sm sm:text-[1rem] relative z-10">
+          {displayedData[index]?.volume?.toLocaleString("en-US")}
         </div>
         <!-- % Size / Vol Column -->
-        <div class="p-2 text-center text-sm sm:text-[1rem] relative z-10">
+        <div class="p-2 text-start text-sm sm:text-[1rem] relative z-10">
           {displayedData[index]?.sizeVolRatio > 0.01
             ? displayedData[index]?.sizeVolRatio?.toFixed(2) + "%"
             : "< 0.01%"}
         </div>
         <!-- % Size / Avg Vol Column -->
-        <div class="p-2 text-center text-sm sm:text-[1rem] relative z-10">
+        <div class="p-2 text-start text-sm sm:text-[1rem] relative z-10">
           {displayedData[index]?.sizeAvgVolRatio > 0.01
             ? displayedData[index]?.sizeAvgVolRatio?.toFixed(2) + "%"
             : "< 0.01%"}
         </div>
         <!-- Sector Column -->
-        <div class="p-2 text-center text-sm sm:text-[1rem] whitespace-nowrap relative z-10">
+        <div
+          class="p-2 text-start text-sm sm:text-[1rem] whitespace-nowrap relative z-10"
+        >
           <a
             href={sectorNavigation?.find(
               (item) => item?.title === displayedData[index]?.sector,
             )?.link}
             class="sm:hover:underline sm:hover:underline-offset-4"
           >
-            {displayedData[index]?.sector?.length > 13
-              ? displayedData[index]?.sector?.slice(0, 13) + "..."
+            {displayedData[index]?.sector?.length > 20
+              ? displayedData[index]?.sector?.slice(0, 20) + "..."
               : displayedData[index]?.sector}
           </a>
         </div>
         <!-- Asset Type Column -->
-        <div class="p-2 text-center text-sm sm:text-[1rem] relative z-10">
+        <div class="p-2 text-end text-sm sm:text-[1rem] relative z-10">
           {displayedData[index]?.assetType}
         </div>
       </div>
