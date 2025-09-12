@@ -84,7 +84,7 @@
   export let onToggleDeleteTicker = null;
 
   let originalData = [...rawData]; // Unaltered copy of raw data
-  let ruleOfList = [...tabRuleSets.general];
+  let ruleOfList = [...defaultList];
   let socket;
   let sortMode = false;
   let inputValue = "";
@@ -333,6 +333,11 @@
   }
 
   function saveRules() {
+    // Only save rules for the general tab - other tabs are fixed
+    if (displayTableTab !== "general") {
+      return;
+    }
+
     // Check if localStorage is available and pagePathName is valid
     if (!pagePathName || typeof localStorage === "undefined" || !localStorage) {
       console.warn(
@@ -348,10 +353,10 @@
         return;
       }
 
-      // Save the rules to localStorage with tab-specific key
-      const tabKey = `${pagePathName}_${displayTableTab}`;
+      // Save the rules to localStorage for general tab only
+      const generalTabKey = `${pagePathName}_general`;
       const serializedRules = JSON.stringify(ruleOfList);
-      localStorage.setItem(tabKey, serializedRules);
+      localStorage.setItem(generalTabKey, serializedRules);
     } catch (e) {
       console.error("Failed saving indicator rules:", e);
 
@@ -362,8 +367,8 @@
           rule: rule.rule,
           type: rule.type || "string",
         }));
-        const tabKey = `${pagePathName}_${displayTableTab}`;
-        localStorage.setItem(tabKey, JSON.stringify(simplifiedRules));
+        const generalTabKey = `${pagePathName}_general`;
+        localStorage.setItem(generalTabKey, JSON.stringify(simplifiedRules));
         console.info("Saved simplified rules as fallback");
       } catch (fallbackError) {
         console.error("Failed saving even simplified rules:", fallbackError);
@@ -372,9 +377,13 @@
   }
 
   async function handleResetAll() {
+    // Only allow reset on general tab
+    if (displayTableTab !== "general") {
+      return;
+    }
+
     searchQuery = "";
-    ruleOfList = defaultList;
-    ruleOfList = [...ruleOfList];
+    ruleOfList = [...defaultList];
     checkedItems = new Set(ruleOfList.map((item) => item.name));
     allRows = sortIndicatorCheckMarks(allRows);
     await updateStockScreenerData();
@@ -384,6 +393,11 @@
   }
 
   async function handleSelectAll() {
+    // Only allow select all on general tab
+    if (displayTableTab !== "general") {
+      return;
+    }
+
     if (["Pro", "Plus"]?.includes(data?.user?.tier)) {
       searchQuery = "";
       ruleOfList = allRows;
@@ -455,31 +469,42 @@
   }
 
   async function changeTab(tabName) {
-    // Save current tab's indicators before switching
-    if (pagePathName && displayTableTab && ruleOfList?.length > 0) {
-      const currentTabKey = `${pagePathName}_${displayTableTab}`;
-      localStorage?.setItem(currentTabKey, JSON.stringify(ruleOfList));
+    // Save current indicators ONLY if we're on the general tab
+    if (
+      pagePathName &&
+      displayTableTab === "general" &&
+      ruleOfList?.length > 0
+    ) {
+      const generalTabKey = `${pagePathName}_general`;
+      localStorage?.setItem(generalTabKey, JSON.stringify(ruleOfList));
     }
 
     displayTableTab = tabName;
 
-    // Load saved indicators for this tab, or use predefined rules
-    const tabKey = `${pagePathName}_${tabName}`;
-    const savedTabRules = localStorage?.getItem(tabKey);
+    if (tabName === "general") {
+      // For general tab, load saved custom indicators
+      const generalTabKey = `${pagePathName}_general`;
+      const savedGeneralRules = localStorage?.getItem(generalTabKey);
 
-    if (savedTabRules) {
-      try {
-        const parsedRules = JSON.parse(savedTabRules);
-        if (parsedRules && Array.isArray(parsedRules)) {
-          ruleOfList = parsedRules;
-        } else {
-          ruleOfList = [...tabRuleSets[tabName]] || [...tabRuleSets.general];
+      if (savedGeneralRules) {
+        try {
+          const parsedRules = JSON.parse(savedGeneralRules);
+          if (parsedRules && Array.isArray(parsedRules)) {
+            ruleOfList = parsedRules;
+          } else {
+            ruleOfList = [...defaultList];
+          }
+        } catch (e) {
+          ruleOfList = [...defaultList];
         }
-      } catch (e) {
-        ruleOfList = [...tabRuleSets[tabName]] || [...tabRuleSets.general];
+      } else {
+        ruleOfList = [...defaultList];
       }
-    } else if (tabRuleSets[tabName]) {
-      ruleOfList = [...tabRuleSets[tabName]];
+    } else {
+      // For all other tabs, always use their hardcoded predefined rules
+      if (tabRuleSets[tabName]) {
+        ruleOfList = [...tabRuleSets[tabName]];
+      }
     }
 
     checkedItems = new Set(ruleOfList.map((item) => item.name));
@@ -491,6 +516,11 @@
   }
 
   async function handleChangeValue(value) {
+    // Only allow indicator changes on general tab
+    if (displayTableTab !== "general") {
+      return;
+    }
+
     if (checkedItems.has(value)) {
       checkedItems.delete(value); // Remove the value if it's already in the Set
     } else {
@@ -647,51 +677,56 @@
     try {
       // derive pagePathName and storageKey from the page store
 
-      // Load saved rules for current tab (if any)
-      const tabKey = `${pagePathName}_${displayTableTab}`;
-      const savedRules = localStorage?.getItem(tabKey);
-      if (savedRules) {
-        let parsedRules;
-        try {
-          parsedRules = JSON?.parse(savedRules);
-        } catch (err) {
-          console.warn("Saved rules parse error, ignoring saved rules:", err);
-          parsedRules = null;
-        }
-
-        if (parsedRules && Array.isArray(parsedRules)) {
-          // Reconcile parsed rules with the current allRows list (update types if changed)
-          ruleOfList = parsedRules.map((rule) => {
-            const matchingRow = allRows.find(
-              (row) => row.name === rule.name || row.rule === rule.rule,
-            );
-            if (matchingRow && matchingRow.type !== rule.type) {
-              return {
-                ...rule,
-                type: matchingRow.type,
-                rule: matchingRow.rule,
-                name: matchingRow.name,
-              };
-            }
-            return rule;
-          });
-
-          // If user is not Pro/Plus, keep only free rules (your existing logic used excludedRules as the free-list)
-          if (!["Pro", "Plus"]?.includes(data?.user?.tier)) {
-            ruleOfList = ruleOfList.filter((item) =>
-              excludedRules.has(item?.rule),
-            );
+      // Load saved rules only for general tab
+      if (displayTableTab === "general") {
+        const generalTabKey = `${pagePathName}_general`;
+        const savedRules = localStorage?.getItem(generalTabKey);
+        if (savedRules) {
+          let parsedRules;
+          try {
+            parsedRules = JSON?.parse(savedRules);
+          } catch (err) {
+            console.warn("Saved rules parse error, ignoring saved rules:", err);
+            parsedRules = null;
           }
 
-          // Persist potentially reconciled rules back to storage
-          const tabKey = `${pagePathName}_${displayTableTab}`;
-          localStorage?.setItem(tabKey, JSON.stringify(ruleOfList));
+          if (parsedRules && Array.isArray(parsedRules)) {
+            // Reconcile parsed rules with the current allRows list (update types if changed)
+            ruleOfList = parsedRules.map((rule) => {
+              const matchingRow = allRows.find(
+                (row) => row.name === rule.name || row.rule === rule.rule,
+              );
+              if (matchingRow && matchingRow.type !== rule.type) {
+                return {
+                  ...rule,
+                  type: matchingRow.type,
+                  rule: matchingRow.rule,
+                  name: matchingRow.name,
+                };
+              }
+              return rule;
+            });
+
+            // If user is not Pro/Plus, keep only free rules (your existing logic used excludedRules as the free-list)
+            if (!["Pro", "Plus"]?.includes(data?.user?.tier)) {
+              ruleOfList = ruleOfList.filter((item) =>
+                excludedRules.has(item?.rule),
+              );
+            }
+
+            // Persist potentially reconciled rules back to storage
+            const generalTabKey = `${pagePathName}_general`;
+            localStorage?.setItem(generalTabKey, JSON.stringify(ruleOfList));
+          }
+        } else {
+          // If no saved rules for general tab, use defaultList prop
+          ruleOfList = [...defaultList];
         }
       } else {
-        // If no saved rules, use predefined rules for current tab
-        ruleOfList = [...tabRuleSets[displayTableTab]] || [
-          ...tabRuleSets.general,
-        ];
+        // For all other tabs, always use their hardcoded predefined rules
+        if (tabRuleSets[displayTableTab]) {
+          ruleOfList = [...tabRuleSets[displayTableTab]];
+        }
       }
 
       // Update checked items and sort the indicators (validation will happen reactively)
@@ -1120,11 +1155,11 @@
                     for={item?.name}
                   >
                     <input
-                      disabled={defaultRules?.includes(item?.rule)
-                        ? true
-                        : false}
+                      disabled={defaultRules?.includes(item?.rule) ||
+                        displayTableTab !== "general"}
                       type="checkbox"
-                      class="rounded {defaultRules?.includes(item?.rule)
+                      class="rounded {defaultRules?.includes(item?.rule) ||
+                      displayTableTab !== 'general'
                         ? 'checked:bg-gray-800'
                         : 'checked:bg-blue-700'}"
                       checked={isChecked(item?.name)}
