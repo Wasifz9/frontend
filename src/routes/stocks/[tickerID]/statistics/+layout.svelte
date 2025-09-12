@@ -9,7 +9,7 @@
       "market-cap": "/statistics/market-cap",
       "short-interest": "/statistics/short-interest",
       revenue: "/statistics/revenue",
-      "price-reaction": "/statistics/price-reaction",
+      earnings: "/statistics/earnings",
       "fail-to-deliver": "/statistics/fail-to-deliver",
     };
 
@@ -24,10 +24,10 @@
     if ($page?.url?.pathname) {
       const parts = $page?.url?.pathname.split("/");
       const sectionMap = {
+        earnings: "earnings",
         "market-cap": "market-cap",
         "short-interest": "short-interest",
         revenue: "revenue",
-        "price-reaction": "price-reaction",
         "fail-to-deliver": "fail-to-deliver",
       };
 
@@ -62,6 +62,16 @@
             </a>
 
             <a
+              href={`/stocks/${$stockTicker}/statistics/earnings`}
+              on:click={() => changeSubSection("earnings")}
+              class="p-2 px-5 cursor-pointer {displaySubSection === 'earnings'
+                ? 'text-muted dark:text-white bg-[#EEEEEE] dark:bg-primary/90 font-semibold'
+                : 'text-gray-600 dark:text-gray-400 sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-[#EEEEEE] dark:sm:hover:bg-primary/90'}"
+            >
+              Earnings
+            </a>
+
+            <a
               href={`/stocks/${$stockTicker}/statistics/market-cap`}
               on:click={() => changeSubSection("market-cap")}
               class="p-2 px-5 cursor-pointer {displaySubSection === 'market-cap'
@@ -90,17 +100,6 @@
                 : 'text-gray-600 dark:text-gray-400 sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-[#EEEEEE] dark:sm:hover:bg-primary/90'}"
             >
               Revenue
-            </a>
-
-            <a
-              href={`/stocks/${$stockTicker}/statistics/price-reaction`}
-              on:click={() => changeSubSection("price-reaction")}
-              class="p-2 px-5 cursor-pointer {displaySubSection ===
-              'price-reaction'
-                ? 'text-muted dark:text-white bg-[#EEEEEE] dark:bg-primary/90 font-semibold'
-                : 'text-gray-600 dark:text-gray-400 sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-[#EEEEEE] dark:sm:hover:bg-primary/90'}"
-            >
-              Price Reaction
             </a>
 
             <a
