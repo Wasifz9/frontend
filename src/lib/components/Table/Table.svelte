@@ -1302,7 +1302,7 @@
         Indicators
         {#if indicatorsTabRules && indicatorsTabRules.length > defaultList.length}
           <div
-            class="ml-1 flex items-center justify-center h-4 w-4 bg-blue-800 dark:bg-white text-white dark:text-black rounded-full text-xs font-bold"
+            class="ml-1 flex items-center justify-center h-4 w-4 bg-black dark:bg-white text-white dark:text-black rounded-full text-xs font-bold"
           >
             {indicatorsTabRules.length - defaultList.length}
           </div>
