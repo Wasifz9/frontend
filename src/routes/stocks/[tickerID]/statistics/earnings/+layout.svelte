@@ -6,7 +6,7 @@
     export let data;
     const similarStocks = data?.getSimilarStocks;
 
-    let displaySubSection = "overview";
+    let displaySubSection = "surprise";
 
     function changeSubSection(state) {
         const subSectionMap = {
@@ -14,7 +14,7 @@
             expiry: "/statistics/earnings/price-reaction",
         };
 
-        if (state !== "overview" && subSectionMap[state]) {
+        if (state !== "surprise" && subSectionMap[state]) {
             displaySubSection = state;
             //goto(`/stocks/${$stockTicker}${subSectionMap[state]}`);
         } else {
@@ -27,7 +27,7 @@
         if ($page?.url?.pathname) {
             const parts = $page?.url?.pathname.split("/");
             const sectionMap = {
-                overview: "overview",
+                surprise: "surprise",
                 "price-reaction": "price-reaction",
             };
 
@@ -38,7 +38,7 @@
             displaySubSection =
                 Object?.keys(sectionMap)?.find(
                     (key) => sectionMap[key] === foundSection,
-                ) || "overview";
+                ) || "surprise";
         }
     }
 </script>
@@ -60,13 +60,13 @@
                         <ul class="flex flex-row items-center w-full">
                             <a
                                 href={`/stocks/${$stockTicker}/statistics/earnings`}
-                                on:click={() => changeSubSection("overview")}
+                                on:click={() => changeSubSection("surprise")}
                                 class="p-2 px-5 cursor-pointer {displaySubSection ===
-                                'overview'
+                                'surprise'
                                     ? 'text-muted dark:text-white bg-[#EEEEEE] dark:bg-primary/90 font-semibold'
                                     : 'text-gray-600 dark:text-gray-400 sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-[#EEEEEE] dark:sm:hover:bg-primary/90'}"
                             >
-                                Overview
+                                Surprise
                             </a>
 
                             <a
@@ -117,18 +117,15 @@
                             class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded h-fit pb-4 mt-4"
                         >
                             <h3 class="p-2 pt-4 text-xl font-semibold">
-                                Earnings Release
+                                Earnings Surprise
                             </h3>
-                            <div class=" p-2">
-                                Earnings Release is a company’s official report
-                                of its financial performance over a specific
-                                period, usually quarterly or annually. It
-                                includes key metrics such as revenue, net
-                                income, and earnings per share (EPS). Earnings
-                                releases often set the tone for investor
-                                sentiment and can significantly influence the
-                                stock price, depending on whether results meet,
-                                beat, or miss expectations.
+                            <div class="p-2">
+                                Earnings Surprise occurs when a company’s
+                                reported earnings per share (EPS) differ from
+                                analysts’ expectations. A positive surprise
+                                (better than expected) often drives the stock
+                                price higher, while a negative surprise (worse
+                                than expected) can lead to declines.
                             </div>
 
                             <div class="px-2">

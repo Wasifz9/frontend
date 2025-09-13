@@ -381,11 +381,45 @@
 </script>
 
 <SEO
-    title={`${$displayCompanyName} (${$stockTicker}) Earnings Overview | Historical EPS & Price`}
-    description={`Historical earnings, EPS surprises and stock price for ${$displayCompanyName} (${$stockTicker}). Visual earnings impact with price overlay.`}
-    keywords={`${$stockTicker} earnings, ${$displayCompanyName} EPS, earnings surprise, historical price`}
+    title={`${$displayCompanyName} (${$stockTicker}) Earnings Surprise Analysis | EPS & Revenue Impact`}
+    description={`In-depth analysis of earnings surprises for ${$displayCompanyName} (${$stockTicker}), tracking EPS and revenue beats or misses. Explore historical earnings impact on stock price and performance trends.`}
+    keywords={`${$stockTicker} earnings surprise, ${$displayCompanyName} EPS surprise, revenue surprise, earnings analysis, historical stock price, EPS beats, revenue beats`}
     type="website"
     url={`https://stocknear.com/stocks/${$stockTicker}/statistics/earnings`}
+    structuredData={{
+        "@context": "https://schema.org",
+        "@type": ["FinancialProduct", "DataAnalysis"],
+        name: `${$displayCompanyName} Earnings Surprise Analysis`,
+        description: `Detailed tracking of EPS and revenue surprises for ${$displayCompanyName} (${$stockTicker}), with historical stock price reactions and performance insights.`,
+        url: `https://stocknear.com/stocks/${$stockTicker}/statistics/earnings`,
+        applicationCategory: "FinanceApplication",
+        featureList: [
+            "EPS surprise analysis",
+            "Revenue surprise tracking",
+            "Historical earnings data",
+            "Stock price reaction to surprises",
+            "Quarterly and annual performance trends",
+            "Post-earnings impact visualization",
+            "Data-driven investing insights",
+            "Earnings beat/miss evaluation",
+        ],
+        provider: {
+            "@type": "Organization",
+            name: "Stocknear",
+            url: "https://stocknear.com",
+        },
+        mainEntity: {
+            "@type": "Corporation",
+            name: $displayCompanyName,
+            tickerSymbol: $stockTicker,
+        },
+        about: {
+            "@type": "Thing",
+            name: "Earnings Surprise Analysis",
+            description:
+                "Professional analysis of EPS and revenue surprises and their impact on stock price and performance.",
+        },
+    }}
 />
 
 <section class=" w-full overflow-hidden h-full">
@@ -402,7 +436,7 @@
                     >
                         <h1 class="text-xl sm:text-2xl font-bold">
                             {removeCompanyStrings($displayCompanyName)} Earnings
-                            Overview
+                            Surprise
                         </h1>
                     </div>
 
