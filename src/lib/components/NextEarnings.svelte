@@ -62,9 +62,9 @@
             timeZone: "UTC",
           })}</strong
         >,
-        {#if compareTimes(rawData?.time, "16:00") > 0}
+        {#if compareTimes(rawData?.time, "16:00") >= 0}
           after market closes.
-        {:else if compareTimes(rawData?.time, "09:30") < 0}
+        {:else if compareTimes(rawData?.time, "09:30") <= 0}
           before market opens.
         {:else}
           during market hours.
