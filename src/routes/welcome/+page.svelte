@@ -15,36 +15,6 @@
   var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
 
   onMount(async () => {
-    // Extract value from URL or use default based on tier
-    const value = urlValue
-      ? parseFloat(urlValue)
-      : tier === "Plus"
-        ? 10
-        : tier === "Pro"
-          ? 20
-          : null;
-
-    // Meta Pixel conversion tracking
-    if (typeof window !== "undefined" && window.fbq && value) {
-      window?.fbq("track", "Purchase", {
-        value: value,
-        currency: "USD",
-        content_ids: [data?.user?.id || "unknown"],
-        content_type: "product",
-        content_name: tier + " Subscription",
-      });
-    }
-
-    // Google Ads conversion tracking
-    if (typeof window !== "undefined" && window.gtag && value) {
-      window?.gtag("event", "conversion", {
-        send_to: "AW-11328922950/FfVkCPuTupcbEMbKhpoq",
-        value: value || 1.0,
-        currency: "EUR",
-        transaction_id: data?.user?.id || "",
-      });
-    }
-
     function randomInRange(min, max) {
       return Math.random() * (max - min) + min;
     }
