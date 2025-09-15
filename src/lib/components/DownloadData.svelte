@@ -185,11 +185,11 @@
       <DropdownMenu.Trigger asChild let:builder>
         <Button
           builders={[builder]}
-          class="w-full sm:w-fit border-gray-300 dark:border-gray-600 border bg-black sm:hover:bg-default text-white dark:sm:hover:bg-primary ease-out flex flex-row justify-between items-center px-3 py-2.5  rounded truncate"
+          class="w-fit border-gray-300 dark:border-gray-600 border bg-black sm:hover:bg-default text-white dark:sm:hover:bg-primary ease-out flex flex-row justify-between items-center px-3 py-2.5  rounded truncate"
         >
           <span class="truncate text-[0.85rem] sm:text-sm">Bulk Download</span>
           <svg
-            class="-mr-1 ml-2 h-5 w-5 inline-block"
+            class="ml-0.5 mt-1 h-5 w-5 inline-block shrink-0"
             viewBox="0 0 20 20"
             fill="currentColor"
             style="max-width:40px"

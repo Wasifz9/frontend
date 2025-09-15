@@ -868,6 +868,7 @@
                       ]}
                       {editMode}
                       {deleteTickerList}
+                      bulkDownload={true}
                       onToggleDeleteTicker={handleFilter}
                     />
 
