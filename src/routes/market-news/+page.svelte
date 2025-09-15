@@ -6,7 +6,7 @@
 
   let rawData = data?.getStockNews;
   let marketNews = data?.getMarketNews;
-  let news = rawData.slice(0, 10) ?? [];
+  let news = rawData.slice(0, 20) ?? [];
 
   const formatDate = (dateString) => {
     // Create a date object for the input dateString

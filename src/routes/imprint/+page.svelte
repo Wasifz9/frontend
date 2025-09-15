@@ -49,7 +49,7 @@
                 <br class="mb-3" />
 
                 Managing Director (<span class="italic">Geschäftsführer</span>):
-                Muslem Rahimi
+                Dr. rer. nat. Muslem Rahimi
                 <br class="mb-3" />
 
                 Registered in the commercial register at the local court at
