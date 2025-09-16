@@ -1333,16 +1333,15 @@
       step: [100, 50, 10, 5, 1, 0],
       defaultCondition: "over",
       defaultValue: "any",
-      category: "Assets & Equity",
+      category: "Assets & Liabilities",
     },
     bookValue: {
       label: "Book Value",
       step: ["100B", "50B", "10B", "100M", "50M", "10M", "1M", 0],
       defaultCondition: "over",
       defaultValue: "any",
-      category: "Assets & Equity",
+      category: "Assets & Liabilities",
     },
-
     employees: {
       label: "Employees",
       step: ["500K", "300K", "200K", "100K", "10K", "1K", "100"],
