@@ -927,7 +927,7 @@
                     <DropdownMenu.Trigger asChild let:builder>
                       <Button
                         builders={[builder]}
-                        class="w-full min-w-auto border-gray-300 font-semibold dark:font-normal dark:border-gray-600 border text-white bg-black sm:hover:bg-default dark:bg-default dark:sm:hover:bg-primary ease-out  flex flex-row justify-between items-center px-3 py-2 h-10  rounded truncate"
+                        class="w-full min-w-auto border-gray-300 font-semibold dark:font-normal dark:border-gray-600 border text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary ease-out  flex flex-row justify-between items-center px-3 py-2 h-10  rounded truncate"
                       >
                         <span class="truncate text-sm"
                           >{selectedPlotCategory?.name}</span
@@ -959,8 +959,8 @@
                           <DropdownMenu.Item
                             on:click={() => changeCategory(item)}
                             class="{selectedPlotCategory?.name === item?.name
-                              ? 'bg-gray-200 dark:bg-primary'
-                              : ''} cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
+                              ? 'bg-gray-100 dark:bg-primary'
+                              : ''} cursor-pointer sm:hover:bg-gray-100 dark:sm:hover:bg-primary"
                           >
                             {item?.name}
                           </DropdownMenu.Item>
