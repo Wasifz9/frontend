@@ -464,6 +464,7 @@
       step: ["500B", "200B", "100B", "50B", "10B", "1B", "100M", "10M"],
       defaultCondition: "over",
       defaultValue: "any",
+      category: "Assets & Liabilities",
     },
     tangibleAssetValue: {
       label: "Tangible Assets",
@@ -746,7 +747,7 @@
       defaultCondition: "over",
       defaultValue: "any",
       varType: "percentSign",
-      category: "Debt",
+      category: "Assets & Liabilities",
     },
     growthTotalDebt: {
       label: "Total Debt Growth",
@@ -1327,6 +1328,21 @@
       defaultValue: "any",
       category: "Shares Statistics",
     },
+    bookValuePerShare: {
+      label: "Book Value Per Share",
+      step: [100, 50, 10, 5, 1, 0],
+      defaultCondition: "over",
+      defaultValue: "any",
+      category: "Assets & Equity",
+    },
+    bookValue: {
+      label: "Book Value",
+      step: ["100B", "50B", "10B", "100M", "50M", "10M", "1M", 0],
+      defaultCondition: "over",
+      defaultValue: "any",
+      category: "Assets & Equity",
+    },
+
     employees: {
       label: "Employees",
       step: ["500K", "300K", "200K", "100K", "10K", "1K", "100"],
@@ -1354,7 +1370,7 @@
       step: ["500B", "200B", "100B", "50B", "10B", "1B", "100M", "10M", "1M"],
       defaultCondition: "over",
       defaultValue: "any",
-      category: "Debt",
+      category: "Assets & Liabilities",
     },
     altmanZScore: {
       label: "Altman-Z-Score",
