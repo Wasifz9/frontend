@@ -122,81 +122,97 @@ function createRuleCheck(rule, ruleName, ruleValue) {
   if (rule.value === 'any') return () => true;
 
 
-
-  if (rule.name === 'earningsDate') {
-    // Get "midnight UTC" of "today"
-    const now = new Date();
-    const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-
-    // Helper: format a Date object as "YYYY-MM-DD"
-    const fmt = (d: Date) => d.toISOString().slice(0, 10);
-
-    // Pre‐compute ranges for each label
-    // Each entry is [startDateString, endDateString], inclusive
-    const ranges: Record<string, [string, string]> = {
-      'today': [fmt(todayUTC), fmt(todayUTC)],
-      'tomorrow': [
-        fmt(new Date(todayUTC.getTime() + 86400_000)), 
-        fmt(new Date(todayUTC.getTime() + 86400_000))
-      ],
-      'next 7d': [
-        fmt(todayUTC), // Include today for Next 7D
-        fmt(new Date(todayUTC.getTime() + 6 * 86400_000)) // Next 6 days (total 7 including today)
-      ],
-      'next 30d': [
-        fmt(todayUTC), // Include today for Next 30D
-        fmt(new Date(todayUTC.getTime() + 29 * 86400_000)) // Next 29 days (total 30 including today)
-      ],
-      'this month': (() => {
-        // first day of this month UTC
-        const start = new Date(Date.UTC(todayUTC.getUTCFullYear(), todayUTC.getUTCMonth(), 1));
-        // last day of this month UTC: month+1, day 0
-        const end = new Date(Date.UTC(todayUTC.getUTCFullYear(), todayUTC.getUTCMonth() + 1, 0));
-        return [fmt(start), fmt(end)];
-      })(),
-      'next month': (() => {
-        // first day of next month UTC
-        const start = new Date(Date.UTC(todayUTC.getUTCFullYear(), todayUTC.getUTCMonth() + 1, 1));
-        // last day of next month UTC: (month+2, day 0)
-        const end = new Date(Date.UTC(todayUTC.getUTCFullYear(), todayUTC.getUTCMonth() + 2, 0));
-        return [fmt(start), fmt(end)];
-      })()
-    };
-
-    // Handle both single string and array of strings
-    const labels = Array.isArray(rule.value) 
-      ? rule.value.map(v => String(v).trim().toLowerCase())
-      : [String(rule.value).trim().toLowerCase()];
-
-    // Find the widest date range from all selected options
-    let minDate = '9999-12-31';
-    let maxDate = '0000-01-01';
-    
-    for (const label of labels) {
-      if (!ranges[label]) {
-        console.warn(`Unrecognized earningsDate label: "${label}"`);
-        continue;
-      }
-      const [start, end] = ranges[label];
-      if (start < minDate) minDate = start;
-      if (end > maxDate) maxDate = end;
-    }
-
-    // If no valid labels were found, return always true
-    if (minDate === '9999-12-31' || maxDate === '0000-01-01') {
-      return () => true;
-    }
-
-    return (item) => {
-      if (!item.earningsDate) return false;
-      const d = new Date(item.earningsDate);
-      if (isNaN(d.getTime())) {
-        return false;
-      }
-      const itemDateStr = d.toISOString().slice(0, 10);
-      return itemDateStr >= minDate && itemDateStr <= maxDate;
-    };
+if (['earningsDate', 'exDividendDate'].includes(rule.name)) {
+  // If rule.value explicitly says 'any' or is empty -> always match
+  const rawVal = rule.value;
+  if (
+    rawVal === undefined ||
+    rawVal === null ||
+    (typeof rawVal === 'string' && rawVal.trim().toLowerCase() === 'any') ||
+    (Array.isArray(rawVal) && rawVal.length === 0)
+  ) {
+    return () => true;
   }
+
+  // Get "midnight UTC" of "today"
+  const now = new Date();
+  const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+  // Helper: format a Date object as "YYYY-MM-DD"
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
+  // Pre-compute ranges for each label (inclusive)
+  const ranges: Record<string, [string, string]> = {
+    'today': [fmt(todayUTC), fmt(todayUTC)],
+    'tomorrow': [
+      fmt(new Date(todayUTC.getTime() + 24 * 60 * 60_000)),
+      fmt(new Date(todayUTC.getTime() + 24 * 60 * 60_000))
+    ],
+    'next 7d': [
+      fmt(todayUTC),
+      fmt(new Date(todayUTC.getTime() + 6 * 24 * 60 * 60_000)) // include today + next 6 days
+    ],
+    'next 30d': [
+      fmt(todayUTC),
+      fmt(new Date(todayUTC.getTime() + 29 * 24 * 60 * 60_000)) // include today + next 29 days
+    ],
+    'this month': (() => {
+      const start = new Date(Date.UTC(todayUTC.getUTCFullYear(), todayUTC.getUTCMonth(), 1));
+      const end = new Date(Date.UTC(todayUTC.getUTCFullYear(), todayUTC.getUTCMonth() + 1, 0));
+      return [fmt(start), fmt(end)];
+    })(),
+    'next month': (() => {
+      const start = new Date(Date.UTC(todayUTC.getUTCFullYear(), todayUTC.getUTCMonth() + 1, 1));
+      const end = new Date(Date.UTC(todayUTC.getUTCFullYear(), todayUTC.getUTCMonth() + 2, 0));
+      return [fmt(start), fmt(end)];
+    })()
+  };
+
+  // Build label list from rule.value (accept string or array)
+  const labels = Array.isArray(rule.value)
+    ? rule.value.map((v: any) => String(v).trim().toLowerCase())
+    : [String(rule.value).trim().toLowerCase()];
+
+  // Find the widest combined date range across labels
+  let minDate = '9999-12-31';
+  let maxDate = '0000-01-01';
+  for (const label of labels) {
+    if (!label) continue;
+    const r = ranges[label];
+    if (!r) {
+      console.warn(`Unrecognized ${rule.name} label: "${label}"`);
+      continue;
+    }
+    const [start, end] = r;
+    if (start < minDate) minDate = start;
+    if (end > maxDate) maxDate = end;
+  }
+
+  // If no valid labels were found, match everything
+  if (minDate === '9999-12-31' || maxDate === '0000-01-01') {
+    return () => true;
+  }
+
+  // Return predicate that checks the relevant field dynamically (earningsDate or exDividendDate)
+  return (item: any) => {
+    const raw = item?.[rule.name];
+    if (!raw) return false;
+
+    // Accept strings, numbers (timestamps), or Date objects
+    let d: Date;
+    if (raw instanceof Date) d = raw;
+    else if (typeof raw === 'number') d = new Date(raw);
+    else d = new Date(String(raw));
+
+    if (isNaN(d.getTime())) return false;
+
+    // Normalize to UTC midnight and compare ISO date strings
+    const itemUTC = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+    const itemDateStr = fmt(itemUTC);
+
+    return itemDateStr >= minDate && itemDateStr <= maxDate;
+  };
+}
 
     
 

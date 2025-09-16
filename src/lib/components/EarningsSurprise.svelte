@@ -50,6 +50,7 @@
     <div class="flex flex-col items-center w-full mb-3">
       <div class="flex flex-row justify-start mr-auto items-center">
         <!--<img class="h-10 inline-block mr-2" src={copilotIcon} />-->
+
         <div class="flex flex-row items-center">
           <h3 class="mr-1 flex flex-row items-center text-2xl font-bold">
             Earnings Surprise

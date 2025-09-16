@@ -43,11 +43,26 @@
         <div class="flex flex-col items-center w-full mb-3">
           <div class="flex flex-row justify-start mr-auto items-center">
             <!--<img class="h-10 inline-block mr-2" src={copilotIcon} />-->
-            <div class="flex flex-row items-center">
+            <a
+              href="/stocks/{$stockTicker}/statistics/earnings"
+              class="flex flex-row items-center sm:hover:underline sm:hover:underline-offset-4"
+            >
               <h3 class="mr-1 flex flex-row items-center text-2xl font-bold">
                 Next Earnings Release
               </h3>
-            </div>
+              <svg
+                class="size-6 inline-block mt-1.5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                style="max-width:40px"
+                aria-hidden="true"
+                ><path
+                  fill-rule="evenodd"
+                  d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                  clip-rule="evenodd"
+                ></path></svg
+              >
+            </a>
           </div>
         </div>
       {/if}

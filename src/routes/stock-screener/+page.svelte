@@ -92,6 +92,7 @@
     "analystRating",
     "earningsTime",
     "earningsDate",
+    "exDividendDate",
     "payoutFrequency",
     "topAnalystRating",
     "halalStocks",
@@ -625,6 +626,21 @@
       defaultCondition: "over",
       defaultValue: "any",
       varType: "percent",
+      category: "Dividends",
+    },
+    exDividendDate: {
+      label: "Ex-Dividend Date",
+      step: [
+        "Today",
+        "Tomorrow",
+        "Next 7D",
+        "Next 30D",
+        "This Month",
+        "Next Month",
+      ],
+      defaultCondition: "",
+      defaultValue: "any",
+      varType: "date",
       category: "Dividends",
     },
     eps: {
@@ -2601,6 +2617,7 @@ const handleKeyDown = (event) => {
           },
         ],
       },
+
       dividendGrowth: {
         name: "Dividend Growth",
         rules: [
