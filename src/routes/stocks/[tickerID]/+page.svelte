@@ -1028,19 +1028,17 @@
                     ><td
                       class="whitespace-nowrap px-0.5 py-[1px] xs:px-1 text-sm sm:text-[0.9rem]"
                       ><a
-                        href={data?.getStockDeck?.annualDividend !== undefined
+                        href={data?.getStockDeck?.annualDividend
                           ? `/stocks/${$stockTicker}/dividends`
                           : ""}
-                        class={data?.getStockDeck?.annualDividend !== undefined
+                        class={data?.getStockDeck?.annualDividend
                           ? "sm:hover:text-blue-800 dark:sm:hover:text-blue-400 underline underline-offset-4"
                           : " cursor-text"}>Dividends</a
                       >
                     </td>
                     <td
                       class="whitespace-nowrap px-0.5 py-[1px] text-left text-sm sm:text-[0.9rem] font-semibold dark:font-normal xs:px-1 sm:text-right"
-                      >{data?.getStockDeck?.annualDividend !== null &&
-                      data?.getStockDeck?.annualDividend !== "n/a" &&
-                      data?.getStockDeck?.annualDividend !== undefined
+                      >{data?.getStockDeck?.annualDividend
                         ? "$" + data?.getStockDeck?.annualDividend
                         : "n/a"}</td
                     ></tr

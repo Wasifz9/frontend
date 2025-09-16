@@ -638,16 +638,18 @@
                         >
                           Insider
                         </a>
-                        <a
-                          href={`/stocks/${$stockTicker}/dividends`}
-                          on:click={() => changeSection("dividends")}
-                          class="p-2 px-5 cursor-pointer {displaySection ===
-                          'dividends'
-                            ? ' bg-[#EEEEEE] dark:bg-secondary font-semibold'
-                            : 'text-gray-600 dark:text-gray-400 sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-[#EEEEEE] dark:sm:hover:bg-secondary'}"
-                        >
-                          Dividends
-                        </a>
+                        {#if data?.getStockDeck?.annualDividend !== null}
+                          <a
+                            href={`/stocks/${$stockTicker}/dividends`}
+                            on:click={() => changeSection("dividends")}
+                            class="p-2 px-5 cursor-pointer {displaySection ===
+                            'dividends'
+                              ? ' bg-[#EEEEEE] dark:bg-secondary font-semibold'
+                              : 'text-gray-600 dark:text-gray-400 sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-[#EEEEEE] dark:sm:hover:bg-secondary'}"
+                          >
+                            Dividends
+                          </a>
+                        {/if}
                         <a
                           href={`/stocks/${$stockTicker}/history`}
                           on:click={() => changeSection("history")}
