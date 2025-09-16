@@ -11,6 +11,7 @@
       overview: "overview",
       ai: "ai",
       analyst: "analyst",
+      "dcf-model": "dcf-model",
     };
 
     const foundSection = parts?.find((part) =>
@@ -87,6 +88,16 @@
                 : 'text-gray-600 dark:text-gray-400 sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-[#EEEEEE] dark:sm:hover:bg-primary/90'}"
             >
               AI Forecast
+            </a>
+
+            <a
+              href={`/stocks/${$stockTicker}/forecast/dcf-model`}
+              on:click={() => changeSubSection("dcf-model")}
+              class="p-2 px-5 cursor-pointer {displaySubSection === 'dcf-model'
+                ? 'text-muted dark:text-white bg-[#EEEEEE] dark:bg-primary/90 font-semibold'
+                : 'text-gray-600 dark:text-gray-400 sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-[#EEEEEE] dark:sm:hover:bg-primary/90'}"
+            >
+              DCF Model
             </a>
           </ul>
         </nav>
