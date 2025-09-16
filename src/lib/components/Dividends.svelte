@@ -271,19 +271,22 @@
           </div>
 
           <div
-            class="flex flex-row justify-between items-center w-full mt-5 mb-4"
+            class="history-driver mt-5 flex flex-row items-center w-full justify-between border-t border-b border-gray-300 dark:border-gray-800 py-2"
           >
-            <h2 class="text-xl sm:text-2xl font-bold">Dividends History</h2>
-            <DownloadData
-              {data}
-              rawData={rawData?.history}
-              title={`dividend_${ticker}`}
-            />
+            <h3 class="text-xl sm:text-2xl font-bold">History</h3>
+
+            <div class="inline-flex ml-auto">
+              <DownloadData
+                {data}
+                rawData={rawData?.history}
+                title={`dividend_${ticker}`}
+              />
+            </div>
           </div>
 
           {#if stockList?.length > 0}
             <div
-              class="overflow-x-auto no-scrollbar flex justify-start items-center w-full m-auto rounded-none sm:rounded mb-4"
+              class="overflow-x-auto no-scrollbar flex justify-start items-center w-full m-auto rounded-none sm:rounded mb-4 mt-4"
             >
               <table
                 class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
