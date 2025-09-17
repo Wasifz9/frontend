@@ -551,7 +551,7 @@
                 <div
                   class="mt-0.5 text-lg font-bold bp:text-xl sm:mt-1.5 sm:text-2xl"
                 >
-                  {totalDividends ?? "n/a"}
+                  {totalDividends?.toFixed(2) ?? "n/a"}
                 </div>
               </div>
 
