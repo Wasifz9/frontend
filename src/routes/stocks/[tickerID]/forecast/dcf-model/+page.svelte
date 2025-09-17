@@ -633,7 +633,7 @@
           </main>
 
           <aside class="inline-block relative w-full lg:w-1/4 mt-3">
-            <div class="bg-[#1F2937] text-white p-6 rounded-lg shadow-lg">
+            <div class="bg-gray-200 dark:bg-[#1F2937] p-6 rounded-lg shadow-lg">
               <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-bold">DCF Inputs</h2>
               </div>
@@ -642,18 +642,18 @@
                 <div>
                   <label
                     for="metric"
-                    class="flex items-center text-sm font-medium text-gray-300 mb-2"
+                    class="flex items-center text-sm font-medium mb-2"
                   >
                     Metric
                     <InfoModal
-                      content="Choose the metric used to value the company: Free Cash Flow (FCF) or Operating Income."
+                      content="This is the metric you will use for your valuation projections. The appropriate metric depends on the industry. For most companies, free cash flow or operating cash flow is commonly used, as it reflects the cash available to shareholders. For banks and other financial institutions, earnings or book value are often more meaningful, because cash flows do not accurately capture their performance. Choose the metric that best represents how the company generates value."
                     />
                   </label>
                   <select
                     id="metric"
                     bind:value={selectedMetric}
                     on:change={() => onMetricChange()}
-                    class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-3 py-1 cursor-pointer"
+                    class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-sm rounded-lg focus:outline-none block w-full pl-3 py-1 cursor-pointer"
                   >
                     <option value="freeCashFlow">Free Cash Flow</option>
                     <option value="operatingIncome">Operating Income</option>
@@ -666,7 +666,7 @@
                 <div>
                   <label
                     for="years"
-                    class="flex items-center text-sm font-medium text-gray-300 mb-2"
+                    class="flex items-center text-sm font-medium mb-2"
                   >
                     Number of Years To Project
                     <InfoModal
@@ -677,7 +677,7 @@
                     id="years"
                     bind:value={yearsToProject}
                     on:change={() => (userHasModifiedInputs = true)}
-                    class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-3 py-1 cursor-pointer"
+                    class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-sm rounded-lg focus:outline-none block w-full pl-3 py-1 cursor-pointer"
                   >
                     <option value={3}>3</option>
                     <option value={5}>5</option>
@@ -688,7 +688,7 @@
                 <div>
                   <label
                     for="metric-growth"
-                    class="flex items-center text-sm font-medium text-gray-300 mb-2"
+                    class="flex items-center text-sm font-medium mb-2"
                   >
                     {metricLabel} Growth Rate
                     <InfoModal
@@ -697,7 +697,7 @@
                   </label>
                   <div class="relative">
                     <span
-                      class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-300 dark:text-gray-300"
+                      class="absolute inset-y-0 left-0 flex items-center pl-3"
                       >%</span
                     >
                     <input
@@ -706,10 +706,10 @@
                       id="metric-growth"
                       bind:value={metricGrowthRate}
                       on:input={() => (userHasModifiedInputs = true)}
-                      class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
+                      class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
                     />
                   </div>
-                  <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">
+                  <p class="mt-2 text-xs">
                     5-year historical {metricLabel} growth: {selectedMetric ===
                     "freeCashFlow"
                       ? valuationData?.freeCashFlowGrowth || 0
@@ -720,7 +720,7 @@
                 <div>
                   <label
                     for="shares-growth"
-                    class="flex items-center text-sm font-medium text-gray-300 mb-2"
+                    class="flex items-center text-sm font-medium mb-2"
                   >
                     Diluted Shares Growth Rate
                     <InfoModal
@@ -729,7 +729,7 @@
                   </label>
                   <div class="relative">
                     <span
-                      class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-300 dark:text-gray-300"
+                      class="absolute inset-y-0 left-0 flex items-center pl-3"
                       >%</span
                     >
                     <input
@@ -738,10 +738,10 @@
                       id="shares-growth"
                       bind:value={sharesGrowthRate}
                       on:input={() => (userHasModifiedInputs = true)}
-                      class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
+                      class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
                     />
                   </div>
-                  <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">
+                  <p class="mt-2 text-xs">
                     5-year historical shares growth: {valuationData?.sharesGrowth ||
                       0}%
                   </p>
@@ -750,7 +750,7 @@
                 <div>
                   <label
                     for="dividend-growth"
-                    class="flex items-center text-sm font-medium text-gray-300 mb-2"
+                    class="flex items-center text-sm font-medium mb-2"
                   >
                     Dividend Growth Rate
                     <InfoModal
@@ -759,7 +759,7 @@
                   </label>
                   <div class="relative">
                     <span
-                      class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-300 dark:text-gray-300"
+                      class="absolute inset-y-0 left-0 flex items-center pl-3"
                       >%</span
                     >
                     <input
@@ -768,7 +768,7 @@
                       id="dividend-growth"
                       bind:value={dividendGrowthRate}
                       on:input={() => (userHasModifiedInputs = true)}
-                      class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
+                      class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
                     />
                   </div>
                 </div>
@@ -776,7 +776,7 @@
                 <div>
                   <label
                     for="price-ratio"
-                    class="flex items-center text-sm font-medium text-gray-300 mb-2"
+                    class="flex items-center text-sm font-medium mb-2"
                   >
                     Price Ratio
                     <InfoModal
@@ -789,9 +789,9 @@
                     id="price-ratio"
                     bind:value={priceRatioAvg}
                     on:input={() => (userHasModifiedInputs = true)}
-                    class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-3 py-1"
+                    class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-sm rounded-lg focus:outline-none block w-full pl-3 py-1"
                   />
-                  <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">
+                  <p class="mt-2 text-xs">
                     5-year average P/{metricShortLabel}: {valuationData?.[
                       ratioAvgKey
                     ] ?? 0}
@@ -801,7 +801,7 @@
                 <div>
                   <label
                     for="discount-rate"
-                    class="flex items-center text-sm font-medium text-gray-300 mb-2"
+                    class="flex items-center text-sm font-medium mb-2"
                   >
                     Discount Rate
                     <InfoModal
@@ -810,7 +810,7 @@
                   </label>
                   <div class="relative">
                     <span
-                      class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-300 dark:text-gray-300"
+                      class="absolute inset-y-0 left-0 flex items-center pl-3"
                       >%</span
                     >
                     <input
@@ -819,10 +819,10 @@
                       id="discount-rate"
                       bind:value={discountRate}
                       on:input={() => (userHasModifiedInputs = true)}
-                      class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
+                      class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
                     />
                   </div>
-                  <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">
+                  <p class="mt-2 text-xs">
                     A sane starting discount rate is 10%.
                   </p>
                 </div>
