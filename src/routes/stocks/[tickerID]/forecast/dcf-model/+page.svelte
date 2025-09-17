@@ -10,6 +10,7 @@
   export let data;
 
   let configHistoricalChart = null;
+  let configFCFChart = null;
   let showSteps = false;
   // DCF calculation variables from the valuation data
   $: valuationData = data?.getData || {};
@@ -312,6 +313,173 @@
     return options;
   }
 
+  function plotFCFChart() {
+    const fcfHistory = valuationData?.freeCashFlowHistory || [];
+    if (!fcfHistory || fcfHistory.length === 0) return null;
+
+    // Historical FCF data as TTM (Trailing Twelve Months)
+    const historicalFCF = [];
+    for (let i = 3; i < fcfHistory.length; i++) {
+      // Calculate TTM by summing the last 4 quarters
+      const ttmFCF = fcfHistory
+        .slice(i - 3, i + 1)
+        .reduce((sum, q) => sum + q.freeCashFlow, 0);
+      historicalFCF.push([
+        new Date(fcfHistory[i].date).getTime(),
+        ttmFCF, // Keep raw value for chart
+      ]);
+    }
+
+    // Project future FCF quarterly
+    const projectedFCF = [];
+    const lastHistoricalDate = new Date(fcfHistory[fcfHistory.length - 1].date);
+    const totalQuarters = yearsToProject * 4;
+
+    for (let quarter = 1; quarter <= totalQuarters; quarter++) {
+      const projectedDate = new Date(lastHistoricalDate);
+      projectedDate.setMonth(projectedDate.getMonth() + quarter * 3);
+
+      const yearsFraction = quarter / 4;
+      const projectedValue =
+        latestFCF * Math.pow(1 + fcfGrowthRate / 100, yearsFraction);
+      projectedFCF.push([projectedDate.getTime(), projectedValue]);
+    }
+
+    // Create connection line between historical and projected
+    const connectionLine = [];
+    if (historicalFCF.length > 0 && projectedFCF.length > 0) {
+      const lastHistoricalPoint = historicalFCF[historicalFCF.length - 1];
+      const firstProjectedPoint = projectedFCF[0];
+      connectionLine.push([lastHistoricalPoint[0], lastHistoricalPoint[1]]);
+      connectionLine.push([firstProjectedPoint[0], firstProjectedPoint[1]]);
+    }
+
+    const options = {
+      credits: { enabled: false },
+      chart: {
+        backgroundColor: $mode === "light" ? "#fff" : "#09090B",
+        plotBackgroundColor: $mode === "light" ? "#fff" : "#09090B",
+        type: "spline",
+        height: $screenWidth < 640 ? 360 : 450,
+        animation: false,
+      },
+      title: {
+        text: "",
+        style: {
+          color: $mode === "light" ? "#333" : "#fff",
+          fontSize: "18px",
+          fontWeight: "600",
+        },
+      },
+      xAxis: {
+        type: "datetime",
+        crosshair: {
+          color: $mode === "light" ? "black" : "white",
+          width: 1,
+          dashStyle: "Solid",
+        },
+        labels: { style: { color: $mode === "light" ? "#666" : "#aaa" } },
+        gridLineColor: $mode === "light" ? "#e0e0e0" : "#2a2a2a",
+      },
+      yAxis: {
+        title: {
+          text: "Free Cash Flow TTM",
+          style: { color: $mode === "light" ? "#545454" : "white" },
+        },
+        gridLineWidth: 1,
+        gridLineColor: $mode === "light" ? "#e5e7eb" : "#111827",
+        labels: {
+          style: { color: $mode === "light" ? "#545454" : "white" },
+          formatter: function () {
+            return abbreviateNumber(this.value);
+          },
+        },
+      },
+      tooltip: {
+        shared: true,
+        useHTML: true,
+        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        borderColor: "rgba(255, 255, 255, 0.2)",
+        borderWidth: 1,
+        style: { color: "#fff", fontSize: "16px", padding: "10px" },
+        borderRadius: 4,
+        formatter: function () {
+          let tooltip = `<b>${new Date(this.x)?.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}</b><br/>`;
+          this.points.forEach((point) => {
+            if (point.series.name === "Historical FCF") {
+              tooltip += `<span style="color:${point.color}">●</span> Historical FCF (TTM): ${abbreviateNumber(point.y)}<br/>`;
+            } else if (point.series.name === "Projected FCF") {
+              tooltip += `<span style="color:${point.color}">●</span> Projected FCF (TTM): ${abbreviateNumber(point.y)}<br/>`;
+            }
+          });
+          return tooltip;
+        },
+      },
+      plotOptions: {
+        series: {
+          legendSymbol: "rectangle",
+          animation: false,
+          states: { hover: { enabled: false } },
+        },
+        spline: {
+          marker: {
+            enabled: false,
+            states: { hover: { enabled: false } },
+          },
+        },
+      },
+      series: [
+        {
+          name: "Historical FCF",
+          data: historicalFCF,
+          color: $mode === "light" ? "#000" : "#fff",
+          animation: false,
+          zIndex: 2,
+        },
+        {
+          name: "Projected FCF",
+          data: projectedFCF,
+          color: "#ef4444",
+          animation: false,
+          dashStyle: "ShortDot",
+          lineWidth: 2,
+          marker: { enabled: true, radius: 4, symbol: "circle" },
+          zIndex: 3,
+        },
+        {
+          name: "Connection",
+          type: "line",
+          data: connectionLine,
+          color: "#ffffff",
+          animation: false,
+          dashStyle: "Dash",
+          lineWidth: 1,
+          marker: { enabled: false },
+          showInLegend: false,
+          enableMouseTracking: false,
+          zIndex: 4,
+        },
+      ],
+      legend: {
+        enabled: true,
+        align: "center",
+        verticalAlign: "top",
+        layout: "horizontal",
+        squareSymbol: false,
+        symbolWidth: 20,
+        symbolHeight: 12,
+        symbolRadius: 0,
+        itemStyle: { color: $mode === "light" ? "black" : "white" },
+      },
+    };
+
+    return options;
+  }
+
   // Reactive recalculation when inputs change
   $: {
     if (Object?.keys(valuationData)?.length > 0) {
@@ -328,6 +496,7 @@
       discountRate
     ) {
       configHistoricalChart = plotHistoricalPriceChart() || null;
+      configFCFChart = plotFCFChart() || null;
     }
   }
 </script>
@@ -452,6 +621,23 @@
                     <div
                       class="sm:p-3 shadow-xs border border-gray-300 dark:border-gray-800 rounded"
                       use:highcharts={configHistoricalChart}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            {/if}
+
+            {#if valuationData?.freeCashFlowHistory?.length > 0}
+              <h2 class="text-xl sm:text-2xl font-bold text-start mr-auto mb-4">
+                Historical and Projected Free Cash Flow
+              </h2>
+
+              <div class="mb-8">
+                <div class="grow">
+                  <div class="relative">
+                    <div
+                      class="sm:p-3 shadow-xs border border-gray-300 dark:border-gray-800 rounded"
+                      use:highcharts={configFCFChart}
                     ></div>
                   </div>
                 </div>
