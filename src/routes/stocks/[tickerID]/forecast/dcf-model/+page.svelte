@@ -30,12 +30,12 @@
       chart: {
         backgroundColor: $mode === "light" ? "#fff" : "#09090B",
         plotBackgroundColor: $mode === "light" ? "#fff" : "#09090B",
-        type: "line",
+        type: "spline",
         height: $screenWidth < 640 ? 300 : 400,
         animation: false,
       },
       title: {
-        text: "GOOG Historical Price & P/FCF Ratio",
+        text: "",
         style: {
           color: $mode === "light" ? "#333" : "#fff",
           fontSize: "18px",
@@ -44,6 +44,11 @@
       },
       xAxis: {
         type: "datetime",
+        crosshair: {
+          color: $mode === "light" ? "black" : "white",
+          width: 1,
+          dashStyle: "Solid",
+        },
         labels: {
           style: {
             color: $mode === "light" ? "#666" : "#aaa",
@@ -54,46 +59,47 @@
       yAxis: [
         {
           title: {
-            text: "Price ($)",
-            style: {
-              color: "#10b981",
-            },
+            text: "Price",
+            style: { color: $mode === "light" ? "#545454" : "white" },
           },
+          gridLineWidth: 1,
+          gridLineColor: $mode === "light" ? "#e5e7eb" : "#111827",
           labels: {
-            style: {
-              color: "#10b981",
-            },
-            format: "${value}",
+            style: { color: $mode === "light" ? "#545454" : "white" },
           },
-          gridLineColor: $mode === "light" ? "#e0e0e0" : "#2a2a2a",
         },
         {
           title: {
-            text: "P/FCF Ratio",
-            style: {
-              color: "#f59e0b",
-            },
+            text: null,
           },
           labels: {
-            style: {
-              color: "#f59e0b",
-            },
-            format: "{value}x",
+            enabled: false,
           },
+          gridLineWidth: 0,
           opposite: true,
         },
       ],
       tooltip: {
-        backgroundColor: $mode === "light" ? "#fff" : "#1a1a1a",
-        style: {
-          color: $mode === "light" ? "#333" : "#fff",
-        },
         shared: true,
+        useHTML: true,
+        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        borderColor: "rgba(255, 255, 255, 0.2)",
+        borderWidth: 1,
+        style: {
+          color: "#fff",
+          fontSize: "16px",
+          padding: "10px",
+        },
+        borderRadius: 4,
         formatter: function () {
-          let tooltip = `<b>${new Date(this.x).toLocaleDateString()}</b><br/>`;
+          let tooltip = `<b>${new Date(this.x).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}</b><br/>`;
           this.points.forEach((point) => {
             if (point.series.name === "Price") {
-              tooltip += `<span style="color:${point.color}">●</span> Price: $${point.y.toFixed(2)}<br/>`;
+              tooltip += `<span style="color:${point.color}">●</span> Price: ${point.y.toFixed(2)}<br/>`;
             } else {
               tooltip += `<span style="color:${point.color}">●</span> P/FCF Ratio: ${point.y.toFixed(2)}x`;
             }
@@ -102,20 +108,22 @@
         },
       },
       plotOptions: {
-        line: {
-          lineWidth: 2,
+        series: {
+          legendSymbol: "rectangle",
+          animation: false,
+          states: {
+            hover: {
+              enabled: false,
+            },
+          },
+        },
+        spline: {
           marker: {
             enabled: false,
             states: {
               hover: {
-                enabled: true,
-                radius: 5,
+                enabled: false,
               },
-            },
-          },
-          states: {
-            hover: {
-              lineWidth: 3,
             },
           },
         },
@@ -136,19 +144,18 @@
           animation: false,
         },
       ],
+
       legend: {
         enabled: true,
         align: "center",
         verticalAlign: "top",
-        y: 25,
-        floating: true,
-        backgroundColor:
-          $mode === "light" ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.9)",
-        borderColor: $mode === "light" ? "#ccc" : "#444",
-        borderWidth: 1,
-        borderRadius: 3,
+        layout: "horizontal",
+        squareSymbol: false,
+        symbolWidth: 20,
+        symbolHeight: 12,
+        symbolRadius: 0,
         itemStyle: {
-          color: $mode === "light" ? "#333" : "#fff",
+          color: $mode === "light" ? "black" : "white",
         },
       },
     };
@@ -230,10 +237,6 @@
               </div>
             </div>
           {/if}
-
-          <div class="mb-3 mt-8">
-            <h2 class="mb-1 text-xl sm:text-2xl font-bold">DCF Calculator</h2>
-          </div>
         </main>
 
         <aside class="inline-block relative w-full lg:w-1/4 mt-3">
@@ -289,7 +292,7 @@
                 </label>
                 <div class="relative">
                   <span
-                    class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-300 dark:text-gray-600"
+                    class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-300 dark:text-gray-300"
                     >%</span
                   >
                   <input
@@ -299,7 +302,7 @@
                     class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
                   />
                 </div>
-                <p class="mt-2 text-xs text-gray-300 dark:text-gray-600">
+                <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">
                   Annual Free Cash Flow growth over the past 5 year(s) is:
                   16.45%
                 </p>
@@ -315,7 +318,7 @@
                 </label>
                 <div class="relative">
                   <span
-                    class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-300 dark:text-gray-600"
+                    class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-300 dark:text-gray-300"
                     >%</span
                   >
                   <input
@@ -325,7 +328,7 @@
                     class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
                   />
                 </div>
-                <p class="mt-2 text-xs text-gray-300 dark:text-gray-600">
+                <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">
                   Annual diluted shares outstanding growth over the past 5
                   year(s) is: -2.35%
                 </p>
@@ -341,7 +344,7 @@
                 </label>
                 <div class="relative">
                   <span
-                    class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-300 dark:text-gray-600"
+                    class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-300 dark:text-gray-300"
                     >%</span
                   >
                   <input
@@ -367,7 +370,7 @@
                   value="27.01"
                   class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-3 py-1"
                 />
-                <p class="mt-2 text-xs text-gray-300 dark:text-gray-600">
+                <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">
                   Average Price to Free Cash Flow over the past 5 year(s) is:
                   27.01
                 </p>
@@ -383,7 +386,7 @@
                 </label>
                 <div class="relative">
                   <span
-                    class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-300 dark:text-gray-600"
+                    class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-300 dark:text-gray-300"
                     >%</span
                   >
                   <input
@@ -393,7 +396,7 @@
                     class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
                   />
                 </div>
-                <p class="mt-2 text-xs text-gray-300 dark:text-gray-600">
+                <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">
                   A sane discount rate to start with is: 10%
                 </p>
               </div>
@@ -404,7 +407,7 @@
                   class="flex items-center text-sm font-medium text-gray-300 mb-2"
                 >
                   Most Recent Metric Override (Advanced)
-                  <span class="ml-1 text-gray-300 dark:text-gray-600 cursor-pointer">
+                  <span class="ml-1 text-gray-300 dark:text-gray-300 cursor-pointer">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       class="h-4 w-4"
@@ -426,7 +429,7 @@
                   value="66728"
                   class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full p-2.5"
                 />
-                <p class="mt-2 text-xs text-gray-300 dark:text-gray-600">Values in millions</p>
+                <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">Values in millions</p>
               </div>
               -->
             </div>
