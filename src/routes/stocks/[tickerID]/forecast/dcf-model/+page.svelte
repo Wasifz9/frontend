@@ -678,6 +678,7 @@
                   >
                     Metric
                     <InfoModal
+                      id="metric"
                       content="This is the metric you will use for your valuation projections. The appropriate metric depends on the industry. For most companies, free cash flow or operating cash flow is commonly used, as it reflects the cash available to shareholders. For banks and other financial institutions, earnings or book value are often more meaningful, because cash flows do not accurately capture their performance. Choose the metric that best represents how the company generates value."
                     />
                   </label>
@@ -703,6 +704,7 @@
                   >
                     Number of Years To Project
                     <InfoModal
+                      id="years"
                       content="The number of years to project the company's future performance."
                     />
                   </label>
@@ -725,6 +727,7 @@
                   >
                     {metricLabel} Growth Rate
                     <InfoModal
+                      id="metricGrowthRate"
                       content="Expected annual growth rate for the selected metric."
                     />
                   </label>
@@ -757,6 +760,7 @@
                   >
                     Diluted Shares Growth Rate
                     <InfoModal
+                      id="dilutedSharedsGrowthRate"
                       content="Expected annual change in diluted shares outstanding."
                     />
                   </label>
@@ -787,6 +791,7 @@
                   >
                     Dividend Growth Rate
                     <InfoModal
+                      id="dividendGrowthRate"
                       content="Expected annual growth rate for dividends per share."
                     />
                   </label>
@@ -813,6 +818,7 @@
                   >
                     Price Ratio
                     <InfoModal
+                      id="priceRatio"
                       content="Expected price ratio to apply to the per-share metric."
                     />
                   </label>
@@ -838,6 +844,7 @@
                   >
                     Discount Rate
                     <InfoModal
+                      id="discountedRate"
                       content="Your target annual rate of return from this investment."
                     />
                   </label>
@@ -944,7 +951,11 @@
             ({abbreviateNumber(futureMetric ?? 0)} ÷ {abbreviateNumber(
               futureShares ?? 1,
             )}) × {priceRatioAvg} =
-            <span class="font-semibold">${futureStockPrice}</span>
+            <span class="font-semibold"
+              >{futureStockPrice && futureStockPrice > 0
+                ? "$" + futureStockPrice
+                : "n/a"}</span
+            >
           </p>
         </div>
 
@@ -977,18 +988,26 @@
           </h3>
           <p class="text-sm">
             Projected stock price: <span class="font-semibold"
-              >${futureStockPrice}</span
+              >{futureStockPrice && futureStockPrice > 0
+                ? "$" + futureStockPrice
+                : "n/a"}</span
             >.
           </p>
           <p class="text-sm">
             Including dividends, total future value: <span class="font-semibold"
-              >${totalFutureValue}</span
+              >{totalFutureValue && totalFutureValue > 0
+                ? "$" + totalFutureValue
+                : "n/a"}</span
             >.
           </p>
           <p class="text-sm">
             Discounted at <span class="font-semibold">{discountRate}%</span> per
             year over {yearsToProject} years → Fair Value:
-            <strong>${presentValue}</strong>.
+            <strong
+              >{presentValue && presentValue > 0
+                ? "$" + presentValue
+                : "n/a"}</strong
+            >.
           </p>
         </div>
       </div>
