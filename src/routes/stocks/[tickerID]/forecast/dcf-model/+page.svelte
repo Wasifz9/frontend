@@ -3,6 +3,7 @@
   import { displayCompanyName, stockTicker, screenWidth } from "$lib/store";
   import { abbreviateNumber, removeCompanyStrings } from "$lib/utils";
   import InfoModal from "$lib/components/InfoModal.svelte";
+  import Infobox from "$lib/components/Infobox.svelte";
 
   import highcharts from "$lib/highcharts.ts";
   import { mode } from "mode-watcher";
@@ -294,7 +295,11 @@
   }
 
   $: {
-    if ($mode && typeof window !== "undefined") {
+    if (
+      $mode &&
+      typeof window !== "undefined" &&
+      Object?.keys(valuationData)?.length > 0
+    ) {
       configHistoricalChart = plotHistoricalPriceChart() || null;
     }
   }
@@ -348,366 +353,367 @@
       <div
         class="relative flex flex-col lg:flex-row justify-center items-start overflow-hidden w-full"
       >
-        <main class="w-full lg:w-3/4 lg:pr-5">
-          <div class="mb-3">
-            <h1 class="mb-1 text-2xl sm:text-3xl font-bold">
-              {$stockTicker} DCF Calculator
-            </h1>
-          </div>
+        {#if Object?.keys(valuationData)?.length > 0}
+          <main class="w-full lg:w-3/4 lg:pr-5">
+            <div class="mb-3">
+              <h1 class="mb-1 text-2xl sm:text-3xl font-bold">
+                {$stockTicker} DCF Calculator
+              </h1>
+            </div>
 
-          <p class="mt-4 mb-4 text-base leading-relaxed"></p>
-          <p class="mt-4 mb-4 text-base leading-relaxed">
-            Based on the DCF (Free Cash Flow Model), the intrinsic value of
-            {removeCompanyStrings($displayCompanyName)} is estimated at
-            <strong class="">{presentValue}</strong>, compared to the current
-            market price of
-            <strong class="">{currentPrice}</strong>.
+            <p class="mt-4 mb-4 text-base leading-relaxed">
+              Based on the DCF (Free Cash Flow Model), the intrinsic value of
+              {removeCompanyStrings($displayCompanyName)} is estimated at
+              <strong class="">{presentValue}</strong>, compared to the current
+              market price of
+              <strong class="">{currentPrice}</strong>.
 
-            <span class="block mt-3">
-              <span class="font-medium"
-                >Projected {yearsToProject}-year target:</span
-              >
-              <strong class="">${totalFutureValue}</strong>
-              <span
-                class="ml-2 px-2 py-1 rounded-md font-medium
+              <span class="block mt-3">
+                <span class="font-medium"
+                  >Projected {yearsToProject}-year target:</span
+                >
+                <strong class="">${totalFutureValue}</strong>
+                <span
+                  class="ml-2 px-2 py-1 rounded-md font-medium
         {upside >= 0
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-[#00FC50]'
-                  : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-[#FF2F1F]'}"
-              >
-                {upside >= 0 ? "+" : ""}{upside}%
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-[#00FC50]'
+                    : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-[#FF2F1F]'}"
+                >
+                  {upside >= 0 ? "+" : ""}{upside}%
+                </span>
               </span>
-            </span>
-          </p>
+            </p>
 
-          {#if data?.getData?.historicalPrice?.length > 0}
-            <div class="mb-8">
-              <div class="grow">
-                <div class="relative">
-                  <div
-                    class="sm:p-3 shadow-xs border border-gray-300 dark:border-gray-800 rounded"
-                    use:highcharts={configHistoricalChart}
-                  ></div>
-                </div>
-              </div>
-            </div>
-          {/if}
-
-          <!-- DCF Calculation Steps -->
-          <div
-            class="mb-8 p-6 border border-gray-300 dark:border-gray-800 rounded-lg shadow-sm"
-          >
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="text-xl font-bold">DCF Calculation Steps</h2>
-              <button
-                on:click={() => (showSteps = !showSteps)}
-                class="cursor-pointer text-sm px-3 py-1 rounded-md border text-white border border-gray-300 dark:border-gray-600 bg-black sm:hover:bg-muted dark:bg-primary dark:sm:hover:bg-secondary"
-              >
-                {showSteps ? "Hide Steps" : "Show Steps"}
-              </button>
-            </div>
-
-            {#if showSteps}
-              <div class="space-y-6">
-                <!-- Step 1 -->
-                <div>
-                  <h3 class="font-semibold dark:text-green-400 mb-2">
-                    Step 1: Project Free Cash Flow
-                  </h3>
-                  <p class="text-sm">
-                    The most recent Free Cash Flow (TTM) value is
-                    <span class="font-semibold"
-                      >{abbreviateNumber(latestFCF)}</span
-                    >
-                    as of {new Date(latestDate)?.toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}.
-                  </p>
-                  <p class="text-sm">
-                    We will project this out {yearsToProject} years with a yearly
-                    growth rate of
-                    <span class="font-semibold">{fcfGrowthRate}%</span>.
-                  </p>
-                  <p class="text-sm">
-                    Starting with {abbreviateNumber(latestFCF)} and growing at
-                    {fcfGrowthRate}% for {yearsToProject} years, we estimate Free
-                    Cash Flow will be
-                    <span class="font-semibold"
-                      >{abbreviateNumber(futureFCF)}</span
-                    >.
-                  </p>
-                </div>
-
-                <!-- Step 2 -->
-                <div>
-                  <h3 class="font-semibold dark:text-green-400 mb-2">
-                    Step 2: Project Future Diluted Shares Outstanding
-                  </h3>
-                  <p class="text-sm">
-                    The most recent Diluted Shares Outstanding value is
-                    <span class="font-semibold"
-                      >{abbreviateNumber(dilutedShares)}</span
-                    >.
-                  </p>
-                  <p class="text-sm">
-                    We will project this out {yearsToProject} year(s) with a growth
-                    rate of
-                    <span class="font-semibold">{sharesGrowthRate}%</span>.
-                  </p>
-                  <p class="text-sm">
-                    Estimated Diluted Shares Outstanding:
-                    <span class="font-semibold"
-                      >{abbreviateNumber(futureShares)}</span
-                    >.
-                  </p>
-                </div>
-
-                <!-- Step 3 -->
-                <div>
-                  <h3 class="font-semibold dark:text-green-400 mb-2">
-                    Step 3: Project Future Stock Price
-                  </h3>
-                  <p class="text-sm mb-3">
-                    Using a price ratio of
-                    <span class="font-semibold">{priceRatioAvg}</span>, formula:
-                    (Future Free Cash Flow ÷ Future Diluted Shares Outstanding)
-                    × Price Ratio
-                  </p>
-                  <p class="text-sm">
-                    ({abbreviateNumber(futureFCF)} ÷ {abbreviateNumber(
-                      futureShares,
-                    )}) ×
-                    {priceRatioAvg} =
-                    <span class="font-semibold">${futureStockPrice}</span>
-                  </p>
-                </div>
-
-                <!-- Step 4 -->
-                <div>
-                  <h3 class="font-semibold dark:text-green-400 mb-2">
-                    Step 4: Project Future Dividends Paid
-                  </h3>
-                  <p class="text-sm">
-                    Forward dividend per share:
-                    <span class="font-semibold">${forwardDividend}</span>.
-                  </p>
-                  <p class="text-sm">
-                    Projected over {yearsToProject} years with a growth rate of
-                    <span class="font-semibold"
-                      >{dividendGrowthRate.toFixed(2)}%</span
-                    >, dividends add to total shareholder return.
-                  </p>
-                  <p class="text-sm">
-                    Expected dividends in {yearsToProject} years:
-                    <span class="font-semibold">${totalDividends}</span>.
-                  </p>
-                </div>
-
-                <!-- Step 5 -->
-                <div>
-                  <h3 class="font-semibold dark:text-green-400 mb-2">
-                    Step 5: Discount the Projected Stock Price
-                  </h3>
-                  <p class="text-sm">
-                    Projected stock price:
-                    <span class="font-semibold">${futureStockPrice}</span>.
-                  </p>
-                  <p class="text-sm">
-                    Including dividends, total future value:
-                    <span class="font-semibold">${totalFutureValue}</span>.
-                  </p>
-                  <p class="text-sm">
-                    Discounted at <span class="font-semibold"
-                      >{discountRate}%</span
-                    >
-                    per year over {yearsToProject} years → Fair Value:
-                    <span class="font-semibold text-lg">${presentValue}</span>.
-                  </p>
+            {#if data?.getData?.historicalPrice?.length > 0}
+              <div class="mb-8">
+                <div class="grow">
+                  <div class="relative">
+                    <div
+                      class="sm:p-3 shadow-xs border border-gray-300 dark:border-gray-800 rounded"
+                      use:highcharts={configHistoricalChart}
+                    ></div>
+                  </div>
                 </div>
               </div>
             {/if}
 
-            <!-- Summary stays always visible -->
-            <div class="mt-8">
-              <div class="flex items-center justify-between">
+            <!-- DCF Calculation Steps -->
+            <div
+              class="mb-8 p-6 border border-gray-300 dark:border-gray-800 rounded-lg shadow-sm"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold">DCF Calculation Steps</h2>
+                <button
+                  on:click={() => (showSteps = !showSteps)}
+                  class="cursor-pointer text-sm px-3 py-1 rounded-md border text-white border border-gray-300 dark:border-gray-600 bg-black sm:hover:bg-muted dark:bg-primary dark:sm:hover:bg-secondary"
+                >
+                  {showSteps ? "Hide Steps" : "Show Steps"}
+                </button>
+              </div>
+
+              {#if showSteps}
+                <div class="space-y-6">
+                  <!-- Step 1 -->
+                  <div>
+                    <h3 class="font-semibold dark:text-green-400 mb-2">
+                      Step 1: Project Free Cash Flow
+                    </h3>
+                    <p class="text-sm">
+                      The most recent Free Cash Flow (TTM) value is
+                      <span class="font-semibold"
+                        >{abbreviateNumber(latestFCF)}</span
+                      >
+                      as of {new Date(latestDate)?.toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}.
+                    </p>
+                    <p class="text-sm">
+                      We will project this out {yearsToProject} years with a yearly
+                      growth rate of
+                      <span class="font-semibold">{fcfGrowthRate}%</span>.
+                    </p>
+                    <p class="text-sm">
+                      Starting with {abbreviateNumber(latestFCF)} and growing at
+                      {fcfGrowthRate}% for {yearsToProject} years, we estimate Free
+                      Cash Flow will be
+                      <span class="font-semibold"
+                        >{abbreviateNumber(futureFCF)}</span
+                      >.
+                    </p>
+                  </div>
+
+                  <!-- Step 2 -->
+                  <div>
+                    <h3 class="font-semibold dark:text-green-400 mb-2">
+                      Step 2: Project Future Diluted Shares Outstanding
+                    </h3>
+                    <p class="text-sm">
+                      The most recent Diluted Shares Outstanding value is
+                      <span class="font-semibold"
+                        >{abbreviateNumber(dilutedShares)}</span
+                      >.
+                    </p>
+                    <p class="text-sm">
+                      We will project this out {yearsToProject} year(s) with a growth
+                      rate of
+                      <span class="font-semibold">{sharesGrowthRate}%</span>.
+                    </p>
+                    <p class="text-sm">
+                      Estimated Diluted Shares Outstanding:
+                      <span class="font-semibold"
+                        >{abbreviateNumber(futureShares)}</span
+                      >.
+                    </p>
+                  </div>
+
+                  <!-- Step 3 -->
+                  <div>
+                    <h3 class="font-semibold dark:text-green-400 mb-2">
+                      Step 3: Project Future Stock Price
+                    </h3>
+                    <p class="text-sm mb-3">
+                      Using a price ratio of
+                      <span class="font-semibold">{priceRatioAvg}</span>,
+                      formula: (Future Free Cash Flow ÷ Future Diluted Shares
+                      Outstanding) × Price Ratio
+                    </p>
+                    <p class="text-sm">
+                      ({abbreviateNumber(futureFCF)} ÷ {abbreviateNumber(
+                        futureShares,
+                      )}) ×
+                      {priceRatioAvg} =
+                      <span class="font-semibold">${futureStockPrice}</span>
+                    </p>
+                  </div>
+
+                  <!-- Step 4 -->
+                  <div>
+                    <h3 class="font-semibold dark:text-green-400 mb-2">
+                      Step 4: Project Future Dividends Paid
+                    </h3>
+                    <p class="text-sm">
+                      Forward dividend per share:
+                      <span class="font-semibold">${forwardDividend}</span>.
+                    </p>
+                    <p class="text-sm">
+                      Projected over {yearsToProject} years with a growth rate of
+                      <span class="font-semibold"
+                        >{dividendGrowthRate.toFixed(2)}%</span
+                      >, dividends add to total shareholder return.
+                    </p>
+                    <p class="text-sm">
+                      Expected dividends in {yearsToProject} years:
+                      <span class="font-semibold">${totalDividends}</span>.
+                    </p>
+                  </div>
+
+                  <!-- Step 5 -->
+                  <div>
+                    <h3 class="font-semibold dark:text-green-400 mb-2">
+                      Step 5: Discount the Projected Stock Price
+                    </h3>
+                    <p class="text-sm">
+                      Projected stock price:
+                      <span class="font-semibold">${futureStockPrice}</span>.
+                    </p>
+                    <p class="text-sm">
+                      Including dividends, total future value:
+                      <span class="font-semibold">${totalFutureValue}</span>.
+                    </p>
+                    <p class="text-sm">
+                      Discounted at <span class="font-semibold"
+                        >{discountRate}%</span
+                      >
+                      per year over {yearsToProject} years → Fair Value:
+                      <span class="font-semibold text-lg">${presentValue}</span
+                      >.
+                    </p>
+                  </div>
+                </div>
+              {/if}
+
+              <!-- Summary stays always visible -->
+              <div class="mt-8">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h3 class="">DCF Fair Value</h3>
+                    <p class="text-2xl font-bold">${presentValue}</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-sm">
+                      Projected Value in {yearsToProject} years
+                    </p>
+                    <p class="text-2xl font-bold">${totalFutureValue}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </main>
+
+          <aside class="inline-block relative w-full lg:w-1/4 mt-3">
+            <div class="bg-[#1F2937] text-white p-6 rounded-lg shadow-lg">
+              <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold">DCF Inputs</h2>
+              </div>
+
+              <div class="space-y-6">
                 <div>
-                  <h3 class="">DCF Fair Value</h3>
-                  <p class="text-2xl font-bold">${presentValue}</p>
+                  <label
+                    for="metric"
+                    class="flex items-center text-sm font-medium text-gray-300 mb-2"
+                  >
+                    Metric
+                    <InfoModal content="test" />
+                  </label>
+                  <select
+                    id="metric"
+                    class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-3 py-1"
+                  >
+                    <option selected>Free Cash Flow</option>
+                    <option>Revenue</option>
+                    <option>Net Income</option>
+                  </select>
                 </div>
-                <div class="text-right">
-                  <p class="text-sm">
-                    Projected Value in {yearsToProject} years
+
+                <div>
+                  <label
+                    for="years"
+                    class="flex items-center text-sm font-medium text-gray-300 mb-2"
+                  >
+                    Number of Years To Project
+                    <InfoModal content="test" />
+                  </label>
+                  <select
+                    id="years"
+                    class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-3 py-1"
+                  >
+                    <option>3</option>
+                    <option selected>5</option>
+                    <option>10</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label
+                    for="metric-growth"
+                    class="flex items-center text-sm font-medium text-gray-300 mb-2"
+                  >
+                    Metric Growth Rate
+                    <InfoModal content="test" />
+                  </label>
+                  <div class="relative">
+                    <span
+                      class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-300 dark:text-gray-300"
+                      >%</span
+                    >
+                    <input
+                      type="text"
+                      id="metric-growth"
+                      value="16.45"
+                      class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
+                    />
+                  </div>
+                  <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">
+                    Annual Free Cash Flow growth over the past 5 year(s) is:
+                    16.45%
                   </p>
-                  <p class="text-2xl font-bold">${totalFutureValue}</p>
                 </div>
-              </div>
-            </div>
-          </div>
-        </main>
 
-        <aside class="inline-block relative w-full lg:w-1/4 mt-3">
-          <div class="bg-[#1F2937] text-white p-6 rounded-lg shadow-lg">
-            <div class="flex justify-between items-center mb-6">
-              <h2 class="text-xl font-bold">DCF Inputs</h2>
-            </div>
-
-            <div class="space-y-6">
-              <div>
-                <label
-                  for="metric"
-                  class="flex items-center text-sm font-medium text-gray-300 mb-2"
-                >
-                  Metric
-                  <InfoModal content="test" />
-                </label>
-                <select
-                  id="metric"
-                  class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-3 py-1"
-                >
-                  <option selected>Free Cash Flow</option>
-                  <option>Revenue</option>
-                  <option>Net Income</option>
-                </select>
-              </div>
-
-              <div>
-                <label
-                  for="years"
-                  class="flex items-center text-sm font-medium text-gray-300 mb-2"
-                >
-                  Number of Years To Project
-                  <InfoModal content="test" />
-                </label>
-                <select
-                  id="years"
-                  class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-3 py-1"
-                >
-                  <option>3</option>
-                  <option selected>5</option>
-                  <option>10</option>
-                </select>
-              </div>
-
-              <div>
-                <label
-                  for="metric-growth"
-                  class="flex items-center text-sm font-medium text-gray-300 mb-2"
-                >
-                  Metric Growth Rate
-                  <InfoModal content="test" />
-                </label>
-                <div class="relative">
-                  <span
-                    class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-300 dark:text-gray-300"
-                    >%</span
+                <div>
+                  <label
+                    for="shares-growth"
+                    class="flex items-center text-sm font-medium text-gray-300 mb-2"
                   >
+                    Diluted Shares Growth Rate
+                    <InfoModal content="test" />
+                  </label>
+                  <div class="relative">
+                    <span
+                      class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-300 dark:text-gray-300"
+                      >%</span
+                    >
+                    <input
+                      type="text"
+                      id="shares-growth"
+                      value="-2.35"
+                      class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
+                    />
+                  </div>
+                  <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">
+                    Annual diluted shares outstanding growth over the past 5
+                    year(s) is: -2.35%
+                  </p>
+                </div>
+
+                <div>
+                  <label
+                    for="dividend-growth"
+                    class="flex items-center text-sm font-medium text-gray-300 mb-2"
+                  >
+                    Dividend Growth Rate
+                    <InfoModal content="test" />
+                  </label>
+                  <div class="relative">
+                    <span
+                      class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-300 dark:text-gray-300"
+                      >%</span
+                    >
+                    <input
+                      type="text"
+                      id="dividend-growth"
+                      value="0"
+                      class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    for="price-ratio"
+                    class="flex items-center text-sm font-medium text-gray-300 mb-2"
+                  >
+                    Price Ratio
+                    <InfoModal content="test" />
+                  </label>
                   <input
                     type="text"
-                    id="metric-growth"
-                    value="16.45"
-                    class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
+                    id="price-ratio"
+                    value="27.01"
+                    class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-3 py-1"
                   />
+                  <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">
+                    Average Price to Free Cash Flow over the past 5 year(s) is:
+                    27.01
+                  </p>
                 </div>
-                <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">
-                  Annual Free Cash Flow growth over the past 5 year(s) is:
-                  16.45%
-                </p>
-              </div>
 
-              <div>
-                <label
-                  for="shares-growth"
-                  class="flex items-center text-sm font-medium text-gray-300 mb-2"
-                >
-                  Diluted Shares Growth Rate
-                  <InfoModal content="test" />
-                </label>
-                <div class="relative">
-                  <span
-                    class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-300 dark:text-gray-300"
-                    >%</span
+                <div>
+                  <label
+                    for="discount-rate"
+                    class="flex items-center text-sm font-medium text-gray-300 mb-2"
                   >
-                  <input
-                    type="text"
-                    id="shares-growth"
-                    value="-2.35"
-                    class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
-                  />
+                    Discount Rate
+                    <InfoModal content="test" />
+                  </label>
+                  <div class="relative">
+                    <span
+                      class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-300 dark:text-gray-300"
+                      >%</span
+                    >
+                    <input
+                      type="text"
+                      id="discount-rate"
+                      value="10"
+                      class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
+                    />
+                  </div>
+                  <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">
+                    A sane discount rate to start with is: 10%
+                  </p>
                 </div>
-                <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">
-                  Annual diluted shares outstanding growth over the past 5
-                  year(s) is: -2.35%
-                </p>
-              </div>
-
-              <div>
-                <label
-                  for="dividend-growth"
-                  class="flex items-center text-sm font-medium text-gray-300 mb-2"
-                >
-                  Dividend Growth Rate
-                  <InfoModal content="test" />
-                </label>
-                <div class="relative">
-                  <span
-                    class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-300 dark:text-gray-300"
-                    >%</span
-                  >
-                  <input
-                    type="text"
-                    id="dividend-growth"
-                    value="0"
-                    class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  for="price-ratio"
-                  class="flex items-center text-sm font-medium text-gray-300 mb-2"
-                >
-                  Price Ratio
-                  <InfoModal content="test" />
-                </label>
-                <input
-                  type="text"
-                  id="price-ratio"
-                  value="27.01"
-                  class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-3 py-1"
-                />
-                <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">
-                  Average Price to Free Cash Flow over the past 5 year(s) is:
-                  27.01
-                </p>
-              </div>
-
-              <div>
-                <label
-                  for="discount-rate"
-                  class="flex items-center text-sm font-medium text-gray-300 mb-2"
-                >
-                  Discount Rate
-                  <InfoModal content="test" />
-                </label>
-                <div class="relative">
-                  <span
-                    class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-300 dark:text-gray-300"
-                    >%</span
-                  >
-                  <input
-                    type="text"
-                    id="discount-rate"
-                    value="10"
-                    class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
-                  />
-                </div>
-                <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">
-                  A sane discount rate to start with is: 10%
-                </p>
-              </div>
-              <!--
+                <!--
               <div>
                 <label
                   for="metric-override"
@@ -739,9 +745,14 @@
                 <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">Values in millions</p>
               </div>
               -->
+              </div>
             </div>
+          </aside>
+        {:else}
+          <div class="w-full">
+            <Infobox text="No valuation data available." />
           </div>
-        </aside>
+        {/if}
       </div>
     </div>
   </div>
