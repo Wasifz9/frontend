@@ -1,7 +1,7 @@
 <script lang="ts">
   import SEO from "$lib/components/SEO.svelte";
   import { displayCompanyName, stockTicker, screenWidth } from "$lib/store";
-  import { abbreviateNumber } from "$lib/utils";
+  import { abbreviateNumber, removeCompanyStrings } from "$lib/utils";
   import InfoModal from "$lib/components/InfoModal.svelte";
 
   import highcharts from "$lib/highcharts.ts";
@@ -9,7 +9,7 @@
   export let data;
 
   let configHistoricalChart = null;
-
+  let showSteps = false;
   // DCF calculation variables from the valuation data
   $: valuationData = data?.getData || {};
 
@@ -43,6 +43,8 @@
   let forwardDividend = data?.getStockDeck?.annualDividend;
   let discountRate = 10; // Default 10%
   let yearsToProject = 5;
+  let upside = 0;
+  let currentPrice = data?.getStockQuote?.price || 0;
 
   // Calculate DCF projections
   function calculateDCF() {
@@ -82,6 +84,10 @@
       discountedValueList.push([projectedDate.getTime(), presentValue]);
     }
     presentValue = discountedValueList[discountedValueList.length - 1][1];
+
+    upside = (((totalFutureValue - currentPrice) / currentPrice) * 100).toFixed(
+      2,
+    );
   }
 
   function plotHistoricalPriceChart() {
@@ -263,7 +269,7 @@
         {
           name: "P/FCF Ratio",
           data: priceToFCFRatios,
-          color: "#f59e0b",
+          color: "#2c6288",
           yAxis: 1,
           animation: false,
         },
@@ -349,6 +355,30 @@
             </h1>
           </div>
 
+          <p class="mt-4 mb-4 text-base leading-relaxed"></p>
+          <p class="mt-4 mb-4 text-base leading-relaxed">
+            Based on the DCF (Free Cash Flow Model), the intrinsic value of
+            {removeCompanyStrings($displayCompanyName)} is estimated at
+            <strong class="">{presentValue}</strong>, compared to the current
+            market price of
+            <strong class="">{currentPrice}</strong>.
+
+            <span class="block mt-3">
+              <span class="font-medium"
+                >Projected {yearsToProject}-year target:</span
+              >
+              <strong class="">${totalFutureValue}</strong>
+              <span
+                class="ml-2 px-2 py-1 rounded-md font-medium
+        {upside >= 0
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-[#00FC50]'
+                  : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-[#FF2F1F]'}"
+              >
+                {upside >= 0 ? "+" : ""}{upside}%
+              </span>
+            </span>
+          </p>
+
           {#if data?.getData?.historicalPrice?.length > 0}
             <div class="mb-8">
               <div class="grow">
@@ -363,165 +393,153 @@
           {/if}
 
           <!-- DCF Calculation Steps -->
-          <div class="mb-8 p-6 bg-gray-50 dark:bg-gray-900 rounded-lg">
-            <h2 class="text-xl font-bold mb-6">DCF Calculation Steps</h2>
-
-            <div class="space-y-6">
-              <div>
-                <h3
-                  class="font-semibold text-green-600 dark:text-green-400 mb-2"
-                >
-                  Step 1: Project Free Cash Flow
-                </h3>
-                <p class="text-sm">
-                  The most recent Free Cash Flow (TTM) value is <span
-                    class="font-semibold">{abbreviateNumber(latestFCF)}</span
-                  >
-                  as of {new Date(latestDate)?.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}.
-                </p>
-                <p class="text-sm">
-                  We will project this out {yearsToProject} years with a yearly growth
-                  rate of
-                  <span class="font-semibold">{fcfGrowthRate}%</span>.
-                </p>
-                <p class="text-sm">
-                  Starting with {abbreviateNumber(latestFCF)}
-                  and growing at {fcfGrowthRate}% for {yearsToProject}
-                  years, we estimate the Free Cash Flow will be
-                  <span class="font-semibold"
-                    >{abbreviateNumber(futureFCF)}</span
-                  >.
-                </p>
-              </div>
-
-              <div>
-                <h3
-                  class="font-semibold text-green-600 dark:text-green-400 mb-2"
-                >
-                  Step 2: Project Future Diluted Shares Outstanding
-                </h3>
-                <p class="text-sm">
-                  The most recent Diluted Shares Outstanding value is <span
-                    class="font-semibold"
-                    >{abbreviateNumber(dilutedShares)}
-                  </span>.
-                </p>
-                <p class="text-sm">
-                  We will project this out {yearsToProject} year(s) with a growth
-                  rate of
-                  <span class="font-semibold">{sharesGrowthRate}%</span>.
-                </p>
-                <p class="text-sm">
-                  We estimate the Diluted Shares Outstanding will be <span
-                    class="font-semibold">{abbreviateNumber(futureShares)}</span
-                  >.
-                </p>
-              </div>
-
-              <div>
-                <h3
-                  class="font-semibold text-green-600 dark:text-green-400 mb-2"
-                >
-                  Step 3: Project Future Stock Price
-                </h3>
-
-                <p class="text-sm mb-3">
-                  Using a price ratio of <span class="font-semibold"
-                    >{priceRatioAvg}</span
-                  >, the formula is: Future Stock Price = (Future Free Cash Flow
-                  / Future Diluted Shares Outstanding) × Price Ratio
-                </p>
-                <p class="text-sm">
-                  Calculation: ({abbreviateNumber(futureFCF)} / {abbreviateNumber(
-                    futureShares,
-                  )}) × {priceRatioAvg} =
-                  <span class="font-semibold">${futureStockPrice}</span>
-                </p>
-              </div>
-
-              <div>
-                <h3
-                  class="font-semibold text-green-600 dark:text-green-400 mb-2"
-                >
-                  Step 4: Project Future Dividends Paid
-                </h3>
-                <p class="text-sm">
-                  The most recent forward dividend per share value is <span
-                    class="font-semibold">${forwardDividend}</span
-                  >.
-                </p>
-                <p class="text-sm">
-                  We will project this out {yearsToProject} year(s) with a growth
-                  rate of
-                  <span class="font-semibold"
-                    >{dividendGrowthRate.toFixed(2)}%</span
-                  >, which will be added to the future stock price to find total
-                  shareholder returns.
-                </p>
-                <p class="text-sm">
-                  Based on this growth rate, over the next {yearsToProject} year(s)
-                  the stock will pay
-                  <span class="font-semibold">${totalDividends}</span> in total dividends.
-                </p>
-              </div>
-
-              <div>
-                <h3
-                  class="font-semibold text-green-600 dark:text-green-400 mb-2"
-                >
-                  Step 5: Discount the Projected Stock Price
-                </h3>
-                <p class="text-sm">
-                  The projected stock price is <span class="font-semibold"
-                    >${futureStockPrice}</span
-                  >. To find total shareholder returns, we need to include all
-                  money a shareholder would receive.
-                </p>
-                <p class="text-sm">
-                  Since shareholders would also receive ${totalDividends} in dividends
-                  over this period, the total future value is
-                  <span class="font-semibold">${totalFutureValue}</span>.
-                </p>
-                <p class="text-sm">
-                  Discounting this value by <span class="font-semibold"
-                    >{discountRate}%</span
-                  >
-                  per year for {yearsToProject} year(s) gives us today's fair value
-                  of
-                  <span class="font-semibold text-lg">${presentValue}</span>.
-                </p>
-              </div>
+          <div
+            class="mb-8 p-6 border border-gray-300 dark:border-gray-800 rounded-lg shadow-sm"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-xl font-bold">DCF Calculation Steps</h2>
+              <button
+                on:click={() => (showSteps = !showSteps)}
+                class="cursor-pointer text-sm px-3 py-1 rounded-md border text-white border border-gray-300 dark:border-gray-600 bg-black sm:hover:bg-muted dark:bg-primary dark:sm:hover:bg-secondary"
+              >
+                {showSteps ? "Hide Steps" : "Show Steps"}
+              </button>
             </div>
 
-            <div
-              class="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-500"
-            >
-              <div class="flex items-center justify-between">
+            {#if showSteps}
+              <div class="space-y-6">
+                <!-- Step 1 -->
                 <div>
-                  <h3
-                    class="text-lg font-semibold text-blue-900 dark:text-blue-100"
-                  >
-                    DCF Fair Value
+                  <h3 class="font-semibold dark:text-green-400 mb-2">
+                    Step 1: Project Free Cash Flow
                   </h3>
-                  <p
-                    class="text-2xl font-bold text-blue-700 dark:text-blue-300"
-                  >
-                    ${presentValue}
+                  <p class="text-sm">
+                    The most recent Free Cash Flow (TTM) value is
+                    <span class="font-semibold"
+                      >{abbreviateNumber(latestFCF)}</span
+                    >
+                    as of {new Date(latestDate)?.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}.
+                  </p>
+                  <p class="text-sm">
+                    We will project this out {yearsToProject} years with a yearly
+                    growth rate of
+                    <span class="font-semibold">{fcfGrowthRate}%</span>.
+                  </p>
+                  <p class="text-sm">
+                    Starting with {abbreviateNumber(latestFCF)} and growing at
+                    {fcfGrowthRate}% for {yearsToProject} years, we estimate Free
+                    Cash Flow will be
+                    <span class="font-semibold"
+                      >{abbreviateNumber(futureFCF)}</span
+                    >.
                   </p>
                 </div>
+
+                <!-- Step 2 -->
+                <div>
+                  <h3 class="font-semibold dark:text-green-400 mb-2">
+                    Step 2: Project Future Diluted Shares Outstanding
+                  </h3>
+                  <p class="text-sm">
+                    The most recent Diluted Shares Outstanding value is
+                    <span class="font-semibold"
+                      >{abbreviateNumber(dilutedShares)}</span
+                    >.
+                  </p>
+                  <p class="text-sm">
+                    We will project this out {yearsToProject} year(s) with a growth
+                    rate of
+                    <span class="font-semibold">{sharesGrowthRate}%</span>.
+                  </p>
+                  <p class="text-sm">
+                    Estimated Diluted Shares Outstanding:
+                    <span class="font-semibold"
+                      >{abbreviateNumber(futureShares)}</span
+                    >.
+                  </p>
+                </div>
+
+                <!-- Step 3 -->
+                <div>
+                  <h3 class="font-semibold dark:text-green-400 mb-2">
+                    Step 3: Project Future Stock Price
+                  </h3>
+                  <p class="text-sm mb-3">
+                    Using a price ratio of
+                    <span class="font-semibold">{priceRatioAvg}</span>, formula:
+                    (Future Free Cash Flow ÷ Future Diluted Shares Outstanding)
+                    × Price Ratio
+                  </p>
+                  <p class="text-sm">
+                    ({abbreviateNumber(futureFCF)} ÷ {abbreviateNumber(
+                      futureShares,
+                    )}) ×
+                    {priceRatioAvg} =
+                    <span class="font-semibold">${futureStockPrice}</span>
+                  </p>
+                </div>
+
+                <!-- Step 4 -->
+                <div>
+                  <h3 class="font-semibold dark:text-green-400 mb-2">
+                    Step 4: Project Future Dividends Paid
+                  </h3>
+                  <p class="text-sm">
+                    Forward dividend per share:
+                    <span class="font-semibold">${forwardDividend}</span>.
+                  </p>
+                  <p class="text-sm">
+                    Projected over {yearsToProject} years with a growth rate of
+                    <span class="font-semibold"
+                      >{dividendGrowthRate.toFixed(2)}%</span
+                    >, dividends add to total shareholder return.
+                  </p>
+                  <p class="text-sm">
+                    Expected dividends in {yearsToProject} years:
+                    <span class="font-semibold">${totalDividends}</span>.
+                  </p>
+                </div>
+
+                <!-- Step 5 -->
+                <div>
+                  <h3 class="font-semibold dark:text-green-400 mb-2">
+                    Step 5: Discount the Projected Stock Price
+                  </h3>
+                  <p class="text-sm">
+                    Projected stock price:
+                    <span class="font-semibold">${futureStockPrice}</span>.
+                  </p>
+                  <p class="text-sm">
+                    Including dividends, total future value:
+                    <span class="font-semibold">${totalFutureValue}</span>.
+                  </p>
+                  <p class="text-sm">
+                    Discounted at <span class="font-semibold"
+                      >{discountRate}%</span
+                    >
+                    per year over {yearsToProject} years → Fair Value:
+                    <span class="font-semibold text-lg">${presentValue}</span>.
+                  </p>
+                </div>
+              </div>
+            {/if}
+
+            <!-- Summary stays always visible -->
+            <div class="mt-8">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="">DCF Fair Value</h3>
+                  <p class="text-2xl font-bold">${presentValue}</p>
+                </div>
                 <div class="text-right">
-                  <p class="text-sm text-gray-600 dark:text-gray-400">
+                  <p class="text-sm">
                     Projected Value in {yearsToProject} years
                   </p>
-                  <p
-                    class="text-lg font-semibold text-gray-800 dark:text-gray-200"
-                  >
-                    ${totalFutureValue}
-                  </p>
+                  <p class="text-2xl font-bold">${totalFutureValue}</p>
                 </div>
               </div>
             </div>
