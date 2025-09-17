@@ -109,7 +109,7 @@
         backgroundColor: $mode === "light" ? "#fff" : "#09090B",
         plotBackgroundColor: $mode === "light" ? "#fff" : "#09090B",
         type: "spline",
-        height: $screenWidth < 640 ? 300 : 400,
+        height: 360,
         animation: false,
       },
       title: {

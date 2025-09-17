@@ -26,25 +26,11 @@ export const load = async ({ locals, params }) => {
     return output;
   };
 
-  const getStockQuote = async () => {
-    const response = await fetch(apiURL + "/stock-quote", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-KEY": apiKey,
-      },
-      body: JSON.stringify(postData),
-    });
 
-    const output = await response.json();
-
-    return output;
-  };
 
   // Make sure to return a promise
   return {
-    getData: await getData(),
-    getStockQuote: await getStockQuote(),
+    getData: await getData()
   };
 };
 
