@@ -181,7 +181,7 @@
       Math.pow(1 + dividendGrowthRate / 100, yearsToProject / 2);
 
     // Step 5: Total future value & discount it back
-    totalFutureValue = Number((futureStockPrice + totalDividends).toFixed(2));
+    totalFutureValue = Number((futureStockPrice + totalDividends)?.toFixed(2));
 
     // Build discounted values for each projected year (we keep yearsToProject ... 0)
     for (let year = yearsToProject; year >= 0; year--) {
@@ -201,10 +201,10 @@
 
     // Upside calculations
     upsideTotalFutureValue = currentPrice
-      ? (((totalFutureValue - currentPrice) / currentPrice) * 100).toFixed(2)
+      ? (((totalFutureValue - currentPrice) / currentPrice) * 100)?.toFixed(2)
       : "0.00";
     upsidePresentValue = currentPrice
-      ? (((presentValue - currentPrice) / currentPrice) * 100).toFixed(2)
+      ? (((presentValue - currentPrice) / currentPrice) * 100)?.toFixed(2)
       : "0.00";
   }
 
@@ -255,7 +255,10 @@
       },
       yAxis: [
         {
-          title: { text: "Price" },
+          title: {
+            text: "Price",
+            style: { color: $mode === "light" ? "#000" : "#fff" },
+          },
           gridLineWidth: 1,
           gridLineColor: $mode === "light" ? "#e5e7eb" : "#111827",
           labels: { style: { color: $mode === "light" ? "#545454" : "white" } },
@@ -273,7 +276,7 @@
         backgroundColor: "rgba(0, 0, 0, 0.8)",
         borderColor: "rgba(255, 255, 255, 0.2)",
         borderWidth: 1,
-        style: { color: "#fff", fontSize: "16px", padding: "10px" },
+        style: { color: "#fff", fontSize: "14px", padding: "10px" },
         borderRadius: 4,
         formatter: function () {
           let tooltip = `<b>${new Date(this.x)?.toLocaleDateString("en-US", {
@@ -283,11 +286,11 @@
           })}</b><br/>`;
           this.points.forEach((point) => {
             if (point.series.name === "Stock Price") {
-              tooltip += `<span style="color:${point.color}">●</span> Price: $${point.y.toFixed(2)}<br/>`;
+              tooltip += `<span  style="color:${point.color}">●</span> Price: $${point.y.toFixed(2)}<br/>`;
             } else if (point.series.name === "DCF Projection") {
-              tooltip += `<span style="color:${point.color}">●</span> Projected Price: $${point.y.toFixed(2)}<br/>`;
+              tooltip += `<span  style="color:${point.color}">●</span> Projected Price: $${point.y.toFixed(2)}<br/>`;
             } else if (point.series.name === `P/${metricShortLabel} Ratio`) {
-              tooltip += `<span style="color:${point.color}">●</span> P/${metricShortLabel} Ratio: ${point.y.toFixed(2)}x`;
+              tooltip += `<span  style="color:${point.color}">●</span> P/${metricShortLabel} Ratio: ${point.y.toFixed(2)}x`;
             }
           });
           return tooltip;
@@ -425,7 +428,7 @@
         gridLineColor: $mode === "light" ? "#e0e0e0" : "#2a2a2a",
       },
       yAxis: {
-        title: { text: metricTTTLabel },
+        title: null,
         gridLineWidth: 1,
         gridLineColor: $mode === "light" ? "#e5e7eb" : "#111827",
         labels: {
@@ -441,7 +444,7 @@
         backgroundColor: "rgba(0, 0, 0, 0.8)",
         borderColor: "rgba(255, 255, 255, 0.2)",
         borderWidth: 1,
-        style: { color: "#fff", fontSize: "16px", padding: "10px" },
+        style: { color: "#fff", fontSize: "14px", padding: "10px" },
         borderRadius: 4,
         formatter: function () {
           let tooltip = `<b>${new Date(this.x)?.toLocaleDateString("en-US", {
@@ -567,7 +570,7 @@
                 <div
                   class="mt-0.5 text-lg bp:text-xl sm:mt-1.5 sm:text-2xl font-bold flex flex-row items-center"
                 >
-                  ${currentPrice}
+                  {currentPrice}
                 </div>
               </div>
 
@@ -576,7 +579,7 @@
                 <div
                   class="mt-0.5 text-lg font-bold bp:text-xl sm:mt-1.5 sm:text-2xl"
                 >
-                  {totalDividends?.toFixed(2) ?? "n/a"}
+                  {totalDividends ? totalDividends?.toFixed(2) : "n/a"}
                 </div>
               </div>
 
@@ -585,14 +588,16 @@
                 <div
                   class="mt-0.5 text-lg bp:text-xl sm:mt-1.5 sm:text-2xl font-bold flex flex-row items-center"
                 >
-                  {presentValue ?? "n/a"}
+                  {presentValue && presentValue > 0 ? presentValue : "n/a"}
                   <span
                     class="ml-2 px-2 py-1 rounded-md font-medium text-sm {upsidePresentValue >=
-                    0
-                      ? 'bg-green-200 text-green-800 dark:bg-green-900/20 dark:text-[#00FC50]'
-                      : 'bg-red-200 text-red-800 dark:bg-red-900/20 dark:text-[#FF2F1F]'}"
+                      0 && presentValue > 0
+                      ? "before:content-['+'] bg-green-200 text-green-800 dark:bg-green-900/20 dark:text-[#00FC50]"
+                      : upsidePresentValue < 0 && presentValue > 0
+                        ? 'bg-red-200 text-red-800 dark:bg-red-900/20 dark:text-[#FF2F1F]'
+                        : 'hidden'}"
                   >
-                    {upsidePresentValue >= 0 ? "+" : ""}{upsidePresentValue}%
+                    {upsidePresentValue}%
                   </span>
                 </div>
               </div>
@@ -602,16 +607,18 @@
                 <div
                   class="mt-0.5 text-lg bp:text-xl sm:mt-1.5 sm:text-2xl font-bold flex flex-row items-center"
                 >
-                  {totalFutureValue ?? "n/a"}
+                  {totalFutureValue && totalFutureValue > 0
+                    ? totalFutureValue
+                    : "n/a"}
                   <span
                     class="ml-2 px-2 py-1 rounded-md font-medium text-sm {upsideTotalFutureValue >=
-                    0
-                      ? 'bg-green-200 text-green-800 dark:bg-green-900/20 dark:text-[#00FC50]'
-                      : 'bg-red-200 text-red-800 dark:bg-red-900/20 dark:text-[#FF2F1F]'}"
+                      0 && totalFutureValue > 0
+                      ? "before:content-['+'] bg-green-200 text-green-800 dark:bg-green-900/20 dark:text-[#00FC50]"
+                      : upsideTotalFutureValue < 0 && totalFutureValue > 0
+                        ? 'bg-red-200 text-red-800 dark:bg-red-900/20 dark:text-[#FF2F1F]'
+                        : 'hidden'}"
                   >
-                    {upsideTotalFutureValue >= 0
-                      ? "+"
-                      : ""}{upsideTotalFutureValue}%
+                    {upsideTotalFutureValue}%
                   </span>
                 </div>
               </div>
@@ -658,7 +665,7 @@
           </main>
 
           <aside class="inline-block relative w-full lg:w-1/4 mt-3">
-            <div class="bg-gray-200 dark:bg-[#1F2937] p-6 rounded-lg shadow-lg">
+            <div class="bg-gray-200 dark:bg-[#1F2937] p-6 rounded shadow">
               <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-bold">DCF Inputs</h2>
               </div>
@@ -678,7 +685,7 @@
                     id="metric"
                     bind:value={selectedMetric}
                     on:change={() => onMetricChange()}
-                    class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-sm rounded-lg focus:outline-none block w-full pl-3 py-1 cursor-pointer"
+                    class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-smrounded focus:outline-none block w-full pl-3 py-1 cursor-pointer"
                   >
                     <option value="freeCashFlow">Free Cash Flow</option>
                     <option value="operatingIncome">Operating Income</option>
@@ -703,7 +710,7 @@
                     id="years"
                     bind:value={yearsToProject}
                     on:change={() => (userHasModifiedInputs = true)}
-                    class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-sm rounded-lg focus:outline-none block w-full pl-3 py-1 cursor-pointer"
+                    class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-sm rounded focus:outline-none block w-full pl-3 py-1 cursor-pointer"
                   >
                     <option value={3}>3</option>
                     <option value={5}>5</option>
@@ -732,7 +739,7 @@
                       id="metric-growth"
                       bind:value={metricGrowthRate}
                       on:input={() => (userHasModifiedInputs = true)}
-                      class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
+                      class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-smrounded focus:outline-none block w-full pl-7 py-1"
                     />
                   </div>
                   <p class="mt-2 text-xs">
@@ -764,7 +771,7 @@
                       id="shares-growth"
                       bind:value={sharesGrowthRate}
                       on:input={() => (userHasModifiedInputs = true)}
-                      class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
+                      class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-sm rounded focus:outline-none block w-full pl-7 py-1"
                     />
                   </div>
                   <p class="mt-2 text-xs">
@@ -794,7 +801,7 @@
                       id="dividend-growth"
                       bind:value={dividendGrowthRate}
                       on:input={() => (userHasModifiedInputs = true)}
-                      class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
+                      class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-smrounded focus:outline-none block w-full pl-7 py-1"
                     />
                   </div>
                 </div>
@@ -815,7 +822,7 @@
                     id="price-ratio"
                     bind:value={priceRatioAvg}
                     on:input={() => (userHasModifiedInputs = true)}
-                    class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-sm rounded-lg focus:outline-none block w-full pl-3 py-1"
+                    class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-sm rounded focus:outline-none block w-full pl-3 py-1"
                   />
                   <p class="mt-2 text-xs">
                     5-year average P/{metricShortLabel}: {valuationData?.[
@@ -845,7 +852,7 @@
                       id="discount-rate"
                       bind:value={discountRate}
                       on:input={() => (userHasModifiedInputs = true)}
-                      class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
+                      class="bg-white dark:bg-[#374151] border border-gray-300 shadow dark:border-gray-600 text-smrounded focus:outline-none block w-full pl-7 py-1"
                     />
                   </div>
                   <p class="mt-2 text-xs">
@@ -952,8 +959,11 @@
           </p>
           <p class="text-sm">
             Projected over {yearsToProject} years with a growth rate of
-            <span class="font-semibold">{dividendGrowthRate.toFixed(2)}%</span>,
-            dividends add to total shareholder return.
+            <span class="font-semibold"
+              >{dividendGrowthRate
+                ? dividendGrowthRate?.toFixed(2) + "%"
+                : "n/a"}</span
+            >, dividends add to total shareholder return.
           </p>
           <p class="text-sm">
             Expected dividends in {yearsToProject} years:
