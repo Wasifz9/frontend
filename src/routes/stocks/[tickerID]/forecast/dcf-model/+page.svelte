@@ -674,11 +674,12 @@
                   </label>
                   <select
                     id="metric"
-                    class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-3 py-1"
+                    class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-3 py-1 cursor-pointer"
                   >
                     <option selected>Free Cash Flow</option>
-                    <option>Revenue</option>
-                    <option>Net Income</option>
+                    <option>Book Value</option>
+                    <option>Operating Cash Flow</option>
+                    <option>Operating Income</option>
                   </select>
                 </div>
 
@@ -696,11 +697,11 @@
                     id="years"
                     bind:value={yearsToProject}
                     on:change={() => (userHasModifiedInputs = true)}
-                    class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-3 py-1"
+                    class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-3 py-1 cursor-pointer"
                   >
-                    <option value={3}>3</option>
-                    <option value={5}>5</option>
-                    <option value={10}>10</option>
+                    <option class="cursor-pointer" value={3}>3</option>
+                    <option class="cursor-pointer" value={5}>5</option>
+                    <option class="cursor-pointer" value={10}>10</option>
                   </select>
                 </div>
 
