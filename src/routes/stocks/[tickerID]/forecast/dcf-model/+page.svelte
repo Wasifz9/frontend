@@ -40,7 +40,7 @@
       : selectedMetric === "operatingIncome"
         ? "priceToOperatingIncomeRatio"
         : selectedMetric === "operatingCashFlow"
-          ? "priceToOperatingCashFlowRatio"
+          ? "priceToOCFRatio"
           : "priceToBookRatio";
 
   $: ratioAvgKey =
@@ -57,7 +57,7 @@
     const history = valuationData?.[historyKey] || [];
     if (history.length >= 4) {
       const last4 = history.slice(-4);
-      return last4.reduce((sum, q) => {
+      return last4?.reduce((sum, q) => {
         return (
           sum +
           (selectedMetric === "freeCashFlow"
