@@ -27,10 +27,19 @@
 
   $: latestDate =
     valuationData?.freeCashFlowHistory?.slice(-1)?.[0]?.date || "";
-  $: fcfGrowthRate = valuationData?.freeCashFlowGrowth || 0;
-  $: sharesGrowthRate = valuationData?.sharesGrowth || 0;
-  $: dividendGrowthRate = valuationData?.dividendGrowth || 0;
-  $: priceRatioAvg = valuationData?.priceRatioAvg || 0;
+  // Initialize with default values from API, but allow user override
+  let fcfGrowthRate = valuationData?.freeCashFlowGrowth || 0;
+  let sharesGrowthRate = valuationData?.sharesGrowth || 0;
+  let dividendGrowthRate = valuationData?.dividendGrowth || 0;
+  let priceRatioAvg = valuationData?.priceRatioAvg || 0;
+
+  // Update default values when data changes but preserve user input
+  $: if (valuationData && !userHasModifiedInputs) {
+    fcfGrowthRate = valuationData?.freeCashFlowGrowth || 0;
+    sharesGrowthRate = valuationData?.sharesGrowth || 0;
+    dividendGrowthRate = valuationData?.dividendGrowth || 0;
+    priceRatioAvg = valuationData?.priceRatioAvg || 0;
+  }
 
   let futureFCF;
   let futureShares;
@@ -46,6 +55,7 @@
   let yearsToProject = 5;
   let upside = 0;
   let currentPrice = data?.getStockQuote?.price || 0;
+  let userHasModifiedInputs = false;
 
   // Calculate DCF projections
   function calculateDCF() {
@@ -58,7 +68,8 @@
     futureFCF = latestFCF * Math.pow(1 + fcfGrowthRate / 100, yearsToProject);
 
     // Step 2: Project Future Diluted Shares Outstanding
-    futureShares = dilutedShares * Math.pow(1 - 2.35 / 100, yearsToProject);
+    futureShares =
+      dilutedShares * Math.pow(1 + sharesGrowthRate / 100, yearsToProject);
 
     // Step 3: Project Future Stock Price
     futureStockPrice = Math.floor((futureFCF / futureShares) * priceRatioAvg);
@@ -69,7 +80,7 @@
       Math.pow(1 + dividendGrowthRate / 100, yearsToProject / 2);
 
     // Step 5: Discount the Projected Stock Price
-    totalFutureValue = futureStockPrice + totalDividends;
+    totalFutureValue = (futureStockPrice + totalDividends)?.toFixed(2);
 
     //recursive loop for yearsToProject
     for (let year = yearsToProject; year >= 0; year--) {
@@ -294,11 +305,20 @@
     return options;
   }
 
+  // Reactive recalculation when inputs change
+  $: {
+    if (Object?.keys(valuationData)?.length > 0) {
+      calculateDCF();
+    }
+  }
+
   $: {
     if (
       $mode &&
       typeof window !== "undefined" &&
-      Object?.keys(valuationData)?.length > 0
+      Object?.keys(valuationData)?.length > 0 &&
+      yearsToProject &&
+      discountRate
     ) {
       configHistoricalChart = plotHistoricalPriceChart() || null;
     }
@@ -527,8 +547,7 @@
                         >{discountRate}%</span
                       >
                       per year over {yearsToProject} years → Fair Value:
-                      <span class="font-semibold text-lg">${presentValue}</span
-                      >.
+                      <strong>${presentValue}</strong>.
                     </p>
                   </div>
                 </div>
@@ -587,11 +606,13 @@
                   </label>
                   <select
                     id="years"
+                    bind:value={yearsToProject}
+                    on:change={() => (userHasModifiedInputs = true)}
                     class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-3 py-1"
                   >
-                    <option>3</option>
-                    <option selected>5</option>
-                    <option>10</option>
+                    <option value={3}>3</option>
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
                   </select>
                 </div>
 
@@ -609,15 +630,17 @@
                       >%</span
                     >
                     <input
-                      type="text"
+                      type="number"
+                      step="0.01"
                       id="metric-growth"
-                      value="16.45"
+                      bind:value={fcfGrowthRate}
+                      on:input={() => (userHasModifiedInputs = true)}
                       class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
                     />
                   </div>
                   <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">
                     Annual Free Cash Flow growth over the past 5 year(s) is:
-                    16.45%
+                    {valuationData?.freeCashFlowGrowth || 0}%
                   </p>
                 </div>
 
@@ -635,15 +658,17 @@
                       >%</span
                     >
                     <input
-                      type="text"
+                      type="number"
+                      step="0.01"
                       id="shares-growth"
-                      value="-2.35"
+                      bind:value={sharesGrowthRate}
+                      on:input={() => (userHasModifiedInputs = true)}
                       class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
                     />
                   </div>
                   <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">
                     Annual diluted shares outstanding growth over the past 5
-                    year(s) is: -2.35%
+                    year(s) is: {valuationData?.sharesGrowth || 0}%
                   </p>
                 </div>
 
@@ -661,9 +686,11 @@
                       >%</span
                     >
                     <input
-                      type="text"
+                      type="number"
+                      step="0.01"
                       id="dividend-growth"
-                      value="0"
+                      bind:value={dividendGrowthRate}
+                      on:input={() => (userHasModifiedInputs = true)}
                       class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
                     />
                   </div>
@@ -678,14 +705,16 @@
                     <InfoModal content="test" />
                   </label>
                   <input
-                    type="text"
+                    type="number"
+                    step="0.01"
                     id="price-ratio"
-                    value="27.01"
+                    bind:value={priceRatioAvg}
+                    on:input={() => (userHasModifiedInputs = true)}
                     class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-3 py-1"
                   />
                   <p class="mt-2 text-xs text-gray-300 dark:text-gray-300">
                     Average Price to Free Cash Flow over the past 5 year(s) is:
-                    27.01
+                    {valuationData?.priceRatioAvg || 0}
                   </p>
                 </div>
 
@@ -703,9 +732,11 @@
                       >%</span
                     >
                     <input
-                      type="text"
+                      type="number"
+                      step="0.01"
                       id="discount-rate"
-                      value="10"
+                      bind:value={discountRate}
+                      on:input={() => (userHasModifiedInputs = true)}
                       class="bg-[#374151] border border-gray-600 text-white text-sm rounded-lg focus:outline-none block w-full pl-7 py-1"
                     />
                   </div>
