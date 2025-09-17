@@ -9,6 +9,8 @@
   import { mode } from "mode-watcher";
   export let data;
 
+  $: valuationData = data?.getData || {};
+
   // Charts config
   let configHistoricalChart = null;
   let configMetricChart = null;
@@ -16,24 +18,30 @@
   let userHasModifiedInputs = false;
 
   // Metric toggle (default Free Cash Flow)
-  let selectedMetric: "freeCashFlow" | "operatingIncome" = "freeCashFlow";
-
-  // Derived data
-  $: valuationData = data?.getData || {};
+  let selectedMetric: "freeCashFlow" | "operatingIncome" | "operatingCashFlow" =
+    "freeCashFlow";
 
   // Select proper history & ratio keys depending on selectedMetric
   $: historyKey =
     selectedMetric === "freeCashFlow"
       ? "freeCashFlowHistory"
-      : "operatingIncomeHistory";
+      : selectedMetric === "operatingIncome"
+        ? "operatingIncomeHistory"
+        : "operatingCashFlowHistory";
 
   $: ratioProp =
     selectedMetric === "freeCashFlow"
       ? "priceToFCFRatio"
-      : "priceToOperatingIncomeRatio";
+      : selectedMetric === "operatingIncome"
+        ? "priceToOperatingIncomeRatio"
+        : "priceToOperatingCashFlowRatio";
 
   $: ratioAvgKey =
-    selectedMetric === "freeCashFlow" ? "priceRatioAvgFCF" : "priceRatioAvgOI";
+    selectedMetric === "freeCashFlow"
+      ? "priceRatioAvgFCF"
+      : selectedMetric === "operatingIncome"
+        ? "priceRatioAvgOI"
+        : "priceRatioAvgOCF";
 
   // Latest TTM metric (sum of last 4 quarters)
   $: latestMetric = (() => {
@@ -45,7 +53,9 @@
           sum +
           (selectedMetric === "freeCashFlow"
             ? q?.freeCashFlow || 0
-            : q?.operatingIncome || 0)
+            : selectedMetric === "operatingIncome"
+              ? q?.operatingIncome || 0
+              : q?.operatingCashFlow || 0)
         );
       }, 0);
     }
@@ -61,14 +71,13 @@
   let dividendGrowthRate = 0;
   let priceRatioAvg = 0;
 
-  // When valuationData changes and user hasn't modified inputs,
-  // populate defaults for the currently selected metric.
   $: if (valuationData && !userHasModifiedInputs) {
     metricGrowthRate =
       selectedMetric === "freeCashFlow"
         ? valuationData?.freeCashFlowGrowth || 0
-        : valuationData?.operatingIncomeGrowth || 0;
-
+        : selectedMetric === "operatingIncome"
+          ? valuationData?.operatingIncomeGrowth || 0
+          : valuationData?.operatingCashFlowGrowth || 0;
     sharesGrowthRate = valuationData?.sharesGrowth || 0;
     dividendGrowthRate = valuationData?.dividendGrowth || 0;
     priceRatioAvg = valuationData?.[ratioAvgKey] || 0;
@@ -92,10 +101,21 @@
   let upsidePresentValue = 0;
   let currentPrice = data?.getStockQuote?.price || 0;
 
-  // Helper: label for metric (readable)
+  // Helper: label for metric
   $: metricLabel =
-    selectedMetric === "freeCashFlow" ? "Free Cash Flow" : "Operating Income";
-  $: metricShortLabel = selectedMetric === "freeCashFlow" ? "FCF" : "OpInc";
+    selectedMetric === "freeCashFlow"
+      ? "Free Cash Flow"
+      : selectedMetric === "operatingIncome"
+        ? "Operating Income"
+        : "Operating Cash Flow";
+
+  $: metricShortLabel =
+    selectedMetric === "freeCashFlow"
+      ? "FCF"
+      : selectedMetric === "operatingIncome"
+        ? "OpInc"
+        : "OCF";
+
   $: metricTTTLabel = `${metricLabel} TTM`;
 
   // DCF Calculation
@@ -327,7 +347,9 @@
           sum +
           (selectedMetric === "freeCashFlow"
             ? q.freeCashFlow || 0
-            : q.operatingIncome || 0)
+            : selectedMetric === "operatingIncome"
+              ? q.operatingIncome || 0
+              : q.operatingCashFlow || 0)
         );
       }, 0);
       historicalMetric.push([new Date(history[i].date).getTime(), ttm]);
@@ -404,9 +426,9 @@
           })}</b><br/>`;
           this.points.forEach((point) => {
             if (point.series.name === `Historical ${metricLabel}`) {
-              tooltip += `<span style="color:${point.color}">●</span> Historical ${metricLabel} (TTM): ${abbreviateNumber(point.y)}<br/>`;
+              tooltip += `<span style="color:${point.color}">●</span> ${metricLabel} (ttm): ${abbreviateNumber(point.y)}<br/>`;
             } else if (point.series.name === `Projected ${metricLabel}`) {
-              tooltip += `<span style="color:${point.color}">●</span> Projected ${metricLabel} (TTM): ${abbreviateNumber(point.y)}<br/>`;
+              tooltip += `<span style="color:${point.color}">●</span> ${metricLabel} (ttm): ${abbreviateNumber(point.y)}<br/>`;
             }
           });
           return tooltip;
@@ -635,6 +657,9 @@
                   >
                     <option value="freeCashFlow">Free Cash Flow</option>
                     <option value="operatingIncome">Operating Income</option>
+                    <option value="operatingCashFlow"
+                      >Operating Cash Flow</option
+                    >
                   </select>
                 </div>
 
