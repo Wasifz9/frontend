@@ -53,7 +53,8 @@
   let forwardDividend = data?.getStockDeck?.annualDividend;
   let discountRate = 10; // Default 10%
   let yearsToProject = 5;
-  let upside = 0;
+  let upsideTotalFutureValue = 0;
+  let upsidePresentValue = 0;
   let currentPrice = data?.getStockQuote?.price || 0;
   let userHasModifiedInputs = false;
 
@@ -97,9 +98,15 @@
     }
     presentValue = discountedValueList[discountedValueList.length - 1][1];
 
-    upside = (((totalFutureValue - currentPrice) / currentPrice) * 100).toFixed(
-      2,
-    );
+    upsideTotalFutureValue = (
+      ((totalFutureValue - currentPrice) / currentPrice) *
+      100
+    )?.toFixed(2);
+
+    upsidePresentValue = (
+      ((presentValue - currentPrice) / currentPrice) *
+      100
+    )?.toFixed(2);
   }
 
   function plotHistoricalPriceChart() {
@@ -377,32 +384,66 @@
           <main class="w-full lg:w-3/4 lg:pr-5">
             <div class="mb-3">
               <h1 class="mb-1 text-2xl sm:text-3xl font-bold">
-                {$stockTicker} DCF Calculator
+                DCF Calculator
               </h1>
             </div>
 
-            <p class="mt-4 mb-4 text-base leading-relaxed">
-              Based on the DCF (Free Cash Flow Model), the intrinsic value of
-              {removeCompanyStrings($displayCompanyName)} is estimated at
-              <strong class="">{presentValue}</strong>, compared to the current
-              market price of
-              <strong class="">{currentPrice}</strong>.
+            <div
+              class="mt-5 mb-6 grid grid-cols-2 gap-3 xs:mt-6 bp:mt-7 sm:grid-cols-4 sm:gap-6"
+            >
+              <div>
+                Current Price
+                <div
+                  class="mt-0.5 text-lg bp:text-xl sm:mt-1.5 sm:text-2xl font-bold flex flex-row items-center"
+                >
+                  {currentPrice}
+                </div>
+              </div>
 
-              <span class="block mt-3">
-                <span class="font-medium"
-                  >Projected {yearsToProject}-year target:</span
+              <div>
+                Dividends Paid <div
+                  class="mt-0.5 text-lg font-bold bp:text-xl sm:mt-1.5 sm:text-2xl"
                 >
-                <strong class="">${totalFutureValue}</strong>
-                <span
-                  class="ml-2 px-2 py-1 rounded-md font-medium
-        {upside >= 0
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-[#00FC50]'
-                    : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-[#FF2F1F]'}"
+                  {totalDividends ?? "n/a"}
+                </div>
+              </div>
+
+              <div>
+                DCF Fair Value (today)
+                <div
+                  class="mt-0.5 text-lg bp:text-xl sm:mt-1.5 sm:text-2xl font-bold flex flex-row items-center"
                 >
-                  {upside >= 0 ? "+" : ""}{upside}%
-                </span>
-              </span>
-            </p>
+                  {presentValue ?? "n/a"}
+                  <span
+                    class="ml-2 px-2 py-1 rounded-md font-medium text-sm
+        {upsidePresentValue >= 0
+                      ? 'bg-green-200 text-green-800 dark:bg-green-900/20 dark:text-[#00FC50]'
+                      : 'bg-red-200 text-red-800 dark:bg-red-900/20 dark:text-[#FF2F1F]'}"
+                  >
+                    {upsidePresentValue >= 0 ? "+" : ""}{upsidePresentValue}%
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                Projected Value in {yearsToProject} years
+                <div
+                  class="mt-0.5 text-lg bp:text-xl sm:mt-1.5 sm:text-2xl font-bold flex flex-row items-center"
+                >
+                  {totalFutureValue ?? "n/a"}
+                  <span
+                    class="ml-2 px-2 py-1 rounded-md font-medium text-sm
+        {upsideTotalFutureValue >= 0
+                      ? 'bg-green-200 text-green-800 dark:bg-green-900/20 dark:text-[#00FC50]'
+                      : 'bg-red-200 text-red-800 dark:bg-red-900/20 dark:text-[#FF2F1F]'}"
+                  >
+                    {upsideTotalFutureValue >= 0
+                      ? "+"
+                      : ""}{upsideTotalFutureValue}%
+                  </span>
+                </div>
+              </div>
+            </div>
 
             {#if data?.getData?.historicalPrice?.length > 0}
               <div class="mb-8">
@@ -552,22 +593,6 @@
                   </div>
                 </div>
               {/if}
-
-              <!-- Summary stays always visible -->
-              <div class="mt-8">
-                <div class="flex items-center justify-between">
-                  <div>
-                    <h3 class="">DCF Fair Value</h3>
-                    <p class="text-2xl font-bold">${presentValue}</p>
-                  </div>
-                  <div class="text-right">
-                    <p class="text-sm">
-                      Projected Value in {yearsToProject} years
-                    </p>
-                    <p class="text-2xl font-bold">${totalFutureValue}</p>
-                  </div>
-                </div>
-              </div>
             </div>
           </main>
 
@@ -602,7 +627,9 @@
                     class="flex items-center text-sm font-medium text-gray-300 mb-2"
                   >
                     Number of Years To Project
-                    <InfoModal content="test" />
+                    <InfoModal
+                      content="The number of years to project the company's future performance. Typical range is 5-10 years. Longer projections become increasingly unreliable as unpredictable events and changes occur over time. The DCF calculator applies all your inputs over this timeframe to calculate the final projected value. Shorter periods are more reliable but may miss long-term value creation."
+                    />
                   </label>
                   <select
                     id="years"
@@ -622,7 +649,9 @@
                     class="flex items-center text-sm font-medium text-gray-300 mb-2"
                   >
                     Metric Growth Rate
-                    <InfoModal content="test" />
+                    <InfoModal
+                      content="Expected annual growth rate for Free Cash Flow. We show the 5-year historical average as a starting point, but many investors use lower rates for larger companies since growth naturally slows as scale increases (doubling $1B is harder than doubling $1M). Conservative projections below historical averages provide a margin of safety and account for future uncertainties."
+                    />
                   </label>
                   <div class="relative">
                     <span
@@ -650,7 +679,9 @@
                     class="flex items-center text-sm font-medium text-gray-300 mb-2"
                   >
                     Diluted Shares Growth Rate
-                    <InfoModal content="test" />
+                    <InfoModal
+                      content="Expected annual change in diluted shares outstanding, which directly impacts future share price growth. More shares dilute value and slow price appreciation, while fewer shares from buybacks accelerate it. We show the 5-year historical average: negative values indicate buyback history (share count decreasing), positive values indicate dilution history (share count increasing). This trend significantly affects projected share price performance."
+                    />
                   </label>
                   <div class="relative">
                     <span
@@ -678,7 +709,9 @@
                     class="flex items-center text-sm font-medium text-gray-300 mb-2"
                   >
                     Dividend Growth Rate
-                    <InfoModal content="test" />
+                    <InfoModal
+                      content="Expected annual growth rate for dividends per share, which significantly impacts total investor returns beyond share price appreciation. We show the 5-year historical average to indicate whether the company has been increasing (positive) or decreasing (negative) dividends over time. Growing dividends enhance total returns, while declining dividends reduce them. Set to 0 for non-dividend paying companies."
+                    />
                   </label>
                   <div class="relative">
                     <span
@@ -702,7 +735,9 @@
                     class="flex items-center text-sm font-medium text-gray-300 mb-2"
                   >
                     Price Ratio
-                    <InfoModal content="test" />
+                    <InfoModal
+                      content="The expected price ratio represents how the market will value the company in the future. We show the 5-year historical average as a reference point. However, past ratios don't guarantee future performance - if margins contract or growth slows, the market may assign lower ratios. Many investors use a conservative ratio below the historical average to build in a margin of safety."
+                    />
                   </label>
                   <input
                     type="number"
@@ -724,7 +759,9 @@
                     class="flex items-center text-sm font-medium text-gray-300 mb-2"
                   >
                     Discount Rate
-                    <InfoModal content="test" />
+                    <InfoModal
+                      content="Your target annual rate of return from this investment. For example, a 10% discount rate calculates what price you'd need to buy the stock today to achieve a 10% annual return. We project the future stock price, then discount it back by your desired return rate. Higher discount rates result in lower buy prices but don't change the future estimated value."
+                    />
                   </label>
                   <div class="relative">
                     <span
