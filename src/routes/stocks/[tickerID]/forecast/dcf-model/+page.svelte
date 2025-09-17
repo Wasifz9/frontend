@@ -18,8 +18,11 @@
   let userHasModifiedInputs = false;
 
   // Metric toggle (default Free Cash Flow)
-  let selectedMetric: "freeCashFlow" | "operatingIncome" | "operatingCashFlow" =
-    "freeCashFlow";
+  let selectedMetric:
+    | "freeCashFlow"
+    | "operatingIncome"
+    | "operatingCashFlow"
+    | "bookValue" = "freeCashFlow";
 
   // Select proper history & ratio keys depending on selectedMetric
   $: historyKey =
@@ -27,21 +30,27 @@
       ? "freeCashFlowHistory"
       : selectedMetric === "operatingIncome"
         ? "operatingIncomeHistory"
-        : "operatingCashFlowHistory";
+        : selectedMetric === "operatingCashFlow"
+          ? "operatingCashFlowHistory"
+          : "bookValueHistory";
 
   $: ratioProp =
     selectedMetric === "freeCashFlow"
       ? "priceToFCFRatio"
       : selectedMetric === "operatingIncome"
         ? "priceToOperatingIncomeRatio"
-        : "priceToOperatingCashFlowRatio";
+        : selectedMetric === "operatingCashFlow"
+          ? "priceToOperatingCashFlowRatio"
+          : "priceToBookRatio";
 
   $: ratioAvgKey =
     selectedMetric === "freeCashFlow"
       ? "priceRatioAvgFCF"
       : selectedMetric === "operatingIncome"
         ? "priceRatioAvgOI"
-        : "priceRatioAvgOCF";
+        : selectedMetric === "operatingCashFlow"
+          ? "priceRatioAvgOCF"
+          : "priceRatioAvgBV";
 
   // Latest TTM metric (sum of last 4 quarters)
   $: latestMetric = (() => {
@@ -55,9 +64,16 @@
             ? q?.freeCashFlow || 0
             : selectedMetric === "operatingIncome"
               ? q?.operatingIncome || 0
-              : q?.operatingCashFlow || 0)
+              : selectedMetric === "operatingCashFlow"
+                ? q?.operatingCashFlow || 0
+                : q?.bookValue || 0)
         );
       }, 0);
+    } else if (history.length > 0) {
+      // fallback for Book Value: take last quarter
+      return selectedMetric === "bookValue"
+        ? history[history.length - 1]?.bookValue || 0
+        : 0;
     }
     return 0;
   })();
@@ -77,7 +93,10 @@
         ? valuationData?.freeCashFlowGrowth || 0
         : selectedMetric === "operatingIncome"
           ? valuationData?.operatingIncomeGrowth || 0
-          : valuationData?.operatingCashFlowGrowth || 0;
+          : selectedMetric === "operatingCashFlow"
+            ? valuationData?.operatingCashFlowGrowth || 0
+            : valuationData?.bookValueGrowth || 0;
+
     sharesGrowthRate = valuationData?.sharesGrowth || 0;
     dividendGrowthRate = valuationData?.dividendGrowth || 0;
     priceRatioAvg = valuationData?.[ratioAvgKey] || 0;
@@ -101,20 +120,24 @@
   let upsidePresentValue = 0;
   let currentPrice = data?.getStockQuote?.price || 0;
 
-  // Helper: label for metric
+  // Metric labels
   $: metricLabel =
     selectedMetric === "freeCashFlow"
       ? "Free Cash Flow"
       : selectedMetric === "operatingIncome"
         ? "Operating Income"
-        : "Operating Cash Flow";
+        : selectedMetric === "operatingCashFlow"
+          ? "Operating Cash Flow"
+          : "Book Value";
 
   $: metricShortLabel =
     selectedMetric === "freeCashFlow"
       ? "FCF"
       : selectedMetric === "operatingIncome"
         ? "OpInc"
-        : "OCF";
+        : selectedMetric === "operatingCashFlow"
+          ? "OCF"
+          : "BV";
 
   $: metricTTTLabel = `${metricLabel} TTM`;
 
@@ -342,17 +365,19 @@
     // Build TTM historical (sum last 4 quarters)
     const historicalMetric = [];
     for (let i = 3; i < history.length; i++) {
-      const ttm = history.slice(i - 3, i + 1).reduce((sum, q) => {
+      const ttm = history.slice(i - 3, i + 1)?.reduce((sum, q) => {
         return (
           sum +
           (selectedMetric === "freeCashFlow"
-            ? q.freeCashFlow || 0
+            ? q?.freeCashFlow || 0
             : selectedMetric === "operatingIncome"
-              ? q.operatingIncome || 0
-              : q.operatingCashFlow || 0)
+              ? q?.operatingIncome || 0
+              : selectedMetric === "operatingCashFlow"
+                ? q?.operatingCashFlow || 0
+                : q?.bookValue || 0)
         );
       }, 0);
-      historicalMetric.push([new Date(history[i].date).getTime(), ttm]);
+      historicalMetric?.push([new Date(history[i].date).getTime(), ttm]);
     }
 
     // Project metric quarterly
@@ -660,6 +685,7 @@
                     <option value="operatingCashFlow"
                       >Operating Cash Flow</option
                     >
+                    <option value="bookValue">Book Value</option>
                   </select>
                 </div>
 
