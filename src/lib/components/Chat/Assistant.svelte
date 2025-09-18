@@ -993,7 +993,7 @@
         <!-- messages -->
         <div
           bind:this={chatContainer}
-          class="flex-1 px-6 py-6 space-y-6 overflow-y-auto scroll-smooth"
+          class="flex-1 px-6 py-6 space-y-6 overflow-y-auto scroll-smooth bg-white dark:bg-[#2A2E39] text-gray-900 dark:text-white"
         >
           {#each messages as message, index (index)}
             {#if index === messages.length - 1 && message.role === "system" && isLoading}
@@ -1320,6 +1320,11 @@
     padding: 0;
     line-height: 1.5;
     font-size: 14px;
+    color: #374151; /* gray-700 for light mode */
+  }
+
+  :global(.dark) .assistant-editor :global(.ProseMirror) {
+    color: #ffffff; /* white for dark mode */
   }
 
   .assistant-editor :global(.ProseMirror:focus) {
