@@ -8,6 +8,7 @@
   import * as DropdownMenu from "$lib/components/shadcn/dropdown-menu/index.js";
   import { Button } from "$lib/components/shadcn/button/index.js";
   import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
   import X from "lucide-svelte/icons/x";
   import Plus from "lucide-svelte/icons/plus";
   import History from "lucide-svelte/icons/history";
@@ -74,6 +75,9 @@
   let loadingHistory = false;
 
   let agentNames = agentOptions?.map((item) => item?.name) ?? [];
+
+  // Hide Assistant on chat pages
+  $: shouldShowAssistant = !$page.url.pathname.startsWith('/chat');
 
   // --- editor plugins & helpers (kept from your original) ---
   function agentMentionDeletePlugin(agentNames: string[]) {
@@ -830,8 +834,8 @@
   });
 </script>
 
-<!-- Floating Open Button - Only show on lg screens and above -->
-{#if !isOpen}
+<!-- Floating Open Button - Only show on lg screens and above, and not on /chat pages -->
+{#if shouldShowAssistant && !isOpen}
   <button
     on:click|stopPropagation={openChat}
     aria-label="Open AI Assistant"
@@ -843,8 +847,8 @@
   </button>
 {/if}
 
-<!-- Panel - Only show on lg screens and above -->
-{#if isOpen}
+<!-- Panel - Only show on lg screens and above, and not on /chat pages -->
+{#if shouldShowAssistant && isOpen}
     <!-- panel -->
     <aside
       bind:this={chatWindow}
