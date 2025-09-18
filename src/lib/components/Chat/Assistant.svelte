@@ -68,6 +68,11 @@
   let editingMessageIndex: number | null = null;
   let editable = true; // Assistant is always editable
 
+  // Chat history
+  let showChatHistory = false;
+  let chatHistory = [];
+  let loadingHistory = false;
+
   let agentNames = agentOptions?.map((item) => item?.name) ?? [];
 
   // --- editor plugins & helpers (kept from your original) ---
@@ -257,6 +262,12 @@
 
   function stopDrag() {
     isDragging = false;
+  }
+
+  function handleClickOutside(event) {
+    if (showChatHistory && !event.target.closest('.chat-history-dropdown')) {
+      showChatHistory = false;
+    }
   }
 
   // Chat functionality - complete workflow like main chat
@@ -549,6 +560,93 @@
     }
   }
 
+  async function fetchChatHistory() {
+    if (!userData) {
+      console.log("No userData available");
+      return;
+    }
+    
+    loadingHistory = true;
+    try {
+      const response = await fetch("/api/chat-history", {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Chat history response:", data);
+        chatHistory = data.getAllChats || [];
+        console.log("Chat history array:", chatHistory);
+      } else {
+        console.error("API response not ok:", response.status);
+      }
+    } catch (error) {
+      console.error("Failed to fetch chat history:", error);
+    } finally {
+      loadingHistory = false;
+    }
+  }
+
+  function toggleChatHistory() {
+    showChatHistory = !showChatHistory;
+    if (showChatHistory && chatHistory.length === 0) {
+      fetchChatHistory();
+    }
+  }
+
+  async function loadChatFromHistory(chatData) {
+    try {
+      // Show loading state
+      loadingHistory = true;
+      
+      // Load the specific chat by ID
+      const response = await fetch(`/api/chat/${chatData.id}`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Loaded chat data:", data);
+        
+        // Load the chat data into the assistant
+        messages = data.getChat?.messages || [];
+        chatId = data.getChat?.id;
+        relatedQuestions = [];
+        editingMessageIndex = null;
+        
+        // Clear any text in the editor
+        if (editorView) {
+          const emptyDoc = schema?.topNodeType?.createAndFill();
+          const tr = editorView?.state?.tr?.replaceWith(
+            0,
+            editorView?.state?.doc?.content?.size,
+            emptyDoc?.content,
+          );
+          editorView?.dispatch(tr);
+          editorText = "";
+        }
+        
+        // Close dropdown
+        showChatHistory = false;
+        
+        console.log("Chat loaded successfully, messages:", messages);
+      } else {
+        console.error("Failed to load chat:", response.status);
+      }
+    } catch (error) {
+      console.error("Failed to load chat:", error);
+    } finally {
+      loadingHistory = false;
+    }
+  }
+
   // rewriting/editing handlers (kept)
   async function rewriteResponse(dispatchData: any) {
     const index = dispatchData?.detail ?? null;
@@ -682,6 +780,7 @@
     if (browser) {
       document.addEventListener("mousemove", handleDrag);
       document.addEventListener("mouseup", stopDrag);
+      document.addEventListener("click", handleClickOutside);
       window.addEventListener("beforeunload", handlePageUnload);
       window.addEventListener("pagehide", handlePageUnload);
     }
@@ -712,6 +811,7 @@
     if (browser) {
       document.removeEventListener("mousemove", handleDrag);
       document.removeEventListener("mouseup", stopDrag);
+      document.removeEventListener("click", handleClickOutside);
       window.removeEventListener("beforeunload", handlePageUnload);
       window.removeEventListener("pagehide", handlePageUnload);
     }
@@ -783,13 +883,54 @@
           >
             <Plus class="w-4 h-4 " />
           </button>
-          <button
-            class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            title="Chat history"
-            aria-label="Chat history"
-          >
-            <History class="w-4 h-4 " />
-          </button>
+          <div class="relative chat-history-dropdown">
+            <button
+              on:click={toggleChatHistory}
+              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              title="Chat history"
+              aria-label="Chat history"
+            >
+              <History class="w-4 h-4" />
+            </button>
+            
+            {#if showChatHistory}
+              <div
+                class="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto"
+                transition:fly={{ y: -10, duration: 200 }}
+              >
+                <div class="p-3 border-b border-gray-200 dark:border-gray-600">
+                  <h3 class="text-sm font-semibold">Chat History</h3>
+                </div>
+                
+                {#if loadingHistory}
+                  <div class="p-4 text-center">
+                    <div class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                    <span class="ml-2 text-sm text-gray-600 dark:text-gray-300">Loading...</span>
+                  </div>
+                {:else if chatHistory.length === 0}
+                  <div class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                    No chat history found
+                  </div>
+                {:else}
+                  <div class="py-2">
+                    {#each chatHistory as chat}
+                      <button
+                        on:click={() => loadChatFromHistory(chat)}
+                        class="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                      >
+                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                          {chat.message || "No message"}
+                        </div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {new Date(chat.updated).toLocaleDateString()} {new Date(chat.updated).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </div>
+                      </button>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+            {/if}
+          </div>
           <button
             on:click={() => toggleFullscreen()}
             class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -840,6 +981,9 @@
                 isLatestSystemMessage={index === messages.length - 1}
                 allMessages={messages}
                 onExportPDF={exportToPDF}
+                showSources={false}
+                showPlots={false}
+                showRelatedQuestions={false}
                 on:rewrite={rewriteResponse}
                 on:edit={editMessage}
                 on:start-edit={handleStartEdit}
@@ -859,6 +1003,9 @@
                 isLatestSystemMessage={index === messages.length - 1}
                 allMessages={messages}
                 onExportPDF={exportToPDF}
+                showSources={false}
+                showPlots={false}
+                showRelatedQuestions={false}
                 on:rewrite={rewriteResponse}
                 on:edit={editMessage}
                 on:start-edit={handleStartEdit}
