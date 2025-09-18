@@ -10,6 +10,7 @@
   import Footer from "$lib/components/Footer.svelte";
   import Searchbar from "$lib/components/Searchbar.svelte";
   import NotificationBell from "$lib/components/NotificationBell.svelte";
+  import Assistant from "$lib/components/Chat/Assistant.svelte";
 
   //import PullToRefresh from '$lib/components/PullToRefresh.svelte';
 
@@ -1578,6 +1579,9 @@
     </div>
   </div>
 </div>
+
+<!-- Floating AI Assistant -->
+<Assistant userData={data?.user} />
 
 <style lang="scss">
   :root {
