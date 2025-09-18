@@ -830,21 +830,22 @@
   });
 </script>
 
-<!-- Floating Open Button -->
+<!-- Floating Open Button - Only show on lg screens and above -->
 {#if !isOpen}
   <button
     on:click|stopPropagation={openChat}
     aria-label="Open AI Assistant"
-    class="fixed bottom-10 right-6 flex items-center gap-2 px-4 py-3 rounded-full bg-black dark:bg-white shadow cursor-pointer pointer-events-auto text-white dark:text-black"
+    class="hidden lg:flex fixed bottom-8 right-8 items-center gap-2 px-4 py-3 rounded-xl bg-black dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 shadow-lg hover:shadow-xl cursor-pointer pointer-events-auto text-white dark:text-black transition-all duration-200 hover:scale-105"
     style="position: fixed !important; z-index: 99999 !important;"
   >
-    <Spark class="size-5" />
+    <Spark class="w-5 h-5" />
+    <span class="text-sm font-medium">AI Assistant</span>
   </button>
 {/if}
 
-<!-- Overlay + Panel -->
+<!-- Overlay + Panel - Only show on lg screens and above -->
 {#if isOpen}
-  <div class="fixed inset-0 z-50">
+  <div class="hidden lg:block fixed inset-0 z-50">
     <!-- overlay -->
     <div
       class="absolute inset-0"
@@ -859,60 +860,58 @@
       bind:this={chatWindow}
       role="dialog"
       aria-modal="true"
-      class="absolute right-0 {isFullscreen 
-        ? 'top-0 bottom-0' 
-        : 'bottom-0'} w-full md:w-[440px] lg:w-[560px] {isFullscreen 
+      class="absolute right-0 bottom-0 w-full md:w-[480px] lg:w-[600px] {isFullscreen 
         ? 'h-full' 
-        : 'h-[500px]'} max-w-full z-60 bg-white/95 dark:bg-[#0b0b0c]/95 backdrop-blur-xl border-l border-white/20 dark:border-gray-700/30 shadow-2xl flex flex-col transition-all duration-300"
-      style="transform-origin: right center;"
+        : 'h-[600px]'} max-w-full z-60 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-2xl flex flex-col transition-all duration-300 {isFullscreen ? 'rounded-none' : 'rounded-l-2xl'}"
+      style="transform-origin: bottom center;"
       transition:slide={{ duration: 400, easing: quintOut, axis: "x" }}
     >
       <!-- Header -->
       <header
         role="banner"
-        class="flex items-center justify-between px-4 py-4 cursor-default select-none"
+        class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-default select-none"
         on:mousedown={startDrag}
       >
         <div class="flex items-center gap-3 min-w-0">
           <div class="flex-shrink-0">
-            <div class="w-8 h-8 rounded-md flex items-center justify-center">
-              <span class="text-sm font-semibold">AI</span>
+            <div class="w-9 h-9 rounded-xl bg-black dark:bg-white flex items-center justify-center shadow-sm">
+              <Spark class="w-5 h-5 text-white dark:text-black" />
             </div>
           </div>
           <div class="min-w-0">
-            <div class="text-sm font-medium truncate">New Chat</div>
-            <div class="text-xs truncate">
-              AI Assistant • Press Ctrl+Enter to send • Esc to close
+            <div class="text-base font-semibold text-gray-900 dark:text-white truncate">AI Assistant</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400 truncate">
+              Ready to help with your questions
             </div>
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1">
           <button
             on:click={newChat}
-            class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            title="New chat (Ctrl+N)"
+            class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            title="New chat"
             aria-label="New chat"
           >
-            <Plus class="w-4 h-4 " />
+            <Plus class="w-4 h-4 text-gray-600 dark:text-gray-300" />
           </button>
           <div class="relative chat-history-dropdown">
             <button
               on:click={toggleChatHistory}
-              class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               title="Chat history"
               aria-label="Chat history"
             >
-              <History class="w-4 h-4" />
+              <History class="w-4 h-4 text-gray-600 dark:text-gray-300" />
             </button>
             
             {#if showChatHistory}
               <div
-                class="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto"
+                class="absolute top-full right-0 mt-3 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-xl z-50 max-h-96 overflow-y-auto"
                 transition:fly={{ y: -10, duration: 200 }}
               >
-                <div class="p-3 border-b border-gray-200 dark:border-gray-600">
-                  <h3 class="text-sm font-semibold">Chat History</h3>
+                <div class="p-4 border-b border-gray-200 dark:border-gray-600">
+                  <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Recent Conversations</h3>
                 </div>
                 
                 {#if loadingHistory}
@@ -946,7 +945,7 @@
           </div>
           <button
             on:click={() => toggleFullscreen()}
-            class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             title="{isFullscreen ? 'Shrink window' : 'Expand window'}"
             aria-label="{isFullscreen ? 'Shrink window' : 'Expand window'}"
           >
@@ -990,11 +989,11 @@
           </button>
           <button
             on:click={closeChat}
-            class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             title="Close (Esc)"
             aria-label="Close"
           >
-            <X class="w-4 h-4 " />
+            <X class="w-4 h-4 text-gray-600 dark:text-gray-300" />
           </button>
         </div>
       </header>
@@ -1004,7 +1003,7 @@
         <!-- messages -->
         <div
           bind:this={chatContainer}
-          class="flex-1 px-4 py-4 space-y-4 overflow-y-auto scroll-smooth"
+          class="flex-1 px-6 py-6 space-y-6 overflow-y-auto scroll-smooth"
         >
           {#each messages as message, index (index)}
             {#if index === messages.length - 1 && message.role === "system" && isLoading}
@@ -1057,17 +1056,17 @@
 
         <!-- Input area -->
         <div
-          class="px-4 py-4 border-t border-white/20 dark:border-gray-700/30 bg-white/90 dark:bg-[#0b0b0c]/90 backdrop-blur-md"
+          class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
         >
           <div
-            class="block p-3 w-full border border-gray-300 dark:border-gray-600 rounded-[5px] overflow-hidden bg-white dark:bg-[#2A2E39]"
+            class="block p-4 w-full border border-gray-300 dark:border-gray-600 rounded-xl overflow-hidden bg-white dark:bg-gray-900 shadow-sm"
           >
             <div
               bind:this={editorDiv}
               role="textbox"
               aria-label="Message input"
               aria-multiline="true"
-              class="assistant-editor editor-container ml-2 bg-white dark:bg-[#2A2E39] w-full min-h-[50px] text-sm"
+              class="assistant-editor editor-container ml-2 bg-white dark:bg-gray-900 w-full min-h-[60px] text-sm"
               on:keydown={handleKeyDown}
             />
 
@@ -1097,7 +1096,7 @@
                 class="relative min-h-12 h-auto overflow-y-hidden w-full outline-none"
               >
                 <div
-                  class="absolute bottom-0 flex flex-row justify-end w-full bg-white dark:bg-[#2A2E39]"
+                  class="absolute bottom-0 flex flex-row justify-end w-full bg-white dark:bg-gray-900"
                 >
                   <div class="flex flex-row justify-between w-full">
                     <div
@@ -1107,7 +1106,7 @@
                         <DropdownMenu.Trigger asChild let:builder>
                           <Button
                             builders={[builder]}
-                            class="w-full border-gray-300 font-semibold dark:font-normal dark:border-gray-600 border bg-black sm:hover:bg-default text-white dark:text-black dark:bg-white dark:sm:hover:bg-gray-100 ease-out flex flex-row justify-between items-center px-3 py-2 rounded truncate"
+                            class="w-full border-gray-300 font-medium dark:border-gray-600 border bg-black hover:bg-gray-800 text-white dark:bg-white dark:hover:bg-gray-100 dark:text-black ease-out flex flex-row justify-between items-center px-3 py-2 rounded-lg truncate transition-colors"
                           >
                             <span class="truncate">@Agents</span>
                             <svg
@@ -1241,7 +1240,7 @@
 
                     {#if userData}
                       <label
-                        class="ml-auto mr-2 whitespace-nowrap w-auto text-xs border-gray-300 font-semibold dark:font-normal dark:border-gray-600 border bg-gray-50 dark:bg-[#2A2E39] flex flex-row justify-between items-center px-3 rounded"
+                        class="ml-auto mr-2 whitespace-nowrap w-auto text-xs border-gray-300 font-medium dark:border-gray-600 border bg-gray-100 dark:bg-gray-800 flex flex-row justify-between items-center px-3 py-2 rounded-lg"
                       >
                         <div>
                           {userData?.credits?.toLocaleString("en-US")}
@@ -1260,8 +1259,8 @@
                       class="{editorText?.trim()?.length > 0 &&
                       !isLoading &&
                       !isStreaming
-                        ? 'cursor-pointer'
-                        : 'cursor-not-allowed opacity-60'} py-2 text-white dark:text-black text-[1rem] rounded border border-gray-300 dark:border-gray-700 bg-black dark:bg-gray-50 px-3 transition-colors duration-200"
+                        ? 'cursor-pointer bg-black hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100'
+                        : 'cursor-not-allowed opacity-60 bg-gray-400'} py-2 text-white dark:text-black text-[1rem] rounded-lg border-0 px-3 transition-colors duration-200 shadow-sm"
                       type="button"
                     >
                       {#if isLoading || isStreaming}
