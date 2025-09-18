@@ -220,7 +220,7 @@
     chatId = null; // Reset chatId so next message creates new chat
     relatedQuestions = [];
     editingMessageIndex = null;
-    
+
     if (editorView) {
       const emptyDoc = schema?.topNodeType?.createAndFill();
       const tr = editorView?.state?.tr?.replaceWith(
@@ -262,7 +262,7 @@
   // Chat functionality - complete workflow like main chat
   async function llmChat(userMessage?: string) {
     if (isLoading || isStreaming) return;
-    
+
     const userQuery = userMessage || editorText?.trim();
     if (!userQuery || userQuery?.length < 1) return;
 
@@ -279,13 +279,15 @@
   // Create new chat session (like createChat in /chat/+page.svelte)
   async function createChatSession(userQuery: string) {
     if (isLoading) return;
-    
+
     isLoading = true;
 
     // Check user credits (same as main chat)
     if (userData?.credits < 2) {
       // Would show toast in real implementation, but keeping simple for now
-      console.error(`Insufficient credits. Current balance: ${userData?.credits}`);
+      console.error(
+        `Insufficient credits. Current balance: ${userData?.credits}`,
+      );
       isLoading = false;
       return;
     }
@@ -444,9 +446,11 @@
     } catch (error) {
       console.error("Chat request failed:", error);
       messages = messages.slice(0, -1);
-      let errorMessage = "Failed to connect to the chat service. Please try again later.";
+      let errorMessage =
+        "Failed to connect to the chat service. Please try again later.";
       if (error.name === "TypeError" && error.message.includes("fetch")) {
-        errorMessage = "Network error: Unable to reach the chat service. Please check your connection.";
+        errorMessage =
+          "Network error: Unable to reach the chat service. Please check your connection.";
       } else if (error.message) {
         errorMessage = `Error: ${error.message}`;
       }
@@ -664,7 +668,8 @@
       proseMirrorEl.style.boxShadow = "none";
     }
 
-    // Focus with small delay (same as working chat)
+
+    // Focus with small delay and ensure editorText is synced
     setTimeout(() => {
       if (editorView) {
         editorView.focus();
@@ -694,11 +699,11 @@
       initializeEditor();
     }
 
-    // Destroy editor when chat closes
+    // Destroy editor when chat closes and clear input
     if (!isOpen && editorView) {
       editorView.destroy();
       editorView = null;
-      editorText = "";
+      editorText = ""; // Clear input text when closing
       showSuggestions = false;
     }
   });
@@ -721,10 +726,10 @@
   <button
     on:click|stopPropagation={openChat}
     aria-label="Open AI Assistant"
-    class="fixed bottom-10 right-6 flex items-center gap-2 px-4 py-3 rounded-full bg-black dark:bg-white shadow cursor-pointer pointer-events-auto"
+    class="fixed bottom-10 right-6 flex items-center gap-2 px-4 py-3 rounded-full bg-black dark:bg-white shadow cursor-pointer pointer-events-auto text-white dark:text-black"
     style="position: fixed !important; z-index: 99999 !important;"
   >
-    <Spark class="w-5 h-5" />
+    <Spark class="size-5" />
   </button>
 {/if}
 
@@ -863,7 +868,6 @@
             {/if}
           {/each}
 
-
           <div bind:this={bottomEl} />
         </div>
 
@@ -879,7 +883,7 @@
               role="textbox"
               aria-label="Message input"
               aria-multiline="true"
-              class="editor-container ml-2 bg-white dark:bg-[#2A2E39] w-full min-h-[50px]"
+              class="assistant-editor editor-container ml-2 bg-white dark:bg-[#2A2E39] w-full min-h-[50px] text-sm"
               on:keydown={handleKeyDown}
             />
 
@@ -912,7 +916,9 @@
                   class="absolute bottom-0 flex flex-row justify-end w-full bg-white dark:bg-[#2A2E39]"
                 >
                   <div class="flex flex-row justify-between w-full">
-                    <div class="order-first relative inline-block text-left cursor-pointer shadow-xs">
+                    <div
+                      class="order-first relative inline-block text-left cursor-pointer shadow-xs"
+                    >
                       <DropdownMenu.Root>
                         <DropdownMenu.Trigger asChild let:builder>
                           <Button
@@ -952,7 +958,9 @@
                                   }}
                                   class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
                                 >
-                                  <div class="flex flex-row items-center w-full">
+                                  <div
+                                    class="flex flex-row items-center w-full"
+                                  >
                                     <span
                                       >{option} ({agentOptions?.filter(
                                         (item) => item?.group === option,
@@ -1025,10 +1033,13 @@
                               {#each agentOptions as option}
                                 {#if option?.group === selectedGroup}
                                   <DropdownMenu.Item
-                                    on:click={() => insertAgentOption(option?.name)}
+                                    on:click={() =>
+                                      insertAgentOption(option?.name)}
                                     class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
                                   >
-                                    <div class="flex flex-row items-center w-full">
+                                    <div
+                                      class="flex flex-row items-center w-full"
+                                    >
                                       <span>{option?.name} </span>
 
                                       <span class="ml-auto text-xs"
@@ -1044,7 +1055,6 @@
                       </DropdownMenu.Root>
                     </div>
 
-
                     {#if userData}
                       <label
                         class="ml-auto mr-2 whitespace-nowrap w-auto text-xs border-gray-300 font-semibold dark:font-normal dark:border-gray-600 border bg-gray-50 dark:bg-[#2A2E39] flex flex-row justify-between items-center px-3 rounded"
@@ -1058,7 +1068,9 @@
 
                     <button
                       on:click={() =>
-                        editorText?.trim()?.length > 0 && !isLoading && !isStreaming
+                        editorText?.trim()?.length > 0 &&
+                        !isLoading &&
+                        !isStreaming
                           ? llmChat()
                           : ""}
                       class="{editorText?.trim()?.length > 0 &&
@@ -1126,7 +1138,7 @@
     white-space: pre-wrap;
   }
 
-  :global(.ProseMirror) {
+  .assistant-editor :global(.ProseMirror) {
     outline: none !important;
     border: none !important;
     box-shadow: none !important;
@@ -1138,13 +1150,13 @@
     font-size: 14px;
   }
 
-  :global(.ProseMirror:focus) {
+  .assistant-editor :global(.ProseMirror:focus) {
     outline: none !important;
     border: none !important;
     box-shadow: none !important;
   }
 
-  :global(.ProseMirror:focus-visible) {
+  .assistant-editor :global(.ProseMirror:focus-visible) {
     outline: none !important;
     border: none !important;
     box-shadow: none !important;
@@ -1172,14 +1184,14 @@
     outline: none !important;
   }
 
-  :global(.ProseMirror p) {
+  .assistant-editor :global(.ProseMirror p) {
     margin: 0;
     line-height: inherit;
   }
-  :global(.ProseMirror .text-blue-800) {
+  .assistant-editor :global(.ProseMirror .text-blue-800) {
     color: rgb(30 64 175) !important;
   }
-  :global(.dark .ProseMirror .text-blue-400) {
+  .assistant-editor :global(.dark .ProseMirror .text-blue-400) {
     color: rgb(96 165 250) !important;
   }
 
