@@ -393,23 +393,23 @@
               break;
             }
 
-            // Handle sources event
-            if (json?.event === "sources" && json?.sources) {
-              sourcesCollected = json.sources;
-              if (messages[idx]) {
-                messages[idx].sources = sourcesCollected;
-                messages = [...messages];
-              }
-            }
+            // Handle sources event - Skip for Assistant
+            // if (json?.event === "sources" && json?.sources) {
+            //   sourcesCollected = json.sources;
+            //   if (messages[idx]) {
+            //     messages[idx].sources = sourcesCollected;
+            //     messages = [...messages];
+            //   }
+            // }
 
-            // Handle related questions event
-            if (json?.event === "related_questions" && json?.questions) {
-              relatedQuestions = json.questions;
-              if (messages[idx]) {
-                messages[idx].relatedQuestions = json.questions;
-                messages = [...messages];
-              }
-            }
+            // Handle related questions event - Skip for Assistant
+            // if (json?.event === "related_questions" && json?.questions) {
+            //   relatedQuestions = json.questions;
+            //   if (messages[idx]) {
+            //     messages[idx].relatedQuestions = json.questions;
+            //     messages = [...messages];
+            //   }
+            // }
 
             // Handle content updates
             if (json?.content) {
@@ -864,7 +864,7 @@
         ? 'h-full' 
         : 'h-[600px]'} max-w-full z-60 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-2xl flex flex-col transition-all duration-300 {isFullscreen ? 'rounded-none' : 'rounded-l-2xl'}"
       style="transform-origin: bottom center;"
-      transition:slide={{ duration: 400, easing: quintOut, axis: "x" }}
+      transition:slide={{ duration: 400, easing: quintOut, axis: "y" }}
     >
       <!-- Header -->
       <header
