@@ -4,6 +4,10 @@
   import { quintOut, backOut } from "svelte/easing";
   import ChatMessage from "$lib/components/Chat/ChatMessage.svelte";
   import { getCreditFromQuery, agentOptions, agentCategory } from "$lib/utils";
+  import { downloadChatPDF } from "$lib/pdfExport";
+  import * as DropdownMenu from "$lib/components/shadcn/dropdown-menu/index.js";
+  import { Button } from "$lib/components/shadcn/button/index.js";
+  import { goto } from "$app/navigation";
   import X from "lucide-svelte/icons/x";
   import Plus from "lucide-svelte/icons/plus";
   import History from "lucide-svelte/icons/history";
@@ -17,6 +21,8 @@
   import { browser } from "$app/environment";
 
   export let userData = null;
+
+  let selectedGroup = "overview";
 
   // Window state
   let isOpen = false;
@@ -66,6 +72,7 @@
 
   // Message editing
   let editingMessageIndex: number | null = null;
+  let editable = true; // Assistant is always editable
 
   let agentNames = agentOptions?.map((item) => item?.name) ?? [];
 
@@ -151,8 +158,9 @@
           const span = document.createElement("span");
           span.className =
             "text-gray-600 dark:text-gray-300 pointer-events-none";
-          span.textContent =
-            "Ask anything about stocks, markets, or financial data...";
+          span.textContent = editable
+            ? "Ask anything about stocks, markets, or financial data..."
+            : "Read-only: You don't have permission to edit this chat.";
           return span;
         });
         return DecorationSet.create(state.doc, [widget]);
@@ -538,6 +546,17 @@
     editorView?.focus();
   }
 
+  async function exportToPDF() {
+    try {
+      const success = await downloadChatPDF(messages);
+      if (!success) {
+        console.error("Failed to export PDF");
+      }
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+    }
+  }
+
   // rewriting/editing handlers (kept)
   async function rewriteResponse(dispatchData: any) {
     const index = dispatchData?.detail ?? null;
@@ -637,7 +656,11 @@
       attributes: {
         style: "outline: none !important; border: none !important;",
       },
+      editable: () => editable,
       dispatchTransaction(transaction) {
+        // Prevent dispatch if not editable
+        if (!editable) return;
+
         const newState = editorView.state.apply(transaction);
         editorView.updateState(newState);
         editorText = editorView?.state.doc?.textContent || "";
@@ -813,18 +836,43 @@
           class="flex-1 px-4 py-4 space-y-4 overflow-y-auto scroll-smooth"
         >
           {#each messages as message, index (index)}
-            <ChatMessage
-              {message}
-              {index}
-              showSources={true}
-              editable={true}
-              isEditing={editingMessageIndex === index}
-              on:relatedQuestionClick={handleRelatedQuestionClick}
-              on:rewriteResponse={rewriteResponse}
-              on:editMessage={editMessage}
-              on:startEdit={handleStartEdit}
-              on:cancelEdit={handleCancelEdit}
-            />
+            {#if index === messages.length - 1 && message.role === "system" && isLoading}
+              <ChatMessage
+                {message}
+                {index}
+                isLoading={true}
+                {isStreaming}
+                {editable}
+                isEditMode={editingMessageIndex === index}
+                isLatestSystemMessage={index === messages.length - 1}
+                allMessages={messages}
+                onExportPDF={exportToPDF}
+                on:rewrite={rewriteResponse}
+                on:edit={editMessage}
+                on:start-edit={handleStartEdit}
+                on:cancel-edit={handleCancelEdit}
+                on:related-question={handleRelatedQuestionClick}
+              />
+            {:else}
+              <ChatMessage
+                {message}
+                {index}
+                isLoading={false}
+                isStreaming={index === messages.length - 1 &&
+                  message.role === "system" &&
+                  isStreaming}
+                {editable}
+                isEditMode={editingMessageIndex === index}
+                isLatestSystemMessage={index === messages.length - 1}
+                allMessages={messages}
+                onExportPDF={exportToPDF}
+                on:rewrite={rewriteResponse}
+                on:edit={editMessage}
+                on:start-edit={handleStartEdit}
+                on:cancel-edit={handleCancelEdit}
+                on:related-question={handleRelatedQuestionClick}
+              />
+            {/if}
           {/each}
 
           {#if isLoading}
@@ -897,17 +945,172 @@
                   class="absolute bottom-0 flex flex-row justify-end w-full bg-white dark:bg-[#2A2E39]"
                 >
                   <div class="flex flex-row justify-between w-full">
-                    <div class="flex items-center"></div>
+                    <div class="order-first relative inline-block text-left cursor-pointer shadow-xs">
+                      <DropdownMenu.Root>
+                        <DropdownMenu.Trigger asChild let:builder>
+                          <Button
+                            builders={[builder]}
+                            class="w-full border-gray-300 font-semibold dark:font-normal dark:border-gray-600 border bg-black sm:hover:bg-default text-white dark:text-black dark:bg-white dark:sm:hover:bg-gray-100 ease-out flex flex-row justify-between items-center px-3 py-2 rounded truncate"
+                          >
+                            <span class="truncate">@Agents</span>
+                            <svg
+                              class="-mr-1 ml-3 h-5 w-5 xs:ml-2 inline-block"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                              style="max-width:40px"
+                              aria-hidden="true"
+                            >
+                              <path
+                                fill-rule="evenodd"
+                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                clip-rule="evenodd"
+                              ></path>
+                            </svg>
+                          </Button>
+                        </DropdownMenu.Trigger>
+                        <DropdownMenu.Content
+                          side="bottom"
+                          align="start"
+                          sideOffset={10}
+                          alignOffset={0}
+                          class="w-64 h-fit max-h-56 overflow-y-auto scroller"
+                        >
+                          {#if selectedGroup === "overview"}
+                            <DropdownMenu.Group>
+                              {#each agentCategory as option}
+                                <DropdownMenu.Item
+                                  on:click={(e) => {
+                                    e.preventDefault();
+                                    selectedGroup = option;
+                                  }}
+                                  class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
+                                >
+                                  <div class="flex flex-row items-center w-full">
+                                    <span
+                                      >{option} ({agentOptions?.filter(
+                                        (item) => item?.group === option,
+                                      )?.length})</span
+                                    >
 
-                    <label
-                      on:click={() => llmChat()}
-                      class="{editorText?.trim()?.length > 0
-                        ? 'cursor-pointer'
-                        : 'cursor-not-allowed opacity-60'} py-2 text-[1rem] rounded border border-gray-300 dark:border-gray-800 bg-black dark:bg-white px-3 transition-colors"
+                                    <svg
+                                      class="ml-auto h-5 w-5 inline-block rotate-270"
+                                      viewBox="0 0 20 20"
+                                      fill="currentColor"
+                                      style="max-width:40px"
+                                      aria-hidden="true"
+                                    >
+                                      <path
+                                        fill-rule="evenodd"
+                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                        clip-rule="evenodd"
+                                      ></path>
+                                    </svg>
+                                  </div>
+                                </DropdownMenu.Item>
+                              {/each}
+                              <DropdownMenu.Item
+                                on:click={() => goto("/faq/ai-agents")}
+                                class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
+                              >
+                                <div
+                                  class="flex flex-row items-center w-full text-sm"
+                                >
+                                  <span>How to Use Agents correctly</span>
+                                </div>
+                                <svg
+                                  class="ml-auto h-5 w-5 inline-block rotate-270"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                  style="max-width:40px"
+                                  aria-hidden="true"
+                                >
+                                  <path
+                                    fill-rule="evenodd"
+                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                    clip-rule="evenodd"
+                                  ></path>
+                                </svg>
+                              </DropdownMenu.Item>
+                            </DropdownMenu.Group>
+                          {:else}
+                            <DropdownMenu.Group>
+                              <div class="w-full p-1 flex items-stretch gap-1">
+                                <button
+                                  type="button"
+                                  on:click={(e) => {
+                                    e.preventDefault();
+                                    selectedGroup = "overview";
+                                  }}
+                                  class="aspect-square flex items-center cursor-pointer"
+                                  ><svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="w-5 h-5"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    ><path d="m15 18-6-6 6-6"></path></svg
+                                  ></button
+                                >
+                              </div>
+                              {#each agentOptions as option}
+                                {#if option?.group === selectedGroup}
+                                  <DropdownMenu.Item
+                                    on:click={() => insertAgentOption(option?.name)}
+                                    class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
+                                  >
+                                    <div class="flex flex-row items-center w-full">
+                                      <span>{option?.name} </span>
+
+                                      <span class="ml-auto text-xs"
+                                        >{option?.credit} Credits</span
+                                      >
+                                    </div>
+                                  </DropdownMenu.Item>
+                                {/if}
+                              {/each}
+                            </DropdownMenu.Group>
+                          {/if}
+                        </DropdownMenu.Content>
+                      </DropdownMenu.Root>
+                    </div>
+
+                    <Button
+                      on:click={newChat}
+                      class="mr-auto ml-2 w-fit border-gray-300 font-semibold dark:font-normal dark:border-gray-600 border bg-black sm:hover:bg-default text-white dark:text-black dark:bg-white dark:sm:hover:bg-gray-100 ease-out flex flex-row justify-between items-center px-3 py-2 rounded truncate"
                     >
-                      {#if isLoading}
+                      <span class="hidden sm:block"> New chat</span>
+                      <Plus class="sm:-mr-1 sm:ml-1 h-5 w-5 inline-block" />
+                    </Button>
+
+                    {#if userData}
+                      <label
+                        class="ml-auto mr-2 whitespace-nowrap w-auto text-xs border-gray-300 font-semibold dark:font-normal dark:border-gray-600 border bg-gray-50 dark:bg-[#2A2E39] flex flex-row justify-between items-center px-3 rounded"
+                      >
+                        <div>
+                          {userData?.credits?.toLocaleString("en-US")}
+                          <span class="hidden sm:inline-block">Credits</span>
+                        </div>
+                      </label>
+                    {/if}
+
+                    <button
+                      on:click={() =>
+                        editorText?.trim()?.length > 0 && !isLoading && !isStreaming
+                          ? llmChat()
+                          : ""}
+                      class="{editorText?.trim()?.length > 0 &&
+                      !isLoading &&
+                      !isStreaming
+                        ? 'cursor-pointer'
+                        : 'cursor-not-allowed opacity-60'} py-2 text-white dark:text-black text-[1rem] rounded border border-gray-300 dark:border-gray-700 bg-black dark:bg-gray-50 px-3 transition-colors duration-200"
+                      type="button"
+                    >
+                      {#if isLoading || isStreaming}
                         <svg
-                          class="w-4 h-4 animate-spin"
+                          class="w-4 h-4 animate-spin text-white dark:text-black"
                           viewBox="0 0 24 24"
                           fill="none"
                         >
@@ -937,10 +1140,10 @@
                         </svg>
                       {:else}
                         <ArrowUp
-                          class="w-4 h-4 text-center m-auto flex justify-center items-center "
+                          class="w-4 h-4 text-center m-auto flex justify-center items-center text-white dark:text-black"
                         />
                       {/if}
-                    </label>
+                    </button>
                   </div>
                 </div>
               </div>
