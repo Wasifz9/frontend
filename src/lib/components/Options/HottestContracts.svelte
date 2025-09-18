@@ -428,13 +428,56 @@
             </thead>
             <tbody>
               {#each data?.user?.tier === "Pro" ? tableData : tableData?.slice(0, 3) as item, index}
+                {@const isCall = item?.option_type === 'C'}
+                {@const isPut = item?.option_type === 'P'}
+                {@const highVolume = item?.volume > 1000}
+                {@const highOI = item?.open_interest > 5000}
                 <tr
-                  class="dark:sm:hover:bg-[#245073]/10 odd:bg-[#F6F7F8] dark:odd:bg-odd {index +
+                  class="dark:sm:hover:bg-[#245073]/10 odd:bg-[#F6F7F8] dark:odd:bg-odd relative {index +
                     1 ===
                     tableData?.slice(0, 3)?.length &&
                   !['Pro']?.includes(data?.user?.tier)
                     ? 'opacity-[0.1]'
                     : ''}"
+                  style="background: {(() => {
+                    const baseColor = $mode === 'light' 
+                      ? (index % 2 === 0 ? '#ffffff' : '#F6F7F8')
+                      : (index % 2 === 0 ? '#09090B' : '#1A1A1F');
+                    
+                    if ($mode === 'light') {
+                      if (isCall) {
+                        // Higher intensity for high volume/OI
+                        if (highVolume || highOI) {
+                          return `linear-gradient(90deg, ${baseColor} 0%, rgba(34, 197, 94, 0.2) 60%, rgba(34, 197, 94, 0.3) 100%)`;
+                        }
+                        return `linear-gradient(90deg, ${baseColor} 0%, rgba(34, 197, 94, 0.15) 60%, rgba(34, 197, 94, 0.25) 100%)`;
+                      }
+                      if (isPut) {
+                        // Higher intensity for high volume/OI
+                        if (highVolume || highOI) {
+                          return `linear-gradient(90deg, ${baseColor} 0%, rgba(238, 83, 101, 0.2) 60%, rgba(238, 83, 101, 0.3) 100%)`;
+                        }
+                        return `linear-gradient(90deg, ${baseColor} 0%, rgba(238, 83, 101, 0.15) 60%, rgba(238, 83, 101, 0.25) 100%)`;
+                      }
+                    } else {
+                      // Dark mode
+                      if (isCall) {
+                        // Higher intensity for high volume/OI
+                        if (highVolume || highOI) {
+                          return `linear-gradient(90deg, ${baseColor} 0%, rgba(0, 252, 80, 0.12) 60%, rgba(0, 252, 80, 0.2) 100%)`;
+                        }
+                        return `linear-gradient(90deg, ${baseColor} 0%, rgba(0, 252, 80, 0.08) 60%, rgba(0, 252, 80, 0.15) 100%)`;
+                      }
+                      if (isPut) {
+                        // Higher intensity for high volume/OI
+                        if (highVolume || highOI) {
+                          return `linear-gradient(90deg, ${baseColor} 0%, rgba(238, 83, 101, 0.12) 60%, rgba(238, 83, 101, 0.2) 100%)`;
+                        }
+                        return `linear-gradient(90deg, ${baseColor} 0%, rgba(238, 83, 101, 0.08) 60%, rgba(238, 83, 101, 0.15) 100%)`;
+                      }
+                    }
+                    return baseColor;
+                  })()}"
                 >
                   <td
                     class=" text-sm sm:text-[1rem] text-start whitespace-nowrap flex flex-row items-center justify-between"
