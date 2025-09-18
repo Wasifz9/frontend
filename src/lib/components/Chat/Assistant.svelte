@@ -843,33 +843,23 @@
   </button>
 {/if}
 
-<!-- Overlay + Panel - Only show on lg screens and above -->
+<!-- Panel - Only show on lg screens and above -->
 {#if isOpen}
-  <div class="hidden lg:block fixed inset-0 z-50">
-    <!-- overlay -->
-    <div
-      class="absolute inset-0"
-      on:click={() => closeChat()}
-      on:keydown={(e) => e.key === "Escape" && closeChat()}
-      transition:fade={{ duration: 300, easing: quintOut }}
-      aria-hidden="true"
-    />
-
     <!-- panel -->
     <aside
       bind:this={chatWindow}
       role="dialog"
       aria-modal="true"
-      class="absolute right-0 bottom-0 w-full md:w-[480px] lg:w-[600px] {isFullscreen 
+      class="hidden lg:flex fixed right-0 bottom-0 w-full md:w-[480px] lg:w-[600px] {isFullscreen 
         ? 'h-full' 
-        : 'h-[600px]'} max-w-full z-60 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-2xl flex flex-col transition-all duration-300 {isFullscreen ? 'rounded-none' : 'rounded-l-2xl'}"
+        : 'h-[600px]'} max-w-full z-50 bg-white dark:bg-[#2A2E39] border border-gray-200 dark:border-gray-700 shadow-2xl flex-col transition-all duration-300 {isFullscreen ? 'rounded-none' : 'rounded-l-2xl'}"
       style="transform-origin: bottom center;"
       transition:slide={{ duration: 400, easing: quintOut, axis: "y" }}
     >
       <!-- Header -->
       <header
         role="banner"
-        class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-default select-none"
+        class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2A2E39]/50 cursor-default select-none"
         on:mousedown={startDrag}
       >
         <div class="flex items-center gap-3 min-w-0">
@@ -952,7 +942,7 @@
             {#if isFullscreen}
               <!-- Shrink icon -->
               <svg
-                class="w-4 h-4"
+                class="w-4 h-4 text-gray-600 dark:text-gray-300"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -970,7 +960,7 @@
             {:else}
               <!-- Expand icon -->
               <svg
-                class="w-4 h-4"
+                class="w-4 h-4 text-gray-600 dark:text-gray-300"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -1056,17 +1046,17 @@
 
         <!-- Input area -->
         <div
-          class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+          class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2A2E39]/50"
         >
           <div
-            class="block p-4 w-full border border-gray-300 dark:border-gray-600 rounded-xl overflow-hidden bg-white dark:bg-gray-900 shadow-sm"
+            class="block p-4 w-full border border-gray-300 dark:border-gray-600 rounded-xl overflow-hidden bg-white dark:bg-[#2A2E39] shadow-sm"
           >
             <div
               bind:this={editorDiv}
               role="textbox"
               aria-label="Message input"
               aria-multiline="true"
-              class="assistant-editor editor-container ml-2 bg-white dark:bg-gray-900 w-full min-h-[60px] text-sm"
+              class="assistant-editor editor-container ml-2 bg-white dark:bg-[#2A2E39] w-full min-h-[60px] text-sm"
               on:keydown={handleKeyDown}
             />
 
@@ -1096,7 +1086,7 @@
                 class="relative min-h-12 h-auto overflow-y-hidden w-full outline-none"
               >
                 <div
-                  class="absolute bottom-0 flex flex-row justify-end w-full bg-white dark:bg-gray-900"
+                  class="absolute bottom-0 flex flex-row justify-end w-full bg-white dark:bg-[#2A2E39]"
                 >
                   <div class="flex flex-row justify-between w-full">
                     <div
@@ -1240,7 +1230,7 @@
 
                     {#if userData}
                       <label
-                        class="ml-auto mr-2 whitespace-nowrap w-auto text-xs border-gray-300 font-medium dark:border-gray-600 border bg-gray-100 dark:bg-gray-800 flex flex-row justify-between items-center px-3 py-2 rounded-lg"
+                        class="ml-auto mr-2 whitespace-nowrap w-auto text-xs border-gray-300 font-medium dark:border-gray-600 border bg-gray-100 dark:bg-[#2A2E39] text-gray-600 dark:text-gray-300 flex flex-row justify-between items-center px-3 py-2 rounded-lg"
                       >
                         <div>
                           {userData?.credits?.toLocaleString("en-US")}
@@ -1307,7 +1297,6 @@
         </div>
       </div>
     </aside>
-  </div>
 {/if}
 
 <style>
