@@ -615,8 +615,17 @@
         const data = await response.json();
         console.log("Loaded chat data:", data);
         
-        // Load the chat data into the assistant
-        messages = data.getChat?.messages || [];
+        // Load the chat data into the assistant and clean it
+        const cleanedMessages = (data.getChat?.messages || []).map(message => ({
+          content: message.content,
+          role: message.role,
+          // Remove sources, plots, and related questions
+          // sources: undefined,
+          // plots: undefined,
+          // relatedQuestions: undefined
+        }));
+        
+        messages = cleanedMessages;
         chatId = data.getChat?.id;
         relatedQuestions = [];
         editingMessageIndex = null;
@@ -850,7 +859,11 @@
       bind:this={chatWindow}
       role="dialog"
       aria-modal="true"
-      class="absolute right-0 top-0 bottom-0 w-full md:w-[440px] lg:w-[560px] max-w-full z-60 bg-white/95 dark:bg-[#0b0b0c]/95 backdrop-blur-xl border-l border-white/20 dark:border-gray-700/30 shadow-2xl flex flex-col"
+      class="absolute right-0 {isFullscreen 
+        ? 'top-0 bottom-0' 
+        : 'bottom-0'} w-full md:w-[440px] lg:w-[560px] {isFullscreen 
+        ? 'h-full' 
+        : 'h-[500px]'} max-w-full z-60 bg-white/95 dark:bg-[#0b0b0c]/95 backdrop-blur-xl border-l border-white/20 dark:border-gray-700/30 shadow-2xl flex flex-col transition-all duration-300"
       style="transform-origin: right center;"
       transition:slide={{ duration: 400, easing: quintOut, axis: "x" }}
     >
@@ -934,22 +947,46 @@
           <button
             on:click={() => toggleFullscreen()}
             class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            title="Toggle fullscreen (F11)"
-            aria-label="Toggle fullscreen"
+            title="{isFullscreen ? 'Shrink window' : 'Expand window'}"
+            aria-label="{isFullscreen ? 'Shrink window' : 'Expand window'}"
           >
-            <svg
-              class="w-4 h-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path d="M8 3H5a2 2 0 0 0-2 2v3" />
-              <path d="m21 9-4-4 4-4" />
-              <path d="M16 3h3a2 2 0 0 1 2 2v3" />
-              <path d="M9 21H6a2 2 0 0 1-2-2v-3" />
-              <path d="M21 15v3a2 2 0 0 1-2 2h-3" />
-            </svg>
+            {#if isFullscreen}
+              <!-- Shrink icon -->
+              <svg
+                class="w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M8 3v3a2 2 0 0 1-2 2H3" />
+                <path d="m3 3 5 5" />
+                <path d="M8 21v-3a2 2 0 0 1 2-2h3" />
+                <path d="m8 21 5-5" />
+                <path d="M16 3h3a2 2 0 0 1 2 2v3" />
+                <path d="m16 3 5 5" />
+                <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+                <path d="m16 21 5-5" />
+              </svg>
+            {:else}
+              <!-- Expand icon -->
+              <svg
+                class="w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M15 3h6v6" />
+                <path d="m21 3-7 7" />
+                <path d="M9 21H3v-6" />
+                <path d="m3 21 7-7" />
+                <path d="M22 12h-7" />
+                <path d="M3 12h7" />
+                <path d="M12 3v7" />
+                <path d="M12 22v-7" />
+              </svg>
+            {/if}
           </button>
           <button
             on:click={closeChat}
