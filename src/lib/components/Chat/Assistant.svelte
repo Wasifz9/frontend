@@ -30,13 +30,7 @@
   let isFullscreen = false;
 
   // Chat state
-  let messages = [
-    {
-      content:
-        "Hello! I'm your AI assistant. How can I help you with stock market analysis today?",
-      role: "system",
-    },
-  ];
+  let messages = [];
   let relatedQuestions = [];
   let chatId = null;
   let isLoading = false;
@@ -222,13 +216,7 @@
   }
 
   function newChat() {
-    messages = [
-      {
-        content:
-          "Hello! I'm your AI assistant. How can I help you with stock market analysis today?",
-        role: "system",
-      },
-    ];
+    messages = [];
     chatId = null; // Reset chatId so next message creates new chat
     relatedQuestions = [];
     editingMessageIndex = null;
@@ -875,27 +863,6 @@
             {/if}
           {/each}
 
-          {#if isLoading}
-            <div
-              class="flex items-center gap-3 bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg px-4 py-3"
-              transition:fly={{ y: 10, duration: 300, easing: quintOut }}
-            >
-              <div class="flex space-x-1">
-                <div
-                  class="w-2.5 h-2.5 bg-blue-500 rounded-full animate-bounce"
-                ></div>
-                <div
-                  class="w-2.5 h-2.5 bg-blue-500 rounded-full animate-bounce"
-                  style="animation-delay: 0.1s"
-                ></div>
-                <div
-                  class="w-2.5 h-2.5 bg-blue-500 rounded-full animate-bounce"
-                  style="animation-delay: 0.2s"
-                ></div>
-              </div>
-              <span class="text-sm font-medium">AI is thinking...</span>
-            </div>
-          {/if}
 
           <div bind:this={bottomEl} />
         </div>
@@ -1077,13 +1044,6 @@
                       </DropdownMenu.Root>
                     </div>
 
-                    <Button
-                      on:click={newChat}
-                      class="mr-auto ml-2 w-fit border-gray-300 font-semibold dark:font-normal dark:border-gray-600 border bg-black sm:hover:bg-default text-white dark:text-black dark:bg-white dark:sm:hover:bg-gray-100 ease-out flex flex-row justify-between items-center px-3 py-2 rounded truncate"
-                    >
-                      <span class="hidden sm:block"> New chat</span>
-                      <Plus class="sm:-mr-1 sm:ml-1 h-5 w-5 inline-block" />
-                    </Button>
 
                     {#if userData}
                       <label
