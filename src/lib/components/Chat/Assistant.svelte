@@ -796,8 +796,18 @@
     if (!editorDiv || editorView || editorInitialized) return;
     editorInitialized = true;
 
+    // Create initial document with preserved text if any
+    let initialDoc = schema?.topNodeType?.createAndFill();
+    if (editorText && editorText.trim() !== "") {
+      // Create a document with the preserved text
+      initialDoc = schema.nodes.doc.create(null, [
+        schema.nodes.paragraph.create(null, schema.text(editorText))
+      ]);
+    }
+
     editorView = new EditorView(editorDiv, {
       state: EditorState.create({
+        doc: initialDoc,
         schema,
         plugins: [
           editorHighlighter,
@@ -852,7 +862,16 @@
     setTimeout(() => {
       if (editorView) {
         editorView.focus();
-        editorText = editorView.state.doc.textContent || "";
+        // Move cursor to the end if there's existing text
+        if (editorText && editorText.trim() !== "") {
+          const endPos = editorView.state.doc.content.size;
+          const tr = editorView.state.tr.setSelection(
+            editorView.state.selection.constructor.near(
+              editorView.state.doc.resolve(endPos)
+            )
+          );
+          editorView.dispatch(tr);
+        }
       }
     }, 100);
   }
@@ -883,11 +902,15 @@
       }
     }
 
-    // Destroy editor when chat closes and clear input
+    // Destroy editor when chat closes but preserve the input text
     if (!isOpen && editorView) {
+      // Save the current text before destroying
+      if (editorView.state && editorView.state.doc) {
+        editorText = editorView.state.doc.textContent || editorText;
+      }
       editorView.destroy();
       editorView = null;
-      editorText = ""; // Clear input text when closing
+      editorInitialized = false; // Reset initialized flag
       showSuggestions = false;
     }
   });
