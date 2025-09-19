@@ -742,7 +742,8 @@
     messages[index].content = content;
     messages = messages.slice(0, index + 1);
     messages = [...messages];
-    await llmChat(content);
+    // When editing, pass the content as userMessage to indicate it's already in the array
+    await continueChat(content, content);
   }
 
   function handleStartEdit(event: any) {

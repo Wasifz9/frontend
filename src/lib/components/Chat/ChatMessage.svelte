@@ -228,15 +228,21 @@
         <div class="flex items-center space-x-2 py-3">
           <div class="flex space-x-1">
             <div
-              class="w-2 h-2 bg-gray-500 dark:bg-gray-400 rounded-full animate-pulse"
+              class="{assistant
+                ? 'size-1.5'
+                : 'size-1.5 sm:size-2'} bg-gray-500 dark:bg-gray-400 rounded-full animate-pulse"
               style="animation-delay: 0ms; animation-duration: 1.5s;"
             ></div>
             <div
-              class="w-2 h-2 bg-gray-500 dark:bg-gray-400 rounded-full animate-pulse"
+              class="{assistant
+                ? 'size-1.5'
+                : 'size-1.5 sm:size-2'} bg-gray-500 dark:bg-gray-400 rounded-full animate-pulse"
               style="animation-delay: 0.5s; animation-duration: 1.5s;"
             ></div>
             <div
-              class="w-2 h-2 bg-gray-500 dark:bg-gray-400 rounded-full animate-pulse"
+              class="{assistant
+                ? 'size-1.5'
+                : 'size-1.5 sm:size-2'} bg-gray-500 dark:bg-gray-400 rounded-full animate-pulse"
               style="animation-delay: 1s; animation-duration: 1.5s;"
             ></div>
           </div>
