@@ -325,7 +325,7 @@
     if (!userData) {
       // Clear editor first
       clearEditor();
-      
+
       // Trigger login popup
       const closePopup = document.getElementById("userLogin");
       closePopup?.dispatchEvent(new MouseEvent("click"));
@@ -347,7 +347,7 @@
     if (isLoading) return;
 
     isLoading = true;
-    
+
     // Calculate credit cost for this query
     const creditCost = getCreditFromQuery(userQuery, agentOptions);
 
@@ -357,12 +357,12 @@
       messages = [
         ...messages,
         { content: userQuery, role: "user" },
-        { 
+        {
           content: `Insufficient credits. Your current balance is ${userData?.credits}. Your prompt would cost ${creditCost} credits. Credits are reset at the start of each month.`,
-          role: "system"
-        }
+          role: "system",
+        },
       ];
-      
+
       // Clear editor
       clearEditor();
       isLoading = false;
@@ -391,7 +391,7 @@
   async function continueChat(userQuery: string, userMessage?: string) {
     // Calculate credit cost for this query
     const creditCost = getCreditFromQuery(userQuery, agentOptions);
-    
+
     // Check user credits before continuing
     if (userData?.credits < creditCost) {
       // Add user message if not already there
@@ -400,18 +400,18 @@
       }
       // Add insufficient credits message
       messages = [
-        ...messages, 
-        { 
+        ...messages,
+        {
           content: `Insufficient credits. Your current balance is ${userData?.credits}. Your prompt would cost ${creditCost} credits. Credits are reset at the start of each month.`,
-          role: "system"
-        }
+          role: "system",
+        },
       ];
-      
+
       // Clear editor
       clearEditor();
       return;
     }
-    
+
     isLoading = true;
     isStreaming = true;
     relatedQuestions = [];
@@ -1155,14 +1155,14 @@
         class="px-6 py-4 border-t border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-default/50"
       >
         <div
-          class="block p-4 w-full border border-gray-300 dark:border-gray-600 rounded overflow-hidden bg-white dark:bg-default shadow-sm"
+          class="block p-4 w-full border border-gray-300 dark:border-gray-600 rounded overflow-hidden bg-gray-50 dark:bg-[#2A2E39] shadow-sm"
         >
           <div
             bind:this={editorDiv}
             role="textbox"
             aria-label="Message input"
             aria-multiline="true"
-            class="assistant-editor editor-container ml-2 bg-white dark:bg-default w-full min-h-[60px] text-sm"
+            class="assistant-editor editor-container ml-2 bg-gray-50 dark:bg-[#2A2E39] w-full min-h-[60px] text-sm"
             on:keydown={handleKeyDown}
           />
 
@@ -1192,7 +1192,7 @@
               class="relative min-h-12 h-auto overflow-y-hidden w-full outline-none"
             >
               <div
-                class="absolute bottom-0 flex flex-row justify-end w-full bg-white dark:bg-default"
+                class="absolute bottom-0 flex flex-row justify-end w-full bg-gray-50 dark:bg-[#2A2E39]"
               >
                 <div class="flex flex-row justify-between w-full">
                   <div
@@ -1334,7 +1334,7 @@
 
                   {#if userData}
                     <label
-                      class="ml-auto mr-2 whitespace-nowrap w-auto text-xs border-gray-300 font-medium dark:border-gray-600 border bg-gray-100 dark:bg-default text-gray-600 dark:text-gray-300 flex flex-row justify-between items-center px-3 py-2 rounded"
+                      class="ml-auto mr-2 whitespace-nowrap w-auto text-xs border-gray-300 font-medium dark:border-gray-600 border bg-inherit text-gray-600 dark:text-gray-300 flex flex-row justify-between items-center px-3 py-2 rounded"
                     >
                       <div>
                         {userData?.credits?.toLocaleString("en-US")}
