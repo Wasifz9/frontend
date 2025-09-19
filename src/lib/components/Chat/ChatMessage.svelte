@@ -201,12 +201,16 @@
 </script>
 
 <div
-  class="flex m-auto mb-6 w-full max-w-[1000px] {assistant ? 'text-sm' : ''}"
+  class="flex m-auto mb-6 w-full max-w-[1000px] {assistant
+    ? 'text-sm'
+    : 'text-sm sm:text-[1rem]'}"
   class:justify-end={message.role === "user"}
 >
   <div class="flex flex-col sm:flex-row items-start w-full">
     <img
-      class="mr-auto sm:mr-3 w-10 h-10 rounded-full {message.role === 'user'
+      class="mr-auto {assistant
+        ? 'size-8'
+        : 'sm:mr-3 size-8 sm:size-10'} rounded-full {message.role === 'user'
         ? 'hidden'
         : ''}"
       src="/pwa-192x192.png"

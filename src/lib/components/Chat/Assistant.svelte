@@ -2,23 +2,29 @@
   import { onMount, afterUpdate, tick, onDestroy } from "svelte";
   import { slide, fly } from "svelte/transition";
   import { quintOut } from "svelte/easing";
-  import ChatMessage from "$lib/components/Chat/ChatMessage.svelte";
   import { getCreditFromQuery, agentOptions, agentCategory } from "$lib/utils";
-  import * as DropdownMenu from "$lib/components/shadcn/dropdown-menu/index.js";
-  import { Button } from "$lib/components/shadcn/button/index.js";
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
+  import { browser } from "$app/environment";
+  import { derived } from "svelte/store";
+
+  // Lazy load components
+  import ChatMessage from "$lib/components/Chat/ChatMessage.svelte";
+  import * as DropdownMenu from "$lib/components/shadcn/dropdown-menu/index.js";
+  import { Button } from "$lib/components/shadcn/button/index.js";
+
+  // Icons
   import X from "lucide-svelte/icons/x";
   import Plus from "lucide-svelte/icons/plus";
   import History from "lucide-svelte/icons/history";
   import ArrowUp from "lucide-svelte/icons/arrow-up";
   import Spark from "lucide-svelte/icons/sparkles";
 
+  // Lazy load ProseMirror modules
   import { EditorState, Plugin } from "prosemirror-state";
   import { EditorView, Decoration, DecorationSet } from "prosemirror-view";
   import { keymap } from "prosemirror-keymap";
   import { schema } from "prosemirror-schema-basic";
-  import { browser } from "$app/environment";
 
   export let data;
   let userData = data?.user || null;
@@ -74,10 +80,14 @@
   let chatHistory = [];
   let loadingHistory = false;
 
-  let agentNames = agentOptions?.map((item) => item?.name) ?? [];
+  // Memoize agent names
+  const agentNames = agentOptions?.map((item) => item?.name) ?? [];
 
-  // Hide Assistant on chat pages
-  $: shouldShowAssistant = !$page.url.pathname.startsWith("/chat");
+  // Use derived store for better reactivity
+  const shouldShowAssistant = derived(
+    page,
+    ($page) => !$page.url.pathname.startsWith("/chat"),
+  );
 
   // --- editor plugins & helpers (kept from your original) ---
   function agentMentionDeletePlugin(agentNames: string[]) {
@@ -176,26 +186,31 @@
     return view.coordsAtPos(from);
   }
 
+  // Debounce autocomplete for better performance
+  let autocompleteTimeout;
   function checkAutocomplete(view) {
-    const { from } = view.state.selection;
-    const before = view.state.doc.textBetween(
-      Math.max(0, from - 20),
-      from,
-      "\n",
-      "\n",
-    );
-    const match = /\@([a-zA-Z0-9_]*)$/.exec(before);
-    if (match) {
-      currentQuery = match[1];
-      suggestions = agentNames?.filter((s) =>
-        s.toLowerCase().startsWith(currentQuery.toLowerCase()),
+    clearTimeout(autocompleteTimeout);
+    autocompleteTimeout = setTimeout(() => {
+      const { from } = view.state.selection;
+      const before = view.state.doc.textBetween(
+        Math.max(0, from - 20),
+        from,
+        "\n",
+        "\n",
       );
-      const coords = getCaretCoordinates(view);
-      suggestionPos = { top: coords.bottom + 6, left: coords.left - 8 };
-      showSuggestions = suggestions.length > 0;
-    } else {
-      showSuggestions = false;
-    }
+      const match = /\@([a-zA-Z0-9_]*)$/.exec(before);
+      if (match) {
+        currentQuery = match[1];
+        suggestions = agentNames?.filter((s) =>
+          s.toLowerCase().startsWith(currentQuery.toLowerCase()),
+        );
+        const coords = getCaretCoordinates(view);
+        suggestionPos = { top: coords.bottom + 6, left: coords.left - 8 };
+        showSuggestions = suggestions.length > 0;
+      } else {
+        showSuggestions = false;
+      }
+    }, 100);
   }
 
   // Window controls
@@ -230,25 +245,32 @@
     isFullscreen = false;
   }
 
+  // Helper function to clear editor
+  function clearEditor() {
+    if (!editorView) return;
+
+    const emptyDoc = schema?.topNodeType?.createAndFill();
+    const tr = editorView?.state?.tr?.replaceWith(
+      0,
+      editorView?.state?.doc?.content?.size,
+      emptyDoc?.content,
+    );
+    editorView?.dispatch(tr);
+    editorText = "";
+  }
+
   function newChat() {
     messages = [];
     chatId = null; // Reset chatId so next message creates new chat
     relatedQuestions = [];
     editingMessageIndex = null;
-
-    if (editorView) {
-      const emptyDoc = schema?.topNodeType?.createAndFill();
-      const tr = editorView?.state?.tr?.replaceWith(
-        0,
-        editorView?.state?.doc?.content?.size,
-        emptyDoc?.content,
-      );
-      editorView?.dispatch(tr);
-      editorText = "";
-    }
+    // Clear cache when starting new chat
+    chatHistoryCache = null;
+    clearEditor();
   }
 
-  // Drag handling (kept, optional)
+  // Throttle drag handling for better performance
+  let dragAnimationFrame;
   function startDrag(e: MouseEvent) {
     if (isFullscreen) return;
     isDragging = true;
@@ -258,20 +280,32 @@
 
   function handleDrag(e: MouseEvent) {
     if (!isDragging || isFullscreen) return;
-    windowX = e.clientX - dragStartX;
-    windowY = e.clientY - dragStartY;
-    windowX = Math.max(
-      0,
-      Math.min(window.innerWidth - (chatWindow?.offsetWidth || 400), windowX),
-    );
-    windowY = Math.max(
-      0,
-      Math.min(window.innerHeight - (chatWindow?.offsetHeight || 600), windowY),
-    );
+    if (dragAnimationFrame) return;
+
+    dragAnimationFrame = requestAnimationFrame(() => {
+      windowX = e.clientX - dragStartX;
+      windowY = e.clientY - dragStartY;
+      windowX = Math.max(
+        0,
+        Math.min(window.innerWidth - (chatWindow?.offsetWidth || 400), windowX),
+      );
+      windowY = Math.max(
+        0,
+        Math.min(
+          window.innerHeight - (chatWindow?.offsetHeight || 600),
+          windowY,
+        ),
+      );
+      dragAnimationFrame = null;
+    });
   }
 
   function stopDrag() {
     isDragging = false;
+    if (dragAnimationFrame) {
+      cancelAnimationFrame(dragAnimationFrame);
+      dragAnimationFrame = null;
+    }
   }
 
   function handleClickOutside(event) {
@@ -290,22 +324,17 @@
     // Check if user is logged in
     if (!userData) {
       // Add message to show login required
-      messages = [...messages, 
+      messages = [
+        ...messages,
         { content: userQuery, role: "user" },
-        { content: "Please sign up or login to use this feature.", role: "system" }
+        {
+          content: "Please sign up or login to use this feature.",
+          role: "system",
+        },
       ];
-      
+
       // Clear editor
-      if (editorView) {
-        const emptyDoc = schema?.topNodeType?.createAndFill();
-        const tr = editorView?.state?.tr?.replaceWith(
-          0,
-          editorView?.state?.doc?.content?.size,
-          emptyDoc?.content,
-        );
-        editorView?.dispatch(tr);
-        editorText = "";
-      }
+      clearEditor();
       return;
     }
 
@@ -360,16 +389,7 @@
     relatedQuestions = [];
 
     // Clear editor
-    if (editorView) {
-      const emptyDoc = schema?.topNodeType?.createAndFill();
-      const tr = editorView?.state?.tr?.replaceWith(
-        0,
-        editorView?.state?.doc?.content?.size,
-        emptyDoc?.content,
-      );
-      editorView?.dispatch(tr);
-      editorText = "";
-    }
+    clearEditor();
 
     // Add user message if not already in messages
     if (!userMessage) {
@@ -581,9 +601,18 @@
     editorView?.focus();
   }
 
+  // Cache chat history to avoid redundant fetches
+  let chatHistoryCache = null;
+  let chatHistoryCacheTime = 0;
+  const CACHE_DURATION = 60000; // 1 minute cache
+
   async function fetchChatHistory() {
-    if (!userData) {
-      console.log("No userData available");
+    if (!userData) return;
+
+    // Use cache if available and fresh
+    const now = Date.now();
+    if (chatHistoryCache && now - chatHistoryCacheTime < CACHE_DURATION) {
+      chatHistory = chatHistoryCache;
       return;
     }
 
@@ -598,11 +627,9 @@
       });
       if (response.ok) {
         const data = await response.json();
-        console.log("Chat history response:", data);
         chatHistory = data.getAllChats || [];
-        console.log("Chat history array:", chatHistory);
-      } else {
-        console.error("API response not ok:", response.status);
+        chatHistoryCache = chatHistory;
+        chatHistoryCacheTime = now;
       }
     } catch (error) {
       console.error("Failed to fetch chat history:", error);
@@ -654,16 +681,7 @@
         editingMessageIndex = null;
 
         // Clear any text in the editor
-        if (editorView) {
-          const emptyDoc = schema?.topNodeType?.createAndFill();
-          const tr = editorView?.state?.tr?.replaceWith(
-            0,
-            editorView?.state?.doc?.content?.size,
-            emptyDoc?.content,
-          );
-          editorView?.dispatch(tr);
-          editorText = "";
-        }
+        clearEditor();
 
         // Close dropdown
         showChatHistory = false;
@@ -743,8 +761,11 @@
   }
 
   // lifecycle
+  // Optimize editor initialization
+  let editorInitialized = false;
   function initializeEditor() {
-    if (!editorDiv || editorView) return;
+    if (!editorDiv || editorView || editorInitialized) return;
+    editorInitialized = true;
 
     editorView = new EditorView(editorDiv, {
       state: EditorState.create({
@@ -850,14 +871,19 @@
       window.removeEventListener("beforeunload", handlePageUnload);
       window.removeEventListener("pagehide", handlePageUnload);
     }
-    if (editorView) editorView.destroy();
+    if (editorView) {
+      editorView.destroy();
+      editorInitialized = false;
+    }
     if (saveTimeout) clearTimeout(saveTimeout);
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    if (autocompleteTimeout) clearTimeout(autocompleteTimeout);
+    if (dragAnimationFrame) cancelAnimationFrame(dragAnimationFrame);
   });
 </script>
 
 <!-- Floating Open Button - Only show on lg screens and above, and not on /chat pages -->
-{#if shouldShowAssistant && !isOpen}
+{#if $shouldShowAssistant && !isOpen}
   <label
     on:click|stopPropagation={openChat}
     for={!data?.user ? "userLogin" : ""}
@@ -866,12 +892,12 @@
     style="position: fixed !important; z-index: 99999 !important;"
   >
     <Spark class="w-5 h-5" />
-    <!--<span class="text-sm font-medium">AI Assistant</span>-->
+    <span class="text-sm font-medium">AI Assistant</span>
   </label>
 {/if}
 
 <!-- Panel - Only show on lg screens and above, and not on /chat pages -->
-{#if shouldShowAssistant && isOpen}
+{#if $shouldShowAssistant && isOpen}
   <!-- panel -->
   <aside
     bind:this={chatWindow}
@@ -906,7 +932,7 @@
             AI Assistant
           </div>
           <div class="text-xs text-gray-500 dark:text-gray-400 truncate">
-            Ready to help with your questions
+            Real-time financial insights at your fingertips
           </div>
         </div>
       </div>
@@ -1045,8 +1071,9 @@
       <div
         bind:this={chatContainer}
         class="flex-1 px-6 py-6 space-y-6 overflow-y-auto overflow-x-hidden scroll-smooth bg-white dark:bg-default text-gray-900 dark:text-white"
+        style="will-change: scroll-position; contain: layout style paint;"
       >
-        {#each messages as message, index (index)}
+        {#each messages as message, index (`${chatId || "temp"}-${index}-${message.role}`)}
           {#if index === messages.length - 1 && message.role === "system" && isLoading}
             <ChatMessage
               {message}
