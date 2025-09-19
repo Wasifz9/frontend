@@ -4,6 +4,8 @@
 
     import TableHeader from "$lib/components/Table/TableHeader.svelte";
     import * as DropdownMenu from "$lib/components/shadcn/dropdown-menu/index.js";
+    import DownloadData from "$lib/components/DownloadData.svelte";
+
     import { Button } from "$lib/components/shadcn/button/index.js";
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
@@ -55,6 +57,29 @@
         }
     }
 
+    function computeDTE(dateStr) {
+        try {
+            const exp = new Date(dateStr + "T00:00:00Z");
+            const now = new Date();
+            const todayUTC = Date.UTC(
+                now.getUTCFullYear(),
+                now.getUTCMonth(),
+                now.getUTCDate(),
+            );
+            const expUTC = Date.UTC(
+                exp.getUTCFullYear(),
+                exp.getUTCMonth(),
+                exp.getUTCDate(),
+            );
+            const diffMs = expUTC - todayUTC;
+            if (diffMs <= 0) return 0;
+            const dayMs = 24 * 60 * 60 * 1000;
+            return Math.ceil(diffMs / dayMs);
+        } catch (e) {
+            return null;
+        }
+    }
+
     // build per-strike rows for the selectedDate
     function rebuildRowsForSelectedDate() {
         const raw = rawData?.find((item) => item?.expiration === selectedDate);
@@ -65,7 +90,7 @@
         }
 
         const strikes = raw?.strikes || [];
-        const rows = strikes.map((strike, i) => {
+        const rows = strikes?.map((strike, i) => {
             // raw arrays might have undefined or null entries
             const callDelta = raw?.callDelta?.[i] ?? 0;
             const putDelta = raw?.putDelta?.[i] ?? 0;
@@ -76,10 +101,10 @@
             const callVega = raw?.callVega?.[i] ?? 0;
             const putVega = raw?.putVega?.[i] ?? 0;
 
-            const totalDelta = (callDelta ?? 0) + (putDelta ?? 0);
-            const totalGamma = (callGamma ?? 0) + (putGamma ?? 0);
-            const totalTheta = (callTheta ?? 0) + (putTheta ?? 0);
-            const totalVega = (callVega ?? 0) + (putVega ?? 0);
+            const totalDelta = ((callDelta ?? 0) + (putDelta ?? 0))?.toFixed(4);
+            const totalGamma = ((callGamma ?? 0) + (putGamma ?? 0))?.toFixed(4);
+            const totalTheta = ((callTheta ?? 0) + (putTheta ?? 0))?.toFixed(4);
+            const totalVega = ((callVega ?? 0) + (putVega ?? 0))?.toFixed(4);
 
             return {
                 strike,
@@ -153,25 +178,25 @@
         // build series conditionally based on selectedType
         const series = [];
         if (selectedType === "Calls & Puts" || selectedType === "Calls") {
-            series.push({
+            series?.push({
                 name: "Call",
                 type: "spline",
                 data: callSeries,
-                color: $mode === "light" ? "#08B108" : "#00FC50",
-                borderColor: $mode === "light" ? "#08B108" : "#00FC50",
-                marker: { enabled: false },
+                color: "#06988A",
+                borderColor: "#06988A",
+                marker: { enabled: true },
                 visible: true,
                 animation: false,
             });
         }
         if (selectedType === "Calls & Puts" || selectedType === "Puts") {
-            series.push({
+            series?.push({
                 name: "Put",
                 type: "spline",
                 data: putSeries,
                 color: "#FF0808",
                 borderColor: "#FF0808",
-                marker: { enabled: false },
+                marker: { enabled: true },
                 visible: true,
                 animation: false,
             });
@@ -388,8 +413,8 @@
         };
 
         displayList = [...originalList]
-            .sort(compareValues)
-            .slice(0, displayedCount);
+            ?.sort(compareValues)
+            ?.slice(0, displayedCount);
     };
 
     // watchers: rebuild rows when rawData or selectedDate or selectedGreek changes
@@ -439,10 +464,10 @@
 
                 <div>
                     <div
-                        class="flex flex-col sm:flex-row sm:items-center sm:space-x-2"
+                        class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2"
                     >
                         <div
-                            class="text-xs inline-flex justify-center w-full rounded sm:w-auto"
+                            class="text-sm inline-flex justify-center w-full rounded sm:w-auto"
                         >
                             <div
                                 class="flex flex-col sm:flex-row items-start sm:items-center w-full justify-between"
@@ -481,7 +506,7 @@
                         </div>
 
                         <div
-                            class="text-xs inline-flex justify-center w-full rounded sm:w-auto"
+                            class="text-sm inline-flex justify-center w-full rounded sm:w-auto"
                         >
                             <div
                                 class="flex flex-col sm:flex-row items-start sm:items-center w-full justify-between"
@@ -524,7 +549,7 @@
                                     builders={[builder]}
                                     class="border border-gray-300 dark:border-gray-700 dark:bg-primary dark:sm:hover:bg-secondary bg-black sm:hover:bg-default text-white ease-out flex flex-row justify-between items-center min-w-[130px] max-w-[240px] sm:w-auto rounded truncate"
                                 >
-                                    <span class="truncate text-xs"
+                                    <span class=" text-sm"
                                         >Date Expiration | {formatDate(
                                             selectedDate,
                                         )}</span
@@ -563,7 +588,15 @@
                                                     ? 'bg-gray-200 dark:bg-primary'
                                                     : ''} sm:hover:bg-gray-200 dark:sm:hover:bg-primary cursor-pointer"
                                             >
-                                                {formatDate(item)}
+                                                <span>{formatDate(item)}</span>
+                                                <span
+                                                    class="ml-2 text-xs text-gray-500 dark:text-gray-300"
+                                                    >({computeDTE(item)} day{computeDTE(
+                                                        item,
+                                                    ) === 1
+                                                        ? ""
+                                                        : "s"})</span
+                                                >
                                             </DropdownMenu.Item>
                                         {:else}
                                             <DropdownMenu.Item
@@ -571,7 +604,15 @@
                                                     goto("/pricing")}
                                                 class="cursor-pointer sm:hover:bg-gray-200 dark:sm:hover:bg-primary"
                                             >
-                                                {formatDate(item)}
+                                                <span>{formatDate(item)}</span>
+                                                <span
+                                                    class="ml-2 text-xs text-gray-500 dark:text-gray-300"
+                                                    >({computeDTE(item)} day{computeDTE(
+                                                        item,
+                                                    ) === 1
+                                                        ? ""
+                                                        : "s"})</span
+                                                >
                                                 <svg
                                                     class="ml-1 size-4"
                                                     viewBox="0 0 20 20"
@@ -604,9 +645,24 @@
                     </div>
                 </div>
 
-                <h3 class="text-xl sm:text-2xl font-bold mt-5">
-                    {selectedGreek} Table
-                </h3>
+                <div
+                    class="mb-3 mt-10 flex flex-row items-center w-full border-t border-b border-gray-300 dark:border-gray-800 py-2"
+                >
+                    <h2 class=" text-xl sm:text-2xl font-bold">
+                        {selectedGreek} Table
+                    </h2>
+
+                    <div
+                        class="flex flex-row items-center w-[50%] w-auto ml-auto"
+                    >
+                        <DownloadData
+                            {data}
+                            rawData={originalList}
+                            title={`${selectedDate}_greek_data`}
+                        />
+                    </div>
+                </div>
+
                 <div class="w-full overflow-x-auto mt-3">
                     <table
                         class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
@@ -615,7 +671,7 @@
                             <TableHeader {columns} {sortOrders} {sortData} />
                         </thead>
                         <tbody>
-                            {#each displayList as item, index}
+                            {#each displayList as item}
                                 <tr
                                     class="dark:sm:hover:bg-[#245073]/10 odd:bg-[#F6F7F8] dark:odd:bg-odd"
                                 >

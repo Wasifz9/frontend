@@ -5,7 +5,7 @@ import { validateData, checkDisposableEmail, validateReturnUrl } from "$lib/util
 import { loginUserSchema, registerUserSchema } from "$lib/schemas";
 
 export const load = async ({ locals, params }) => {
-  const { apiKey, apiURL, user } = locals;
+  const { apiKey, apiURL } = locals;
 
   const getData = async () => {
     const postData = {
