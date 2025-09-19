@@ -969,7 +969,7 @@
       <div class="flex items-center gap-1">
         <button
           on:click={newChat}
-          class="p-2 rounded sm:hover:bg-gray-300 dark:sm:hover:bg-gray-800 transition-colors"
+          class="cursor-pointer p-2 rounded sm:hover:bg-gray-300 dark:sm:hover:bg-gray-800 transition-colors"
           title="New chat"
           aria-label="New chat"
         >
@@ -978,7 +978,7 @@
         <div class="relative chat-history-dropdown">
           <button
             on:click={toggleChatHistory}
-            class="p-2 rounded sm:hover:bg-gray-300 dark:sm:hover:bg-gray-800 transition-colors"
+            class="cursor-pointer p-2 rounded sm:hover:bg-gray-300 dark:sm:hover:bg-gray-800 transition-colors"
             title="Chat history"
             aria-label="Chat history"
           >
@@ -1041,7 +1041,7 @@
         </div>
         <button
           on:click={() => toggleFullscreen()}
-          class="p-2 rounded sm:hover:bg-gray-300 dark:sm:hover:bg-gray-800 transition-colors"
+          class="cursor-pointer p-2 rounded sm:hover:bg-gray-300 dark:sm:hover:bg-gray-800 transition-colors"
           title={isFullscreen ? "Shrink window" : "Expand window"}
           aria-label={isFullscreen ? "Shrink window" : "Expand window"}
         >
@@ -1085,7 +1085,7 @@
         </button>
         <button
           on:click={closeChat}
-          class="p-2 rounded sm:hover:bg-gray-300 dark:sm:hover:bg-gray-800 transition-colors"
+          class="cursor-pointer p-2 rounded sm:hover:bg-gray-300 dark:sm:hover:bg-gray-800 transition-colors"
           title="Close (Esc)"
           aria-label="Close"
         >
