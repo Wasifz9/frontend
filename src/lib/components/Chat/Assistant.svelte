@@ -323,18 +323,12 @@
 
     // Check if user is logged in
     if (!userData) {
-      // Add message to show login required
-      messages = [
-        ...messages,
-        { content: userQuery, role: "user" },
-        {
-          content: "Please sign up or login to use this feature.",
-          role: "system",
-        },
-      ];
-
-      // Clear editor
+      // Clear editor first
       clearEditor();
+      
+      // Trigger login popup
+      const closePopup = document.getElementById("userLogin");
+      closePopup?.dispatchEvent(new MouseEvent("click"));
       return;
     }
 
