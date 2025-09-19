@@ -953,8 +953,8 @@
                   on:click={() => goto("/chat")}
                   class="mr-auto ml-2 w-fit border-gray-300 font-semibold dark:font-normal dark:border-gray-600 border bg-black sm:hover:bg-default text-white dark:text-black dark:bg-white dark:sm:hover:bg-gray-100 ease-out flex flex-row justify-between items-center px-3 py-2 rounded truncate"
                 >
-                  <span class="hidden sm:block"> New chat</span>
-                  <Plus class="sm:-mr-1 sm:ml-1 h-5 w-5 inline-block" />
+                  <!--<span class="hidden sm:block"> New chat</span>-->
+                  <Plus class="h-5 w-5 inline-block" />
                 </Button>
 
                 {#if data?.user}

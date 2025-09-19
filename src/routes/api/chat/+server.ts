@@ -61,7 +61,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         "Content-Type": "application/json",
         "X-API-KEY": apiKey
       },
-      body: JSON?.stringify({ query: query, messages: messages})
+      body: JSON?.stringify({ query: query, messages: messages, reasoning: 'low'})
     });
 
     if (!upstream.ok || !upstream.body) {
