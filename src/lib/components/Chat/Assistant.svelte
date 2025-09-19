@@ -1203,11 +1203,11 @@
                       <DropdownMenu.Trigger asChild let:builder>
                         <Button
                           builders={[builder]}
-                          class="w-full border-gray-300 font-medium dark:border-gray-600 border bg-black hover:bg-gray-800 text-white dark:bg-white dark:hover:bg-gray-100 dark:text-black ease-out flex flex-row justify-between items-center px-3 py-2 rounded truncate transition-colors"
+                          class="w-full border-gray-300 font-medium dark:border-gray-600 border bg-black hover:bg-gray-800 text-white dark:bg-white dark:hover:bg-gray-100 dark:text-black ease-out flex flex-row justify-between items-center px-2 py-1 rounded truncate transition-colors"
                         >
-                          <span class="truncate">@Agents</span>
+                          <span class="truncate text-xs">@Agents</span>
                           <svg
-                            class="-mr-1 ml-3 h-5 w-5 xs:ml-2 inline-block"
+                            class="-mr-1 ml-2 h-5 w-5 inline-block"
                             viewBox="0 0 20 20"
                             fill="currentColor"
                             style="max-width:40px"
