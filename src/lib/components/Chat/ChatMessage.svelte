@@ -30,6 +30,7 @@
   export let isLatestSystemMessage = false;
   export let allMessages = [];
   export let onExportPDF = null;
+  export let assistant = false;
 
   // Smooth text rendering
   let displayedContent = "";
@@ -200,7 +201,7 @@
 </script>
 
 <div
-  class="flex m-auto mb-6 w-full max-w-[1000px]"
+  class="flex m-auto mb-6 w-full max-w-[1000px] {assistant ? 'text-sm' : ''}"
   class:justify-end={message.role === "user"}
 >
   <div class="flex flex-col sm:flex-row items-start w-full">

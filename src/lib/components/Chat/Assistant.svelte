@@ -1,10 +1,9 @@
 <script lang="ts">
   import { onMount, afterUpdate, tick, onDestroy } from "svelte";
-  import { fade, slide, scale, fly } from "svelte/transition";
-  import { quintOut, backOut } from "svelte/easing";
+  import { slide, fly } from "svelte/transition";
+  import { quintOut } from "svelte/easing";
   import ChatMessage from "$lib/components/Chat/ChatMessage.svelte";
   import { getCreditFromQuery, agentOptions, agentCategory } from "$lib/utils";
-  import { downloadChatPDF } from "$lib/pdfExport";
   import * as DropdownMenu from "$lib/components/shadcn/dropdown-menu/index.js";
   import { Button } from "$lib/components/shadcn/button/index.js";
   import { goto } from "$app/navigation";
@@ -77,7 +76,7 @@
   let agentNames = agentOptions?.map((item) => item?.name) ?? [];
 
   // Hide Assistant on chat pages
-  $: shouldShowAssistant = !$page.url.pathname.startsWith('/chat');
+  $: shouldShowAssistant = !$page.url.pathname.startsWith("/chat");
 
   // --- editor plugins & helpers (kept from your original) ---
   function agentMentionDeletePlugin(agentNames: string[]) {
@@ -269,7 +268,7 @@
   }
 
   function handleClickOutside(event) {
-    if (showChatHistory && !event.target.closest('.chat-history-dropdown')) {
+    if (showChatHistory && !event.target.closest(".chat-history-dropdown")) {
       showChatHistory = false;
     }
   }
@@ -553,23 +552,12 @@
     editorView?.focus();
   }
 
-  async function exportToPDF() {
-    try {
-      const success = await downloadChatPDF(messages);
-      if (!success) {
-        console.error("Failed to export PDF");
-      }
-    } catch (error) {
-      console.error("Error exporting PDF:", error);
-    }
-  }
-
   async function fetchChatHistory() {
     if (!userData) {
       console.log("No userData available");
       return;
     }
-    
+
     loadingHistory = true;
     try {
       const response = await fetch("/api/chat-history", {
@@ -605,7 +593,7 @@
     try {
       // Show loading state
       loadingHistory = true;
-      
+
       // Load the specific chat by ID
       const response = await fetch(`/api/chat/${chatData.id}`, {
         method: "GET",
@@ -614,26 +602,28 @@
           "Content-Type": "application/json",
         },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log("Loaded chat data:", data);
-        
+
         // Load the chat data into the assistant and clean it
-        const cleanedMessages = (data.getChat?.messages || []).map(message => ({
-          content: message.content,
-          role: message.role,
-          // Remove sources, plots, and related questions
-          // sources: undefined,
-          // plots: undefined,
-          // relatedQuestions: undefined
-        }));
-        
+        const cleanedMessages = (data.getChat?.messages || []).map(
+          (message) => ({
+            content: message.content,
+            role: message.role,
+            // Remove sources, plots, and related questions
+            // sources: undefined,
+            // plots: undefined,
+            // relatedQuestions: undefined
+          }),
+        );
+
         messages = cleanedMessages;
         chatId = data.getChat?.id;
         relatedQuestions = [];
         editingMessageIndex = null;
-        
+
         // Clear any text in the editor
         if (editorView) {
           const emptyDoc = schema?.topNodeType?.createAndFill();
@@ -645,10 +635,10 @@
           editorView?.dispatch(tr);
           editorText = "";
         }
-        
+
         // Close dropdown
         showChatHistory = false;
-        
+
         console.log("Chat loaded successfully, messages:", messages);
       } else {
         console.error("Failed to load chat:", response.status);
@@ -779,7 +769,6 @@
       proseMirrorEl.style.boxShadow = "none";
     }
 
-
     // Focus with small delay and ensure editorText is synced
     setTimeout(() => {
       if (editorView) {
@@ -849,458 +838,480 @@
 
 <!-- Panel - Only show on lg screens and above, and not on /chat pages -->
 {#if shouldShowAssistant && isOpen}
-    <!-- panel -->
-    <aside
-      bind:this={chatWindow}
-      role="dialog"
-      aria-modal="true"
-      class="hidden lg:flex fixed right-0 bottom-0 w-full md:w-[480px] lg:w-[600px] {isFullscreen 
-        ? 'h-full' 
-        : 'h-[600px]'} max-w-full z-50 bg-white dark:bg-[#2A2E39] border border-gray-200 dark:border-gray-700 shadow-2xl flex-col transition-all duration-300 {isFullscreen ? 'rounded-none' : 'rounded-l-2xl'}"
-      style="transform-origin: bottom center;"
-      transition:slide={{ duration: 400, easing: quintOut, axis: "y" }}
+  <!-- panel -->
+  <aside
+    bind:this={chatWindow}
+    role="dialog"
+    aria-modal="true"
+    class="hidden lg:flex fixed right-0 bottom-0 w-full md:w-[480px] lg:w-[600px] {isFullscreen
+      ? 'h-full'
+      : 'h-[600px]'} max-w-full z-50 bg-white dark:bg-default border border-gray-300 dark:border-gray-700 shadow-2xl flex-col transition-all duration-300 {isFullscreen
+      ? 'rounded-none'
+      : 'rounded-l-2xl'}"
+    style="transform-origin: bottom center;"
+    transition:slide={{ duration: 400, easing: quintOut, axis: "y" }}
+  >
+    <!-- Header -->
+    <header
+      role="banner"
+      class="flex items-center justify-between px-6 py-4 border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-default/50 cursor-default select-none"
+      on:mousedown={startDrag}
     >
-      <!-- Header -->
-      <header
-        role="banner"
-        class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2A2E39]/50 cursor-default select-none"
-        on:mousedown={startDrag}
-      >
-        <div class="flex items-center gap-3 min-w-0">
-          <div class="flex-shrink-0">
-            <div class="w-9 h-9 rounded-xl bg-black dark:bg-white flex items-center justify-center shadow-sm">
-              <Spark class="w-5 h-5 text-white dark:text-black" />
-            </div>
-          </div>
-          <div class="min-w-0">
-            <div class="text-base font-semibold text-gray-900 dark:text-white truncate">AI Assistant</div>
-            <div class="text-xs text-gray-500 dark:text-gray-400 truncate">
-              Ready to help with your questions
-            </div>
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="flex-shrink-0">
+          <div
+            class="w-9 h-9 rounded-xl bg-black dark:bg-white flex items-center justify-center shadow-sm"
+          >
+            <Spark class="w-5 h-5 text-white dark:text-black" />
           </div>
         </div>
-
-        <div class="flex items-center gap-1">
-          <button
-            on:click={newChat}
-            class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            title="New chat"
-            aria-label="New chat"
+        <div class="min-w-0">
+          <div
+            class="text-base font-semibold text-gray-900 dark:text-white truncate"
           >
-            <Plus class="w-4 h-4 text-gray-600 dark:text-gray-300" />
-          </button>
-          <div class="relative chat-history-dropdown">
-            <button
-              on:click={toggleChatHistory}
-              class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              title="Chat history"
-              aria-label="Chat history"
-            >
-              <History class="w-4 h-4 text-gray-600 dark:text-gray-300" />
-            </button>
-            
-            {#if showChatHistory}
-              <div
-                class="absolute top-full right-0 mt-3 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-xl z-50 max-h-96 overflow-y-auto"
-                transition:fly={{ y: -10, duration: 200 }}
-              >
-                <div class="p-4 border-b border-gray-200 dark:border-gray-600">
-                  <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Recent Conversations</h3>
-                </div>
-                
-                {#if loadingHistory}
-                  <div class="p-4 text-center">
-                    <div class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                    <span class="ml-2 text-sm text-gray-600 dark:text-gray-300">Loading...</span>
-                  </div>
-                {:else if chatHistory.length === 0}
-                  <div class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                    No chat history found
-                  </div>
-                {:else}
-                  <div class="py-2">
-                    {#each chatHistory as chat}
-                      <button
-                        on:click={() => loadChatFromHistory(chat)}
-                        class="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
-                      >
-                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                          {chat.message || "No message"}
-                        </div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {new Date(chat.updated).toLocaleDateString()} {new Date(chat.updated).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        </div>
-                      </button>
-                    {/each}
-                  </div>
-                {/if}
-              </div>
-            {/if}
+            AI Assistant
           </div>
-          <button
-            on:click={() => toggleFullscreen()}
-            class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            title="{isFullscreen ? 'Shrink window' : 'Expand window'}"
-            aria-label="{isFullscreen ? 'Shrink window' : 'Expand window'}"
-          >
-            {#if isFullscreen}
-              <!-- Shrink icon -->
-              <svg
-                class="w-4 h-4 text-gray-600 dark:text-gray-300"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path d="M8 3v3a2 2 0 0 1-2 2H3" />
-                <path d="m3 3 5 5" />
-                <path d="M8 21v-3a2 2 0 0 1 2-2h3" />
-                <path d="m8 21 5-5" />
-                <path d="M16 3h3a2 2 0 0 1 2 2v3" />
-                <path d="m16 3 5 5" />
-                <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
-                <path d="m16 21 5-5" />
-              </svg>
-            {:else}
-              <!-- Expand icon -->
-              <svg
-                class="w-4 h-4 text-gray-600 dark:text-gray-300"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path d="M15 3h6v6" />
-                <path d="m21 3-7 7" />
-                <path d="M9 21H3v-6" />
-                <path d="m3 21 7-7" />
-                <path d="M22 12h-7" />
-                <path d="M3 12h7" />
-                <path d="M12 3v7" />
-                <path d="M12 22v-7" />
-              </svg>
-            {/if}
-          </button>
-          <button
-            on:click={closeChat}
-            class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            title="Close (Esc)"
-            aria-label="Close"
-          >
-            <X class="w-4 h-4 text-gray-600 dark:text-gray-300" />
-          </button>
+          <div class="text-xs text-gray-500 dark:text-gray-400 truncate">
+            Ready to help with your questions
+          </div>
         </div>
-      </header>
+      </div>
 
-      <!-- Content -->
-      <div class="flex-1 flex flex-col overflow-hidden">
-        <!-- messages -->
-        <div
-          bind:this={chatContainer}
-          class="flex-1 px-6 py-6 space-y-6 overflow-y-auto scroll-smooth bg-white dark:bg-[#2A2E39] text-gray-900 dark:text-white"
+      <div class="flex items-center gap-1">
+        <button
+          on:click={newChat}
+          class="p-2 rounded sm:hover:bg-gray-300 dark:sm:hover:bg-gray-800 transition-colors"
+          title="New chat"
+          aria-label="New chat"
         >
-          {#each messages as message, index (index)}
-            {#if index === messages.length - 1 && message.role === "system" && isLoading}
-              <ChatMessage
-                {message}
-                {index}
-                isLoading={true}
-                {isStreaming}
-                {editable}
-                isEditMode={editingMessageIndex === index}
-                isLatestSystemMessage={index === messages.length - 1}
-                allMessages={messages}
-                onExportPDF={exportToPDF}
-                showSources={false}
-                showPlots={false}
-                showRelatedQuestions={false}
-                on:rewrite={rewriteResponse}
-                on:edit={editMessage}
-                on:start-edit={handleStartEdit}
-                on:cancel-edit={handleCancelEdit}
-                on:related-question={handleRelatedQuestionClick}
-              />
-            {:else}
-              <ChatMessage
-                {message}
-                {index}
-                isLoading={false}
-                isStreaming={index === messages.length - 1 &&
-                  message.role === "system" &&
-                  isStreaming}
-                {editable}
-                isEditMode={editingMessageIndex === index}
-                isLatestSystemMessage={index === messages.length - 1}
-                allMessages={messages}
-                onExportPDF={exportToPDF}
-                showSources={false}
-                showPlots={false}
-                showRelatedQuestions={false}
-                on:rewrite={rewriteResponse}
-                on:edit={editMessage}
-                on:start-edit={handleStartEdit}
-                on:cancel-edit={handleCancelEdit}
-                on:related-question={handleRelatedQuestionClick}
-              />
-            {/if}
-          {/each}
+          <Plus class="w-4 h-4 text-gray-600 dark:text-gray-300" />
+        </button>
+        <div class="relative chat-history-dropdown">
+          <button
+            on:click={toggleChatHistory}
+            class="p-2 rounded sm:hover:bg-gray-300 dark:sm:hover:bg-gray-800 transition-colors"
+            title="Chat history"
+            aria-label="Chat history"
+          >
+            <History class="w-4 h-4 text-gray-600 dark:text-gray-300" />
+          </button>
 
-          <div bind:this={bottomEl} />
+          {#if showChatHistory}
+            <div
+              class="absolute top-full right-0 mt-3 w-80 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-xl z-50 max-h-96 overflow-y-auto"
+              transition:fly={{ y: -10, duration: 200 }}
+            >
+              <div class="p-4 border-b border-gray-300 dark:border-gray-600">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+                  Recent Conversations
+                </h3>
+              </div>
+
+              {#if loadingHistory}
+                <div class="p-4 text-center">
+                  <div
+                    class="loading loading-spinner loading-md text-black dark:text-white"
+                  ></div>
+                  <span class="ml-2 text-sm text-gray-600 dark:text-gray-300"
+                    >Loading...</span
+                  >
+                </div>
+              {:else if chatHistory.length === 0}
+                <div
+                  class="p-4 text-center text-sm text-gray-500 dark:text-gray-400"
+                >
+                  No chat history found
+                </div>
+              {:else}
+                <div class="py-2">
+                  {#each chatHistory as chat}
+                    <button
+                      on:click={() => loadChatFromHistory(chat)}
+                      class="w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                    >
+                      <div
+                        class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate"
+                      >
+                        {chat.message || "No message"}
+                      </div>
+                      <div
+                        class="text-xs text-gray-500 dark:text-gray-400 mt-1"
+                      >
+                        {new Date(chat.updated).toLocaleDateString()}
+                        {new Date(chat.updated).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
+                    </button>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+          {/if}
         </div>
+        <button
+          on:click={() => toggleFullscreen()}
+          class="p-2 rounded sm:hover:bg-gray-300 dark:sm:hover:bg-gray-800 transition-colors"
+          title={isFullscreen ? "Shrink window" : "Expand window"}
+          aria-label={isFullscreen ? "Shrink window" : "Expand window"}
+        >
+          {#if isFullscreen}
+            <!-- Shrink icon -->
+            <svg
+              class="w-4 h-4 text-gray-600 dark:text-gray-300"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M8 3v3a2 2 0 0 1-2 2H3" />
+              <path d="m3 3 5 5" />
+              <path d="M8 21v-3a2 2 0 0 1 2-2h3" />
+              <path d="m8 21 5-5" />
+              <path d="M16 3h3a2 2 0 0 1 2 2v3" />
+              <path d="m16 3 5 5" />
+              <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+              <path d="m16 21 5-5" />
+            </svg>
+          {:else}
+            <!-- Expand icon -->
+            <svg
+              class="w-4 h-4 text-gray-600 dark:text-gray-300"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M15 3h6v6" />
+              <path d="m21 3-7 7" />
+              <path d="M9 21H3v-6" />
+              <path d="m3 21 7-7" />
+              <path d="M22 12h-7" />
+              <path d="M3 12h7" />
+              <path d="M12 3v7" />
+              <path d="M12 22v-7" />
+            </svg>
+          {/if}
+        </button>
+        <button
+          on:click={closeChat}
+          class="p-2 rounded sm:hover:bg-gray-300 dark:sm:hover:bg-gray-800 transition-colors"
+          title="Close (Esc)"
+          aria-label="Close"
+        >
+          <X class="w-4 h-4 text-gray-600 dark:text-gray-300" />
+        </button>
+      </div>
+    </header>
 
-        <!-- Input area -->
+    <!-- Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- messages -->
+      <div
+        bind:this={chatContainer}
+        class="flex-1 px-6 py-6 space-y-6 overflow-y-auto scroll-smooth bg-white dark:bg-default text-gray-900 dark:text-white"
+      >
+        {#each messages as message, index (index)}
+          {#if index === messages.length - 1 && message.role === "system" && isLoading}
+            <ChatMessage
+              {message}
+              {index}
+              isLoading={true}
+              {isStreaming}
+              {editable}
+              isEditMode={editingMessageIndex === index}
+              isLatestSystemMessage={index === messages.length - 1}
+              allMessages={messages}
+              showSources={false}
+              showPlots={false}
+              showRelatedQuestions={false}
+              assistant={true}
+              on:rewrite={rewriteResponse}
+              on:edit={editMessage}
+              on:start-edit={handleStartEdit}
+              on:cancel-edit={handleCancelEdit}
+              on:related-question={handleRelatedQuestionClick}
+            />
+          {:else}
+            <ChatMessage
+              {message}
+              {index}
+              isLoading={false}
+              isStreaming={index === messages.length - 1 &&
+                message.role === "system" &&
+                isStreaming}
+              {editable}
+              isEditMode={editingMessageIndex === index}
+              isLatestSystemMessage={index === messages.length - 1}
+              allMessages={messages}
+              showSources={false}
+              showPlots={false}
+              showRelatedQuestions={false}
+              assistant={true}
+              on:rewrite={rewriteResponse}
+              on:edit={editMessage}
+              on:start-edit={handleStartEdit}
+              on:cancel-edit={handleCancelEdit}
+              on:related-question={handleRelatedQuestionClick}
+            />
+          {/if}
+        {/each}
+
+        <div bind:this={bottomEl} />
+      </div>
+
+      <!-- Input area -->
+      <div
+        class="px-6 py-4 border-t border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-default/50"
+      >
         <div
-          class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2A2E39]/50"
+          class="block p-4 w-full border border-gray-300 dark:border-gray-600 rounded-xl overflow-hidden bg-white dark:bg-default shadow-sm"
         >
           <div
-            class="block p-4 w-full border border-gray-300 dark:border-gray-600 rounded-xl overflow-hidden bg-white dark:bg-[#2A2E39] shadow-sm"
+            bind:this={editorDiv}
+            role="textbox"
+            aria-label="Message input"
+            aria-multiline="true"
+            class="assistant-editor editor-container ml-2 bg-white dark:bg-default w-full min-h-[60px] text-sm"
+            on:keydown={handleKeyDown}
+          />
+
+          <!-- Suggestions Dropdown -->
+          {#if showSuggestions}
+            <ul
+              class="absolute bg-white dark:bg-default rounded-[5px] shadow border border-gray-300 dark:border-gray-600 mt-1 z-60 w-56 h-fit max-h-56 overflow-y-auto scroller"
+              style="top: {suggestionPos?.top}px; left: {suggestionPos?.left}px;"
+            >
+              {#each suggestions as suggestion, i}
+                <li
+                  class="px-2 py-1 cursor-pointer sm:hover:bg-gray-100 dark:sm:hover:bg-[#1E222D] text-sm {i ===
+                  selectedSuggestion
+                    ? ' bg-gray-100 dark:bg-[#1E222D]'
+                    : ''}"
+                  on:click={() => insertSuggestion(suggestion)}
+                >
+                  {suggestion}
+                </li>
+              {/each}
+            </ul>
+          {/if}
+          <form
+            class="grow rounded relative flex items-center w-full overflow-hidden"
           >
             <div
-              bind:this={editorDiv}
-              role="textbox"
-              aria-label="Message input"
-              aria-multiline="true"
-              class="assistant-editor editor-container ml-2 bg-white dark:bg-[#2A2E39] w-full min-h-[60px] text-sm"
-              on:keydown={handleKeyDown}
-            />
-
-            <!-- Suggestions Dropdown -->
-            {#if showSuggestions}
-              <ul
-                class="absolute bg-white dark:bg-default rounded-[5px] shadow border border-gray-300 dark:border-gray-600 mt-1 z-60 w-56 h-fit max-h-56 overflow-y-auto scroller"
-                style="top: {suggestionPos?.top}px; left: {suggestionPos?.left}px;"
-              >
-                {#each suggestions as suggestion, i}
-                  <li
-                    class="px-2 py-1 cursor-pointer sm:hover:bg-gray-100 dark:sm:hover:bg-[#1E222D] text-sm {i ===
-                    selectedSuggestion
-                      ? ' bg-gray-100 dark:bg-[#1E222D]'
-                      : ''}"
-                    on:click={() => insertSuggestion(suggestion)}
-                  >
-                    {suggestion}
-                  </li>
-                {/each}
-              </ul>
-            {/if}
-            <form
-              class="grow rounded relative flex items-center w-full overflow-hidden"
+              class="relative min-h-12 h-auto overflow-y-hidden w-full outline-none"
             >
               <div
-                class="relative min-h-12 h-auto overflow-y-hidden w-full outline-none"
+                class="absolute bottom-0 flex flex-row justify-end w-full bg-white dark:bg-default"
               >
-                <div
-                  class="absolute bottom-0 flex flex-row justify-end w-full bg-white dark:bg-[#2A2E39]"
-                >
-                  <div class="flex flex-row justify-between w-full">
-                    <div
-                      class="order-first relative inline-block text-left cursor-pointer shadow-xs"
-                    >
-                      <DropdownMenu.Root>
-                        <DropdownMenu.Trigger asChild let:builder>
-                          <Button
-                            builders={[builder]}
-                            class="w-full border-gray-300 font-medium dark:border-gray-600 border bg-black hover:bg-gray-800 text-white dark:bg-white dark:hover:bg-gray-100 dark:text-black ease-out flex flex-row justify-between items-center px-3 py-2 rounded-lg truncate transition-colors"
-                          >
-                            <span class="truncate">@Agents</span>
-                            <svg
-                              class="-mr-1 ml-3 h-5 w-5 xs:ml-2 inline-block"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                              style="max-width:40px"
-                              aria-hidden="true"
-                            >
-                              <path
-                                fill-rule="evenodd"
-                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                clip-rule="evenodd"
-                              ></path>
-                            </svg>
-                          </Button>
-                        </DropdownMenu.Trigger>
-                        <DropdownMenu.Content
-                          side="bottom"
-                          align="start"
-                          sideOffset={10}
-                          alignOffset={0}
-                          class="w-64 h-fit max-h-56 overflow-y-auto scroller"
+                <div class="flex flex-row justify-between w-full">
+                  <div
+                    class="order-first relative inline-block text-left cursor-pointer shadow-xs"
+                  >
+                    <DropdownMenu.Root>
+                      <DropdownMenu.Trigger asChild let:builder>
+                        <Button
+                          builders={[builder]}
+                          class="w-full border-gray-300 font-medium dark:border-gray-600 border bg-black hover:bg-gray-800 text-white dark:bg-white dark:hover:bg-gray-100 dark:text-black ease-out flex flex-row justify-between items-center px-3 py-2 rounded truncate transition-colors"
                         >
-                          {#if selectedGroup === "overview"}
-                            <DropdownMenu.Group>
-                              {#each agentCategory as option}
+                          <span class="truncate">@Agents</span>
+                          <svg
+                            class="-mr-1 ml-3 h-5 w-5 xs:ml-2 inline-block"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            style="max-width:40px"
+                            aria-hidden="true"
+                          >
+                            <path
+                              fill-rule="evenodd"
+                              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                              clip-rule="evenodd"
+                            ></path>
+                          </svg>
+                        </Button>
+                      </DropdownMenu.Trigger>
+                      <DropdownMenu.Content
+                        side="bottom"
+                        align="start"
+                        sideOffset={10}
+                        alignOffset={0}
+                        class="w-64 h-fit max-h-56 overflow-y-auto scroller"
+                      >
+                        {#if selectedGroup === "overview"}
+                          <DropdownMenu.Group>
+                            {#each agentCategory as option}
+                              <DropdownMenu.Item
+                                on:click={(e) => {
+                                  e.preventDefault();
+                                  selectedGroup = option;
+                                }}
+                                class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
+                              >
+                                <div class="flex flex-row items-center w-full">
+                                  <span
+                                    >{option} ({agentOptions?.filter(
+                                      (item) => item?.group === option,
+                                    )?.length})</span
+                                  >
+
+                                  <svg
+                                    class="ml-auto h-5 w-5 inline-block rotate-270"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                    style="max-width:40px"
+                                    aria-hidden="true"
+                                  >
+                                    <path
+                                      fill-rule="evenodd"
+                                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                      clip-rule="evenodd"
+                                    ></path>
+                                  </svg>
+                                </div>
+                              </DropdownMenu.Item>
+                            {/each}
+                            <DropdownMenu.Item
+                              on:click={() => goto("/faq/ai-agents")}
+                              class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
+                            >
+                              <div
+                                class="flex flex-row items-center w-full text-sm"
+                              >
+                                <span>How to Use Agents correctly</span>
+                              </div>
+                              <svg
+                                class="ml-auto h-5 w-5 inline-block rotate-270"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                                style="max-width:40px"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  fill-rule="evenodd"
+                                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                  clip-rule="evenodd"
+                                ></path>
+                              </svg>
+                            </DropdownMenu.Item>
+                          </DropdownMenu.Group>
+                        {:else}
+                          <DropdownMenu.Group>
+                            <div class="w-full p-1 flex items-stretch gap-1">
+                              <button
+                                type="button"
+                                on:click={(e) => {
+                                  e.preventDefault();
+                                  selectedGroup = "overview";
+                                }}
+                                class="aspect-square flex items-center cursor-pointer"
+                                ><svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  class="w-5 h-5"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  ><path d="m15 18-6-6 6-6"></path></svg
+                                ></button
+                              >
+                            </div>
+                            {#each agentOptions as option}
+                              {#if option?.group === selectedGroup}
                                 <DropdownMenu.Item
-                                  on:click={(e) => {
-                                    e.preventDefault();
-                                    selectedGroup = option;
-                                  }}
+                                  on:click={() =>
+                                    insertAgentOption(option?.name)}
                                   class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
                                 >
                                   <div
                                     class="flex flex-row items-center w-full"
                                   >
-                                    <span
-                                      >{option} ({agentOptions?.filter(
-                                        (item) => item?.group === option,
-                                      )?.length})</span
-                                    >
+                                    <span>{option?.name} </span>
 
-                                    <svg
-                                      class="ml-auto h-5 w-5 inline-block rotate-270"
-                                      viewBox="0 0 20 20"
-                                      fill="currentColor"
-                                      style="max-width:40px"
-                                      aria-hidden="true"
+                                    <span class="ml-auto text-xs"
+                                      >{option?.credit} Credits</span
                                     >
-                                      <path
-                                        fill-rule="evenodd"
-                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                        clip-rule="evenodd"
-                                      ></path>
-                                    </svg>
                                   </div>
                                 </DropdownMenu.Item>
-                              {/each}
-                              <DropdownMenu.Item
-                                on:click={() => goto("/faq/ai-agents")}
-                                class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
-                              >
-                                <div
-                                  class="flex flex-row items-center w-full text-sm"
-                                >
-                                  <span>How to Use Agents correctly</span>
-                                </div>
-                                <svg
-                                  class="ml-auto h-5 w-5 inline-block rotate-270"
-                                  viewBox="0 0 20 20"
-                                  fill="currentColor"
-                                  style="max-width:40px"
-                                  aria-hidden="true"
-                                >
-                                  <path
-                                    fill-rule="evenodd"
-                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                    clip-rule="evenodd"
-                                  ></path>
-                                </svg>
-                              </DropdownMenu.Item>
-                            </DropdownMenu.Group>
-                          {:else}
-                            <DropdownMenu.Group>
-                              <div class="w-full p-1 flex items-stretch gap-1">
-                                <button
-                                  type="button"
-                                  on:click={(e) => {
-                                    e.preventDefault();
-                                    selectedGroup = "overview";
-                                  }}
-                                  class="aspect-square flex items-center cursor-pointer"
-                                  ><svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    class="w-5 h-5"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    ><path d="m15 18-6-6 6-6"></path></svg
-                                  ></button
-                                >
-                              </div>
-                              {#each agentOptions as option}
-                                {#if option?.group === selectedGroup}
-                                  <DropdownMenu.Item
-                                    on:click={() =>
-                                      insertAgentOption(option?.name)}
-                                    class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
-                                  >
-                                    <div
-                                      class="flex flex-row items-center w-full"
-                                    >
-                                      <span>{option?.name} </span>
+                              {/if}
+                            {/each}
+                          </DropdownMenu.Group>
+                        {/if}
+                      </DropdownMenu.Content>
+                    </DropdownMenu.Root>
+                  </div>
 
-                                      <span class="ml-auto text-xs"
-                                        >{option?.credit} Credits</span
-                                      >
-                                    </div>
-                                  </DropdownMenu.Item>
-                                {/if}
-                              {/each}
-                            </DropdownMenu.Group>
-                          {/if}
-                        </DropdownMenu.Content>
-                      </DropdownMenu.Root>
-                    </div>
+                  {#if userData}
+                    <label
+                      class="ml-auto mr-2 whitespace-nowrap w-auto text-xs border-gray-300 font-medium dark:border-gray-600 border bg-gray-100 dark:bg-default text-gray-600 dark:text-gray-300 flex flex-row justify-between items-center px-3 py-2 rounded"
+                    >
+                      <div>
+                        {userData?.credits?.toLocaleString("en-US")}
+                        <span class="hidden sm:inline-block">Credits</span>
+                      </div>
+                    </label>
+                  {/if}
 
-                    {#if userData}
-                      <label
-                        class="ml-auto mr-2 whitespace-nowrap w-auto text-xs border-gray-300 font-medium dark:border-gray-600 border bg-gray-100 dark:bg-[#2A2E39] text-gray-600 dark:text-gray-300 flex flex-row justify-between items-center px-3 py-2 rounded-lg"
-                      >
-                        <div>
-                          {userData?.credits?.toLocaleString("en-US")}
-                          <span class="hidden sm:inline-block">Credits</span>
-                        </div>
-                      </label>
-                    {/if}
-
-                    <button
-                      on:click={() =>
-                        editorText?.trim()?.length > 0 &&
-                        !isLoading &&
-                        !isStreaming
-                          ? llmChat()
-                          : ""}
-                      class="{editorText?.trim()?.length > 0 &&
+                  <button
+                    on:click={() =>
+                      editorText?.trim()?.length > 0 &&
                       !isLoading &&
                       !isStreaming
-                        ? 'cursor-pointer bg-black hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100'
-                        : 'cursor-not-allowed opacity-60 bg-gray-400'} py-2 text-white dark:text-black text-[1rem] rounded-lg border-0 px-3 transition-colors duration-200 shadow-sm"
-                      type="button"
-                    >
-                      {#if isLoading || isStreaming}
-                        <svg
-                          class="w-4 h-4 animate-spin text-white dark:text-black"
-                          viewBox="0 0 24 24"
-                          fill="none"
+                        ? llmChat()
+                        : ""}
+                    class="{editorText?.trim()?.length > 0 &&
+                    !isLoading &&
+                    !isStreaming
+                      ? 'cursor-pointer bg-black hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100'
+                      : 'cursor-not-allowed opacity-60 bg-gray-400'} py-2 text-white dark:text-black text-[1rem] rounded border-0 px-3 transition-colors duration-200 shadow-sm"
+                    type="button"
+                  >
+                    {#if isLoading || isStreaming}
+                      <svg
+                        class="w-4 h-4 animate-spin text-white dark:text-black"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-dasharray="31.416"
+                          stroke-dashoffset="31.416"
                         >
-                          <circle
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-dasharray="31.416"
-                            stroke-dashoffset="31.416"
-                          >
-                            <animate
-                              attributeName="stroke-dasharray"
-                              dur="2s"
-                              values="0 31.416;15.708 15.708;0 31.416"
-                              repeatCount="indefinite"
-                            />
-                            <animate
-                              attributeName="stroke-dashoffset"
-                              dur="2s"
-                              values="0;-15.708;-31.416"
-                              repeatCount="indefinite"
-                            />
-                          </circle>
-                        </svg>
-                      {:else}
-                        <ArrowUp
-                          class="w-4 h-4 text-center m-auto flex justify-center items-center text-white dark:text-black"
-                        />
-                      {/if}
-                    </button>
-                  </div>
+                          <animate
+                            attributeName="stroke-dasharray"
+                            dur="2s"
+                            values="0 31.416;15.708 15.708;0 31.416"
+                            repeatCount="indefinite"
+                          />
+                          <animate
+                            attributeName="stroke-dashoffset"
+                            dur="2s"
+                            values="0;-15.708;-31.416"
+                            repeatCount="indefinite"
+                          />
+                        </circle>
+                      </svg>
+                    {:else}
+                      <ArrowUp
+                        class="w-4 h-4 text-center m-auto flex justify-center items-center text-white dark:text-black"
+                      />
+                    {/if}
+                  </button>
                 </div>
               </div>
-            </form>
-          </div>
+            </div>
+          </form>
         </div>
       </div>
-    </aside>
+    </div>
+  </aside>
 {/if}
 
 <style>
