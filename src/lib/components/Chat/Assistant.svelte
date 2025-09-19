@@ -801,7 +801,7 @@
     if (editorText && editorText.trim() !== "") {
       // Create a document with the preserved text
       initialDoc = schema.nodes.doc.create(null, [
-        schema.nodes.paragraph.create(null, schema.text(editorText))
+        schema.nodes.paragraph.create(null, schema.text(editorText)),
       ]);
     }
 
@@ -867,8 +867,8 @@
           const endPos = editorView.state.doc.content.size;
           const tr = editorView.state.tr.setSelection(
             editorView.state.selection.constructor.near(
-              editorView.state.doc.resolve(endPos)
-            )
+              editorView.state.doc.resolve(endPos),
+            ),
           );
           editorView.dispatch(tr);
         }
@@ -939,12 +939,12 @@
   <label
     on:click|stopPropagation={openChat}
     for={!data?.user ? "userLogin" : ""}
-    aria-label="AI Assistant"
+    aria-label="Ask AI"
     class=" hidden lg:flex fixed bottom-8 right-8 items-center gap-2 px-4 py-3 rounded-full bg-black dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 shadow-lg hover:shadow-xl cursor-pointer pointer-events-auto text-white dark:text-black transition-all duration-200 hover:scale-105"
     style="position: fixed !important; z-index: 99999 !important;"
   >
     <Spark class="w-5 h-5" />
-    <span class="text-sm font-medium">AI Assistant</span>
+    <span class="text-sm font-medium">Ask AI</span>
   </label>
 {/if}
 

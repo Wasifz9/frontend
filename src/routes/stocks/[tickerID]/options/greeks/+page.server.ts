@@ -12,7 +12,7 @@ export const load = async ({ locals, params }) => {
       ticker: params.tickerID,
     };
 
-    const response = await fetch(apiURL + "/max-pain", {
+    const response = await fetch(apiURL + "/greeks", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -14,6 +14,7 @@
       "unusual-activity": "/options/unusual-activity",
       "contract-lookup": "/options/contract-lookup",
       volatility: "/options/volatility",
+      greeks: "/options/greeks",
       gex: "/options/gex",
       dex: "/options/dex",
       oi: "/options/oi",
@@ -38,6 +39,7 @@
         "unusual-activity": "unusual-activity",
         "contract-lookup": "contract-lookup",
         volatility: "volatility",
+        greeks: "greeks",
         gex: "gex",
         dex: "dex",
         oi: "oi",
@@ -115,6 +117,15 @@
                   : 'text-gray-600 dark:text-gray-400 sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-[#EEEEEE] dark:sm:hover:bg-primary/90'}"
               >
                 Max Pain
+              </a>
+              <a
+                href={`/stocks/${$stockTicker}/options/greeks`}
+                on:click={() => changeSubSection("greeks")}
+                class="p-2 px-5 cursor-pointer {displaySubSection === 'greeks'
+                  ? 'text-muted dark:text-white bg-[#EEEEEE] dark:bg-primary/90 font-semibold'
+                  : 'text-gray-600 dark:text-gray-400 sm:hover:text-muted dark:sm:hover:text-white sm:hover:bg-[#EEEEEE] dark:sm:hover:bg-primary/90'}"
+              >
+                Greeks
               </a>
               <a
                 href={`/stocks/${$stockTicker}/options/volatility`}
