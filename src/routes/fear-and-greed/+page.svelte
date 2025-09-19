@@ -19,7 +19,7 @@
     let insights = data?.getData?.insights || {};
 
     // Add timeframe selection
-    let selectedTimeframe = "1M"; // Default to 1 month
+    let selectedTimeframe = "1Y"; // Default to 1 month
     let filteredHistoricalData = [];
 
     const safeValue = (daysAgo: number) => {
@@ -36,7 +36,6 @@
         return latestValue - past;
     };
 
-    // Function to filter data based on selected timeframe
     function filterDataByTimeframe() {
         if (!historicalData || historicalData?.length === 0) {
             filteredHistoricalData = [];
@@ -47,17 +46,23 @@
         let cutoffDate = new Date();
 
         switch (selectedTimeframe) {
-            case "1W":
-                cutoffDate.setDate(now.getDate() - 30);
-                break;
             case "1M":
-                cutoffDate.setMonth(now.getMonth() - 180);
+                cutoffDate.setMonth(now.getMonth() - 1);
                 break;
             case "3M":
-                cutoffDate.setMonth(now.getMonth() - 365);
+                cutoffDate.setMonth(now.getMonth() - 3);
+                break;
+            case "6M":
+                cutoffDate.setMonth(now.getMonth() - 6);
+                break;
+            case "1Y":
+                cutoffDate.setFullYear(now.getFullYear() - 1);
+                break;
+            case "3Y":
+                cutoffDate.setFullYear(now.getFullYear() - 3);
                 break;
             default:
-                cutoffDate.setMonth(now.getMonth() - 365 * 3);
+                cutoffDate.setMonth(now.getMonth() - 1); // Default to 1 month
         }
 
         filteredHistoricalData = historicalData?.filter(
@@ -936,6 +941,15 @@
                                             </DropdownMenu.Item>
                                             <DropdownMenu.Item
                                                 on:click={() => {
+                                                    selectedTimeframe = "3M";
+                                                    filterDataByTimeframe();
+                                                }}
+                                                class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
+                                            >
+                                                3 Months
+                                            </DropdownMenu.Item>
+                                            <DropdownMenu.Item
+                                                on:click={() => {
                                                     selectedTimeframe = "6M";
                                                     filterDataByTimeframe();
                                                 }}
@@ -961,40 +975,13 @@
                                             >
                                                 3 Years
                                             </DropdownMenu.Item>
-                                            <DropdownMenu.Item
-                                                on:click={() => {
-                                                    selectedTimeframe = "5Y";
-                                                    filterDataByTimeframe();
-                                                }}
-                                                class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
-                                            >
-                                                5 Years
-                                            </DropdownMenu.Item>
-                                            <DropdownMenu.Item
-                                                on:click={() => {
-                                                    selectedTimeframe = "10Y";
-                                                    filterDataByTimeframe();
-                                                }}
-                                                class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
-                                            >
-                                                10 Years
-                                            </DropdownMenu.Item>
-                                            <DropdownMenu.Item
-                                                on:click={() => {
-                                                    selectedTimeframe = "MAX";
-                                                    filterDataByTimeframe();
-                                                }}
-                                                class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
-                                            >
-                                                Max
-                                            </DropdownMenu.Item>
                                         </DropdownMenu.Group>
                                     </DropdownMenu.Content>
                                 </DropdownMenu.Root>
                             </div>
                             <DownloadData
                                 {data}
-                                {historicalData}
+                                rawData={historicalData}
                                 title={`fear_and_greed_index_data`}
                             />
                         </div>
