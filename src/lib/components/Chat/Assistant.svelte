@@ -353,13 +353,24 @@
     if (isLoading) return;
 
     isLoading = true;
+    
+    // Calculate credit cost for this query
+    const creditCost = getCreditFromQuery(userQuery, agentOptions);
 
     // Check user credits (same as main chat)
-    if (userData?.credits < 2) {
-      // Would show toast in real implementation, but keeping simple for now
-      console.error(
-        `Insufficient credits. Current balance: ${userData?.credits}`,
-      );
+    if (userData?.credits < creditCost) {
+      // Add user message and insufficient credits message
+      messages = [
+        ...messages,
+        { content: userQuery, role: "user" },
+        { 
+          content: `Insufficient credits. Your current balance is ${userData?.credits}. Your prompt would cost ${creditCost} credits. Credits are reset at the start of each month.`,
+          role: "system"
+        }
+      ];
+      
+      // Clear editor
+      clearEditor();
       isLoading = false;
       return;
     }
@@ -384,6 +395,29 @@
 
   // Continue chat conversation (like llmChat in /chat/[slug]/+page.svelte)
   async function continueChat(userQuery: string, userMessage?: string) {
+    // Calculate credit cost for this query
+    const creditCost = getCreditFromQuery(userQuery, agentOptions);
+    
+    // Check user credits before continuing
+    if (userData?.credits < creditCost) {
+      // Add user message if not already there
+      if (!userMessage) {
+        messages = [...messages, { content: userQuery, role: "user" }];
+      }
+      // Add insufficient credits message
+      messages = [
+        ...messages, 
+        { 
+          content: `Insufficient credits. Your current balance is ${userData?.credits}. Your prompt would cost ${creditCost} credits. Credits are reset at the start of each month.`,
+          role: "system"
+        }
+      ];
+      
+      // Clear editor
+      clearEditor();
+      return;
+    }
+    
     isLoading = true;
     isStreaming = true;
     relatedQuestions = [];
