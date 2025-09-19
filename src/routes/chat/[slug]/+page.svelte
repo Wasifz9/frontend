@@ -222,7 +222,7 @@
       editorText = "";
       if (userQuery?.trim()) {
         // Clear messages and set user message
-        messages = [{ content: userQuery, Text, role: "user" }];
+        messages = [{ content: userQuery, role: "user" }];
         await llmChat(userQuery);
       }
     }
