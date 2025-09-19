@@ -214,8 +214,8 @@
       loading="lazy"
     />
     <div
-      class="rounded p-3 min-w-14 max-w-[80vw] {message?.role === 'user'
-        ? 'ml-auto group/turn-messages'
+      class="rounded p-3 min-w-14 max-w-full {message?.role === 'user'
+        ? 'ml-auto group/turn-messages max-w-[80%]'
         : message?.role === 'system'
           ? 'mr-auto w-full'
           : 'mr-auto w-fit border-b rounded-none border-gray-300 dark:border-gray-700'}"
@@ -276,7 +276,7 @@
             </div>
           {:else}
             <p
-              class="w-full transition-all duration-75 ease-out {message?.role ===
+              class="w-full transition-all duration-75 ease-out break-words overflow-wrap-anywhere {message?.role ===
               'user'
                 ? 'p-3  border border-gray-200 dark:border-gray-800 rounded-[5px] bg-gray-200 dark:bg-table'
                 : ''}"

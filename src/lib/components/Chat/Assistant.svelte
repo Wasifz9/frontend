@@ -20,7 +20,8 @@
   import { schema } from "prosemirror-schema-basic";
   import { browser } from "$app/environment";
 
-  export let userData = null;
+  export let data;
+  let userData = data?.user || null;
 
   let selectedGroup = "overview";
 
@@ -202,7 +203,13 @@
     isOpen = true;
     isMinimized = false;
     // focus editor after smooth transition
-    setTimeout(() => editorView?.focus(), 450);
+    setTimeout(() => {
+      editorView?.focus();
+      // Immediately scroll to bottom when opening
+      if (bottomEl) {
+        bottomEl.scrollIntoView({ behavior: "instant" });
+      }
+    }, 450);
   }
 
   function toggleChat() {
@@ -279,6 +286,28 @@
 
     const userQuery = userMessage || editorText?.trim();
     if (!userQuery || userQuery?.length < 1) return;
+
+    // Check if user is logged in
+    if (!userData) {
+      // Add message to show login required
+      messages = [...messages, 
+        { content: userQuery, role: "user" },
+        { content: "Please sign up or login to use this feature.", role: "system" }
+      ];
+      
+      // Clear editor
+      if (editorView) {
+        const emptyDoc = schema?.topNodeType?.createAndFill();
+        const tr = editorView?.state?.tr?.replaceWith(
+          0,
+          editorView?.state?.doc?.content?.size,
+          emptyDoc?.content,
+        );
+        editorView?.dispatch(tr);
+        editorText = "";
+      }
+      return;
+    }
 
     // Step 1: Create chat if we don't have a chatId (like /chat/+page.svelte)
     if (!chatId) {
@@ -798,6 +827,10 @@
     if (isOpen && editorDiv && !editorView) {
       await tick(); // Wait for DOM
       initializeEditor();
+      // Immediately scroll to bottom when opening
+      if (bottomEl) {
+        bottomEl.scrollIntoView({ behavior: "instant" });
+      }
     }
 
     // Destroy editor when chat closes and clear input
@@ -825,15 +858,16 @@
 
 <!-- Floating Open Button - Only show on lg screens and above, and not on /chat pages -->
 {#if shouldShowAssistant && !isOpen}
-  <button
+  <label
     on:click|stopPropagation={openChat}
-    aria-label="Open AI Assistant"
-    class="hidden lg:flex fixed bottom-8 right-8 items-center gap-2 px-4 py-3 rounded-xl bg-black dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 shadow-lg hover:shadow-xl cursor-pointer pointer-events-auto text-white dark:text-black transition-all duration-200 hover:scale-105"
+    for={!data?.user ? "userLogin" : ""}
+    aria-label="AI Assistant"
+    class=" hidden lg:flex fixed bottom-8 right-8 items-center gap-2 px-4 py-3 rounded-full bg-black dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 shadow-lg hover:shadow-xl cursor-pointer pointer-events-auto text-white dark:text-black transition-all duration-200 hover:scale-105"
     style="position: fixed !important; z-index: 99999 !important;"
   >
     <Spark class="w-5 h-5" />
-    <span class="text-sm font-medium">AI Assistant</span>
-  </button>
+    <!--<span class="text-sm font-medium">AI Assistant</span>-->
+  </label>
 {/if}
 
 <!-- Panel - Only show on lg screens and above, and not on /chat pages -->
@@ -843,8 +877,8 @@
     bind:this={chatWindow}
     role="dialog"
     aria-modal="true"
-    class="hidden lg:flex fixed right-0 bottom-0 w-full md:w-[480px] lg:w-[600px] {isFullscreen
-      ? 'h-full'
+    class="hidden lg:flex fixed right-5 bottom-10 w-full md:w-[480px] lg:w-[600px] {isFullscreen
+      ? 'h-full max-h-[90%]'
       : 'h-[600px]'} max-w-full z-50 bg-white dark:bg-default border border-gray-300 dark:border-gray-700 shadow-2xl flex-col transition-all duration-300 {isFullscreen
       ? 'rounded-none'
       : 'rounded-l-2xl'}"
@@ -860,7 +894,7 @@
       <div class="flex items-center gap-3 min-w-0">
         <div class="flex-shrink-0">
           <div
-            class="w-9 h-9 rounded-xl bg-black dark:bg-white flex items-center justify-center shadow-sm"
+            class="w-9 h-9 rounded bg-black dark:bg-white flex items-center justify-center shadow-sm"
           >
             <Spark class="w-5 h-5 text-white dark:text-black" />
           </div>
@@ -898,7 +932,7 @@
 
           {#if showChatHistory}
             <div
-              class="absolute top-full right-0 mt-3 w-80 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-xl z-50 max-h-96 overflow-y-auto"
+              class="absolute top-full right-0 mt-3 w-80 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded shadow-xl z-50 max-h-96 overflow-y-auto"
               transition:fly={{ y: -10, duration: 200 }}
             >
               <div class="p-4 border-b border-gray-300 dark:border-gray-600">
@@ -1010,7 +1044,7 @@
       <!-- messages -->
       <div
         bind:this={chatContainer}
-        class="flex-1 px-6 py-6 space-y-6 overflow-y-auto scroll-smooth bg-white dark:bg-default text-gray-900 dark:text-white"
+        class="flex-1 px-6 py-6 space-y-6 overflow-y-auto overflow-x-hidden scroll-smooth bg-white dark:bg-default text-gray-900 dark:text-white"
       >
         {#each messages as message, index (index)}
           {#if index === messages.length - 1 && message.role === "system" && isLoading}
@@ -1066,7 +1100,7 @@
         class="px-6 py-4 border-t border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-default/50"
       >
         <div
-          class="block p-4 w-full border border-gray-300 dark:border-gray-600 rounded-xl overflow-hidden bg-white dark:bg-default shadow-sm"
+          class="block p-4 w-full border border-gray-300 dark:border-gray-600 rounded overflow-hidden bg-white dark:bg-default shadow-sm"
         >
           <div
             bind:this={editorDiv}

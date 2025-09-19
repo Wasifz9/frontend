@@ -1581,7 +1581,7 @@
 </div>
 
 <!-- Floating AI Assistant -->
-<Assistant userData={data?.user} />
+<Assistant {data} />
 
 <style lang="scss">
   :root {
