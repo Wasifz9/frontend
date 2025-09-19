@@ -38,7 +38,7 @@
                 informational and educational purposes only. This information
                 should not be construed as financial advice or used as the sole
                 basis for trading or investment decisions.
-                <br /><br />
+                <br />
                 We maintain rigorous standards for data accuracy and quality assurance.
                 If you identify any discrepancies or require clarification, please
                 reach out to us via
