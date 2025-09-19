@@ -4,6 +4,11 @@
     import { screenWidth } from "$lib/store";
     import highcharts from "$lib/highcharts.ts";
     import { mode } from "mode-watcher";
+    import Chevron from "lucide-svelte/icons/chevron-down";
+    import * as DropdownMenu from "$lib/components/shadcn/dropdown-menu/index.js";
+    import { Button } from "$lib/components/shadcn/button/index.js";
+    import DownloadData from "$lib/components/DownloadData.svelte";
+
     export let data;
 
     // Get data from server
@@ -12,6 +17,58 @@
     let lastUpdate = data?.getData?.current?.last_update;
     let historicalData = data?.getData?.historical || [];
     let insights = data?.getData?.insights || {};
+
+    // Add timeframe selection
+    let selectedTimeframe = "1M"; // Default to 1 month
+    let filteredHistoricalData = [];
+
+    const safeValue = (daysAgo: number) => {
+        const idx = historicalData.length - daysAgo;
+        return idx >= 0 ? (historicalData[idx]?.value ?? null) : null;
+    };
+
+    const latestValue =
+        historicalData?.[historicalData.length - 1]?.value ?? null;
+
+    const changeFrom = (daysAgo: number) => {
+        const past = safeValue(daysAgo);
+        if (past == null || latestValue == null) return null;
+        return latestValue - past;
+    };
+
+    // Function to filter data based on selected timeframe
+    function filterDataByTimeframe() {
+        if (!historicalData || historicalData?.length === 0) {
+            filteredHistoricalData = [];
+            return;
+        }
+
+        const now = new Date();
+        let cutoffDate = new Date();
+
+        switch (selectedTimeframe) {
+            case "1W":
+                cutoffDate.setDate(now.getDate() - 30);
+                break;
+            case "1M":
+                cutoffDate.setMonth(now.getMonth() - 180);
+                break;
+            case "3M":
+                cutoffDate.setMonth(now.getMonth() - 365);
+                break;
+            default:
+                cutoffDate.setMonth(now.getMonth() - 365 * 3);
+        }
+
+        filteredHistoricalData = historicalData?.filter(
+            (item) => new Date(item?.date) >= cutoffDate,
+        );
+    }
+
+    // Initial filter
+    $: if (historicalData) {
+        filterDataByTimeframe();
+    }
 
     // Helper function to get color based on value
     function getColorForValue(value) {
@@ -356,19 +413,19 @@
 
     // Historical Line Chart Configuration
     function createHistoricalChart() {
-        // Prepare data for chart
-        const chartData = historicalData.map((item) => ({
+        // Prepare data for chart - use filtered data instead of all historical data
+        const chartData = filteredHistoricalData?.map((item) => ({
             x: new Date(item.date).getTime(),
             y: item.value,
             color: getColorForValue(item.value),
         }));
 
-        // Prepare SPY data for secondary axis
-        const spyData = historicalData
-            ?.filter((item) => item.spy_close)
+        // Prepare SPY data for secondary axis - use filtered data
+        const spyData = filteredHistoricalData
+            ?.filter((item) => item?.spy_close)
             ?.map((item) => ({
                 x: new Date(item.date).getTime(),
-                y: item.spy_close,
+                y: item?.spy_close,
             }));
 
         const options = {
@@ -447,7 +504,7 @@
                             color:
                                 $mode === "light"
                                     ? "rgba(220, 38, 38, 0.08)"
-                                    : "rgba(220, 38, 38, 0.12)",
+                                    : "rgba(220, 38, 38, 0)",
                             label: {
                                 text: "Extreme Fear",
                                 align: "right",
@@ -468,7 +525,7 @@
                             color:
                                 $mode === "light"
                                     ? "rgba(251, 146, 60, 0.08)"
-                                    : "rgba(251, 146, 60, 0.12)",
+                                    : "rgba(251, 146, 60, 0)",
                             label: {
                                 text: "Fear",
                                 align: "right",
@@ -489,7 +546,7 @@
                             color:
                                 $mode === "light"
                                     ? "rgba(107, 114, 128, 0.08)"
-                                    : "rgba(107, 114, 128, 0.12)",
+                                    : "rgba(107, 114, 128, 0)",
                             label: {
                                 text: "Neutral",
                                 align: "right",
@@ -510,7 +567,7 @@
                             color:
                                 $mode === "light"
                                     ? "rgba(34, 197, 94, 0.08)"
-                                    : "rgba(34, 197, 94, 0.12)",
+                                    : "rgba(34, 197, 94, 0)",
                             label: {
                                 text: "Greed",
                                 align: "right",
@@ -531,7 +588,7 @@
                             color:
                                 $mode === "light"
                                     ? "rgba(21, 128, 61, 0.08)"
-                                    : "rgba(21, 128, 61, 0.12)",
+                                    : "rgba(21, 128, 61, 0)",
                             label: {
                                 text: "Extreme Greed",
                                 align: "right",
@@ -697,6 +754,12 @@
     $: {
         if ($mode && currentValue && typeof window !== "undefined") {
             gaugeConfig = createGaugeChart();
+        }
+    }
+
+    // Update historical chart when timeframe or data changes
+    $: {
+        if ($mode && filteredHistoricalData && typeof window !== "undefined") {
             historicalConfig = createHistoricalChart();
         }
     }
@@ -753,24 +816,239 @@
                         <div use:highcharts={gaugeConfig}></div>
                     </div>
 
+                    <!-- Statistics Grid -->
+                    <div
+                        class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 mt-8"
+                    >
+                        {#each [{ label: "1W ago", days: 7 }, { label: "1M ago", days: 30 }, { label: "3M ago", days: 90 }, { label: "1Y ago", days: 365 }] as period}
+                            <div
+                                class="shadow bg-gray-100 dark:bg-[#1C1E22] rounded p-4"
+                            >
+                                <div
+                                    class="dark:text-[#c3c6d0] text-sm mb-2 flex items-center"
+                                >
+                                    <span>{period.label}</span>
+                                </div>
+                                <div class="flex flex-row items-center">
+                                    {#if historicalData.length >= period.days}
+                                        {@const pastValue = safeValue(
+                                            period.days,
+                                        )}
+                                        {@const change = changeFrom(
+                                            period.days,
+                                        )}
+                                        <span class="text-xl font-bold"
+                                            >{pastValue.toFixed(0)}</span
+                                        >
+                                        <div class="ml-1">
+                                            {#if change > 0}
+                                                <Chevron
+                                                    class="size-5 text-green-800 dark:text-green-400  rotate-180"
+                                                />
+                                            {:else if change < 0}
+                                                <Chevron
+                                                    class="size-5 mt-1 text-red-800 dark:text-red-400 "
+                                                />
+                                            {/if}
+                                        </div>
+
+                                        <span
+                                            class="text-lg font-semibold {change >
+                                            0
+                                                ? "before:content-['+'] text-green-800 dark:text-green-400"
+                                                : change < 0
+                                                  ? 'text-red-800 dark:text-red-400'
+                                                  : ''}"
+                                        >
+                                            {change?.toFixed(0)}
+                                        </span>
+                                    {:else}
+                                        <span class="text-xl font-bold"
+                                            >n/a</span
+                                        >
+                                    {/if}
+                                </div>
+                            </div>
+                        {/each}
+                    </div>
                     <!-- Historical Chart -->
-                    <div class="mb-3 mt-10">
-                        <h1 class="mb-1 text-2xl sm:text-3xl font-bold">
-                            Historical Chart
-                        </h1>
+
+                    <div
+                        class="mb-3 mt-10 flex flex-col sm:flex-row items-start sm:items-center w-full border-t border-b border-gray-300 dark:border-gray-800 py-2"
+                    >
+                        <h2 class="mb-3 sm:mb-0 text-xl sm:text-2xl font-bold">
+                            Historical Comparison
+                        </h2>
+
+                        <div
+                            class="flex flex-row items-center w-fit sm:w-[50%] md:w-auto sm:ml-auto"
+                        >
+                            <div
+                                class="timeframe-toggle-driver relative inline-block text-left grow mr-2"
+                            >
+                                <DropdownMenu.Root>
+                                    <DropdownMenu.Trigger asChild let:builder>
+                                        <Button
+                                            builders={[builder]}
+                                            class="w-full  border-gray-300 dark:border-gray-600 border bg-black text-white sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary ease-out  flex flex-row justify-between items-center px-3 py-2  rounded truncate"
+                                        >
+                                            <span
+                                                class="truncate text-xs sm:text-sm"
+                                                >{selectedTimeframe}</span
+                                            >
+                                            <svg
+                                                class="-mr-1 ml-1 h-5 w-5 xs:ml-2 inline-block"
+                                                viewBox="0 0 20 20"
+                                                fill="currentColor"
+                                                style="max-width:40px"
+                                                aria-hidden="true"
+                                            >
+                                                <path
+                                                    fill-rule="evenodd"
+                                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                    clip-rule="evenodd"
+                                                ></path>
+                                            </svg>
+                                        </Button>
+                                    </DropdownMenu.Trigger>
+                                    <DropdownMenu.Content
+                                        side="bottom"
+                                        align="end"
+                                        sideOffset={10}
+                                        alignOffset={0}
+                                        class="w-56 h-fit max-h-72 overflow-y-auto scroller"
+                                    >
+                                        <DropdownMenu.Label
+                                            class="text-muted dark:text-gray-400 font-normal"
+                                        >
+                                            Select time frame
+                                        </DropdownMenu.Label>
+                                        <DropdownMenu.Separator />
+                                        <DropdownMenu.Group>
+                                            <DropdownMenu.Item
+                                                on:click={() => {
+                                                    selectedTimeframe = "1M";
+                                                    filterDataByTimeframe();
+                                                }}
+                                                class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
+                                            >
+                                                1 Month
+                                            </DropdownMenu.Item>
+                                            <DropdownMenu.Item
+                                                on:click={() => {
+                                                    selectedTimeframe = "6M";
+                                                    filterDataByTimeframe();
+                                                }}
+                                                class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
+                                            >
+                                                6 Months
+                                            </DropdownMenu.Item>
+                                            <DropdownMenu.Item
+                                                on:click={() => {
+                                                    selectedTimeframe = "1Y";
+                                                    filterDataByTimeframe();
+                                                }}
+                                                class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
+                                            >
+                                                1 Year
+                                            </DropdownMenu.Item>
+                                            <DropdownMenu.Item
+                                                on:click={() => {
+                                                    selectedTimeframe = "3Y";
+                                                    filterDataByTimeframe();
+                                                }}
+                                                class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
+                                            >
+                                                3 Years
+                                            </DropdownMenu.Item>
+                                            <DropdownMenu.Item
+                                                on:click={() => {
+                                                    selectedTimeframe = "5Y";
+                                                    filterDataByTimeframe();
+                                                }}
+                                                class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
+                                            >
+                                                5 Years
+                                            </DropdownMenu.Item>
+                                            <DropdownMenu.Item
+                                                on:click={() => {
+                                                    selectedTimeframe = "10Y";
+                                                    filterDataByTimeframe();
+                                                }}
+                                                class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
+                                            >
+                                                10 Years
+                                            </DropdownMenu.Item>
+                                            <DropdownMenu.Item
+                                                on:click={() => {
+                                                    selectedTimeframe = "MAX";
+                                                    filterDataByTimeframe();
+                                                }}
+                                                class="cursor-pointer sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
+                                            >
+                                                Max
+                                            </DropdownMenu.Item>
+                                        </DropdownMenu.Group>
+                                    </DropdownMenu.Content>
+                                </DropdownMenu.Root>
+                            </div>
+                            <DownloadData
+                                {data}
+                                {historicalData}
+                                title={`fear_and_greed_index_data`}
+                            />
+                        </div>
                     </div>
 
-                    <p class="mb-5">
-                        Historical data shows a <strong
-                            >{insights?.correlation_percent}%</strong
-                        >
-                        correlation between <strong>Fear & Greed Index</strong>
-                        and <strong>SPY</strong>. Extreme fear readings below 10
-                        averaged
-                        <strong>{insights?.extreme_fear_avg_return}%</strong>
-                        SPY gains over 30 days vs
-                        <strong>{insights?.extreme_greed_avg_return}%</strong>
-                        during extreme greed periods.
+                    <p class="mb-5 mt-6">
+                        {#if filteredHistoricalData && filteredHistoricalData.length > 0}
+                            Over the past <strong>{selectedTimeframe}</strong>,
+                            the Fear & Greed Index averaged
+                            <strong
+                                >{(
+                                    filteredHistoricalData.reduce(
+                                        (sum, item) => sum + item.value,
+                                        0,
+                                    ) / filteredHistoricalData.length
+                                ).toFixed(1)}</strong
+                            >
+                            with a high of
+                            <strong
+                                >{Math.max(
+                                    ...filteredHistoricalData.map(
+                                        (d) => d.value,
+                                    ),
+                                )}</strong
+                            >
+                            and a low of
+                            <strong
+                                >{Math.min(
+                                    ...filteredHistoricalData.map(
+                                        (d) => d.value,
+                                    ),
+                                )}</strong
+                            >.
+                            {#if insights?.correlation_percent}
+                                Historical correlation with SPY is <strong
+                                    >{insights?.correlation_percent}%</strong
+                                >.
+                            {/if}
+                        {:else}
+                            Historical data shows a <strong
+                                >{insights?.correlation_percent}%</strong
+                            >
+                            correlation between
+                            <strong>Fear & Greed Index</strong>
+                            and <strong>SPY</strong>. Extreme fear readings
+                            below 10 averaged
+                            <strong>{insights?.extreme_fear_avg_return}%</strong
+                            >
+                            SPY gains over 30 days vs
+                            <strong
+                                >{insights?.extreme_greed_avg_return}%</strong
+                            >
+                            during extreme greed periods.
+                        {/if}
                     </p>
                     <div class="mt-4">
                         <div use:highcharts={historicalConfig}></div>
