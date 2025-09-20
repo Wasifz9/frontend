@@ -62,5 +62,10 @@
   />
 
   <!-- Page wrapper -->
-  <Table {data} rawData={data?.getData} {defaultList} />
+  <Table
+    title={data?.getData?.length?.toLocaleString("en-US") + " Stocks"}
+    {data}
+    rawData={data?.getData}
+    {defaultList}
+  />
 </section>

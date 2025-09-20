@@ -67,6 +67,6 @@
     {data}
     rawData={data?.getData}
     {defaultList}
-    title={data?.getData?.length + " " + "Stocks"}
+    title={data?.getData?.length?.toLocaleString("en-US") + " " + "Stocks"}
   />
 </section>

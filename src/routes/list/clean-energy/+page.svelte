@@ -97,5 +97,9 @@
     </div>
   </div>
 
-  <Table {data} rawData={data?.getData} />
+  <Table
+    {data}
+    rawData={data?.getData}
+    title={data?.getData?.length?.toLocaleString("en-US") + " " + "Stocks"}
+  />
 </section>

@@ -63,5 +63,12 @@
   />
 
   <!-- Page wrapper -->
-  <Table {data} rawData={data?.getPennyStocks} {defaultList} />
+  <Table
+    {data}
+    rawData={data?.getPennyStocks}
+    {defaultList}
+    title={data?.getPennyStocks?.length?.toLocaleString("en-US") +
+      " " +
+      "Stocks"}
+  />
 </section>

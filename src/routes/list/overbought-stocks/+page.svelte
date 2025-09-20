@@ -78,5 +78,8 @@
     rawData={data?.getOverBoughtStocks}
     {excludedRules}
     {defaultList}
+    title={data?.getOverBoughtStocks?.length?.toLocaleString("en-US") +
+      " " +
+      "Stocks"}
   />
 </section>

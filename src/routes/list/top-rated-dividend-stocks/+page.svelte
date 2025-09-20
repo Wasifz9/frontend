@@ -62,5 +62,10 @@
   />
 
   <!-- Page wrapper -->
-  <Table {data} rawData={data?.getDividendStocks} {defaultList} />
+  <Table
+    {data}
+    rawData={data?.getDividendStocks}
+    {defaultList}
+    title={data?.getDividendStocks?.length?.toLocaleString("en-US") + " Stocks"}
+  />
 </section>

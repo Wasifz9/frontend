@@ -76,6 +76,7 @@
       <main class="w-full lg:w-3/4 lg:pr-10">
         <div class="w-full overflow-x-auto">
           <Table
+            title={rawData?.length?.toLocaleString("en-US") + " Stocks"}
             {data}
             {rawData}
             {excludedRules}

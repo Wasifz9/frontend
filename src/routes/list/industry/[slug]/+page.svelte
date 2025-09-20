@@ -60,5 +60,11 @@
   </div>
 
   <!-- Page wrapper -->
-  <Table {data} rawData={data?.getIndustryStocks?.stocks} />
+  <Table
+    {data}
+    rawData={data?.getIndustryStocks?.stocks}
+    title={data?.getIndustryStocks?.stocks?.length?.toLocaleString("en-US") +
+      " " +
+      "Stocks"}
+  />
 </section>

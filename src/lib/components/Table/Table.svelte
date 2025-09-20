@@ -182,7 +182,7 @@
     { name: "Debt Ratio", rule: "debtRatio", type: "float" },
     { name: "Debt / Equity", rule: "debtToEquityRatio", type: "int" },
     { name: "Profit Margin", rule: "netProfitMargin", type: "percent" },
-    { name: "FTD Shares", rule: "failToDeliver", type: "int" },
+    { name: "FTD Shares", rule: "failToDeliver", type: "decimal" },
     { name: "Relative FTD", rule: "relativeFTD", type: "percent" },
     { name: "Interest Income", rule: "interestIncome", type: "int" },
     { name: "Operating Income", rule: "operatingIncome", type: "int" },

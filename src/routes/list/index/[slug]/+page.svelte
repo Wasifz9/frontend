@@ -77,5 +77,11 @@
   </div>
 
   <!-- Content area -->
-  <Table {data} rawData={data?.getIndexCategory} />
+  <Table
+    {data}
+    rawData={data?.getIndexCategory}
+    title={data?.getIndexCategory?.length?.toLocaleString("en-US") +
+      " " +
+      "Stocks"}
+  />
 </section>

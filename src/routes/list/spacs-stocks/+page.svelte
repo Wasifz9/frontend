@@ -70,5 +70,11 @@
   />
 
   <!-- Page wrapper -->
-  <Table {data} rawData={data?.getData} {excludedRules} {defaultList} />
+  <Table
+    {data}
+    rawData={data?.getData}
+    {excludedRules}
+    {defaultList}
+    title={data?.getData?.length?.toLocaleString("en-US") + " " + "Stocks"}
+  />
 </section>

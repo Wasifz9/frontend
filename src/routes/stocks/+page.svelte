@@ -96,7 +96,13 @@
           <div class="w-full m-auto">
             <!--Start Top Winners/Losers-->
             <div class="flex flex-col justify-center items-center">
-              <Table {data} {rawData} {defaultList} {excludedRules} />
+              <Table
+                {data}
+                {rawData}
+                {defaultList}
+                {excludedRules}
+                title={rawData?.length?.toLocaleString("en-US") + " Stocks"}
+              />
             </div>
           </div>
         </main>

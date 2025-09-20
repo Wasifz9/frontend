@@ -77,5 +77,8 @@
     rawData={data?.getOverSoldStocks}
     {excludedRules}
     {defaultList}
+    title={data?.getOverSoldStocks?.length?.toLocaleString("en-US") +
+      " " +
+      "Stocks"}
   />
 </section>

@@ -74,5 +74,11 @@
     </div>
   </div>
 
-  <Table {data} rawData={data?.getCountryCategory} />
+  <Table
+    {data}
+    rawData={data?.getCountryCategory}
+    title={data?.getCountryCategory?.length?.toLocaleString("en-US") +
+      " " +
+      "Stocks"}
+  />
 </section>
