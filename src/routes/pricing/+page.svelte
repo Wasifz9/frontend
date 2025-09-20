@@ -26,12 +26,13 @@
     if (data?.user) {
       let subId;
 
-      if (subscriptionType?.toLowerCase() === "lifetime") {
+      if (subscriptionType?.toLowerCase() === "lifeTime") {
         subId = import.meta.env.VITE_LEMON_SQUEEZY_LIFE_TIME_ACCESS_ID;
       } else {
         const isPro = subscriptionType?.toLowerCase() === "pro";
         const isPlus = subscriptionType?.toLowerCase() === "plus";
         const isAnnual = Boolean(mode); // true = annual, false = monthly
+        const isFreeTrial = !data?.user?.freeTrial;
 
         let plan = "";
 
@@ -41,14 +42,16 @@
           plan = isAnnual ? "ANNUAL_ID_PLUS" : "MONTHLY_ID_PLUS";
         }
 
-        // Always use normal subscription IDs (no free trial)
-        subId = import.meta.env[`VITE_LEMON_SQUEEZY_${plan}`];
+        const prefix = isFreeTrial
+          ? "VITE_LEMON_SQUEEZY_FREE_TRIAL_"
+          : "VITE_LEMON_SQUEEZY_";
+
+        subId = import.meta.env[`${prefix}${plan}`];
       }
 
       const isDarkMode =
         window.matchMedia &&
         window.matchMedia("(prefers-color-scheme: dark)").matches;
-
       const checkoutUrl =
         `https://stocknear.lemonsqueezy.com/checkout/buy/${subId}?` +
         new URLSearchParams({
@@ -57,10 +60,10 @@
           "checkout[email]": data?.user?.email,
           "checkout[name]": data?.user?.username,
           "checkout[custom][userId]": data?.user?.id,
-        }).toString();
+        })?.toString();
 
       openLemonSqueezyUrl(checkoutUrl);
-      // goto(`https://stocknear.lemonsqueezy.com/checkout/buy/${subId}`)
+      //goto(`https://stocknear.lemonsqueezy.com/checkout/buy/${subId}`)
     }
   }
 </script>
@@ -1262,7 +1265,9 @@
             for={!data?.user ? "userLogin" : ""}
             on:click={() => purchasePlan("plus")}
             class="text-white cursor-pointer w-full py-3 px-4 bg-black dark:bg-white rounded-[3px] font-semibold sm:hover:bg-default dark:sm:hover:bg-gray-100 text-white dark:text-black transition duration-100 flex items-center justify-center"
-            >Unlock Plus Access<svg
+            >{data?.user?.freeTrial
+              ? "Unlock Plus Access"
+              : "Start Free 7 Day Trial"}<svg
               class="w-5 h-5 ml-2"
               fill="none"
               stroke="currentColor"
@@ -1436,7 +1441,9 @@
             for={!data?.user ? "userLogin" : ""}
             on:click={() => purchasePlan("pro")}
             class="cursor-pointer w-full py-3 px-4 bg-white rounded-[3px] font-semibold sm:hover:bg-gray-100 dark:sm:hover:bg-gray-100 text-black transition duration-100 flex items-center justify-center"
-            >Unlock Pro Access<svg
+            >{data?.user?.freeTrial
+              ? "Unlock Pro Access"
+              : "Start Free 7 Day Trial"}<svg
               class="w-5 h-5 ml-2"
               fill="none"
               stroke="currentColor"
@@ -1572,7 +1579,6 @@
               </details>
             </li>
 
-            <!--
             <li class="border-b border-gray-300 dark:border-gray-800">
               <details class="collapse collapse-arrow">
                 <summary
@@ -1592,7 +1598,7 @@
                 </div>
               </details>
             </li>
-          -->
+
             <li class="border-b border-gray-300 dark:border-gray-800">
               <details class="collapse collapse-arrow">
                 <summary
