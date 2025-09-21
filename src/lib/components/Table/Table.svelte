@@ -252,8 +252,8 @@
     const currentPath = pagePathName || $page?.url?.pathname;
 
     if (!currentPath || typeof localStorage === "undefined") {
-      indicatorsTabRules = [];
-      indicatorsTabCheckedItems = new Set();
+      indicatorsTabRules = [...defaultList];
+      indicatorsTabCheckedItems = new Set(defaultList.map((item) => item.name));
       return;
     }
 
@@ -279,9 +279,9 @@
       }
     }
 
-    // If no saved rules or parsing failed, leave empty
-    indicatorsTabRules = [];
-    indicatorsTabCheckedItems = new Set();
+    // If no saved rules or parsing failed, use defaultList
+    indicatorsTabRules = [...defaultList];
+    indicatorsTabCheckedItems = new Set(defaultList.map((item) => item.name));
   }
 
   // Load indicators rules immediately when component initializes
@@ -566,23 +566,35 @@
     }
   }
 
-  async function handleChangeValue(value) {
+  async function handleChangeValue(itemName) {
+    // Find the item object from allRows
+    const item = allRows.find((row) => row.name === itemName);
+    if (!item) return;
+
+    // Don't allow toggling default rules
+    if (defaultRules?.includes(item?.rule)) {
+      return;
+    }
+
     // If not on indicators tab, switch to it first
     if (displayTableTab !== "indicators") {
       await changeTab("indicators");
     }
 
-    // Toggle indicator in indicators tab
-    if (indicatorsTabCheckedItems.has(value)) {
-      indicatorsTabCheckedItems.delete(value);
-    } else {
-      indicatorsTabCheckedItems.add(value);
-    }
-
-    // Update indicators tab rules
-    indicatorsTabRules = allRows.filter((item) =>
-      indicatorsTabCheckedItems.has(item.name),
+    // Check if item is already in indicatorsTabRules by rule
+    const existingIndex = indicatorsTabRules.findIndex(
+      (tabItem) => tabItem.rule === item.rule,
     );
+
+    if (existingIndex >= 0) {
+      // Remove the item (but not if it's a default rule)
+      indicatorsTabRules.splice(existingIndex, 1);
+      indicatorsTabCheckedItems.delete(itemName);
+    } else {
+      // Add the item
+      indicatorsTabRules.push(item);
+      indicatorsTabCheckedItems.add(itemName);
+    }
 
     // Update the display since we're now on indicators tab
     checkedItems = new Set([...indicatorsTabCheckedItems]);
