@@ -494,9 +494,11 @@
   function sortIndicatorCheckMarks(allRows) {
     return allRows?.sort((a, b) => {
       const isAChecked =
-        indicatorsTabCheckedItems && indicatorsTabCheckedItems.has(a?.name);
+        indicatorsTabRules &&
+        indicatorsTabRules.some((tabItem) => tabItem.rule === a?.rule);
       const isBChecked =
-        indicatorsTabCheckedItems && indicatorsTabCheckedItems.has(b?.name);
+        indicatorsTabRules &&
+        indicatorsTabRules.some((tabItem) => tabItem.rule === b?.rule);
 
       // Sort checked items first
       if (isAChecked !== isBChecked) return isAChecked ? -1 : 1;
@@ -1167,9 +1169,12 @@
                       type="checkbox"
                       class="cursor-pointer rounded checked:bg-gray-700"
                       checked={displayTableTab === "indicators"
-                        ? isChecked(item?.name)
-                        : indicatorsTabCheckedItems &&
-                          indicatorsTabCheckedItems.has(item?.name)}
+                        ? defaultList.some(
+                            (defaultItem) => defaultItem.rule === item?.rule,
+                          )
+                        : indicatorsTabRules.some(
+                            (tabItem) => tabItem.rule === item?.rule,
+                          )}
                     />
                     <span class="ml-2">{item?.name}</span>
                   </label>
@@ -1189,9 +1194,12 @@
                         ? 'checked:bg-gray-800'
                         : 'checked:bg-blue-700'}"
                       checked={displayTableTab === "indicators"
-                        ? isChecked(item?.name)
-                        : indicatorsTabCheckedItems &&
-                          indicatorsTabCheckedItems.has(item?.name)}
+                        ? ruleOfList.some(
+                            (listItem) => listItem.rule === item?.rule,
+                          )
+                        : indicatorsTabRules.some(
+                            (tabItem) => tabItem.rule === item?.rule,
+                          )}
                     />
                     <span class="ml-2">{item?.name}</span>
                   </label>
