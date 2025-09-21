@@ -705,7 +705,9 @@
 
   async function resetTableSearch() {
     inputValue = "";
-    search();
+    rawData = originalData;
+    stockList = originalData?.slice(0, 50);
+    changeTab(displayTableTab || "general");
   }
 
   async function search() {
