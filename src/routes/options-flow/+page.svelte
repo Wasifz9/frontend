@@ -528,11 +528,23 @@
   function toggleMode() {
     if ($isOpen) {
       modeStatus = !modeStatus;
-      if (modeStatus === true && selectedDate !== undefined) {
-        selectedDate = undefined;
-        rawData = data?.getOptionsFlowFeed;
-        displayedData = [...rawData];
-        shouldLoadWorker.set(true);
+      if (modeStatus === true) {
+        // Switching to live mode
+        if (selectedDate !== undefined) {
+          selectedDate = undefined;
+          rawData = data?.getOptionsFlowFeed;
+          displayedData = [...rawData];
+          shouldLoadWorker.set(true);
+        }
+        // Reconnect WebSocket for Pro users when switching to live mode
+        if (data?.user?.tier === "Pro") {
+          console.log("Switching to live mode - connecting WebSocket");
+          connectWebSocket();
+        }
+      } else {
+        // Switching to historical mode - disconnect WebSocket
+        console.log("Switching to historical mode - disconnecting WebSocket");
+        disconnectWebSocket();
       }
     }
   }
@@ -567,6 +579,12 @@
   // WebSocket connection functions
   function connectWebSocket() {
     if (data?.user?.tier !== "Pro" || !data?.wsURL) {
+      return;
+    }
+    
+    // Prevent duplicate connections
+    if (socket && (socket.readyState === WebSocket.CONNECTING || socket.readyState === WebSocket.OPEN)) {
+      console.log("WebSocket already connected or connecting");
       return;
     }
 
@@ -639,9 +657,10 @@
         console.log("Options Flow WebSocket connection closed:", event.reason);
         socket = null;
 
-        // Attempt to reconnect if market is open and not destroyed
+        // Attempt to reconnect if market is open, live mode is on, and not destroyed
         if (
           $isOpen &&
+          modeStatus &&
           !isComponentDestroyed &&
           reconnectAttempts < maxReconnectAttempts
         ) {
@@ -675,13 +694,13 @@
     }
   }
 
-  // --- Reactive statement now only handles stopping/starting based on $isOpen ---
-  $: if ($isOpen && data?.user?.tier === "Pro") {
-    console.log("$isOpen is true. Connecting to WebSocket.");
+  // --- Reactive statement handles WebSocket connection based on market status and mode ---
+  $: if ($isOpen && data?.user?.tier === "Pro" && modeStatus) {
+    console.log("Market is open, user is Pro, and live mode is active. Connecting to WebSocket.");
     connectWebSocket();
   } else {
     console.log(
-      "$isOpen is false or user is not Pro. Disconnecting WebSocket.",
+      "WebSocket disconnected: market closed, non-Pro user, or historical mode.",
     );
     disconnectWebSocket();
   }
@@ -840,6 +859,10 @@
     if (data?.user?.tier === "Pro") {
       modeStatus = false;
       isLoaded = false;
+      
+      // Disconnect WebSocket when viewing historical data
+      console.log("Viewing historical data - disconnecting WebSocket");
+      disconnectWebSocket();
 
       displayRules = allRows?.filter((row) =>
         ruleOfList.some((rule) => rule.name === row.rule),
