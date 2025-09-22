@@ -1,20 +1,16 @@
 export const load = async ({ locals, cookies }) => {
-  const { apiURL, apiKey, pb, user } = locals;
+  const { apiURL, apiKey, pb, user, wsURL } = locals;
 
   const getOptionsFlowFeed = async () => {
-    // make the POST request to the endpoint
-    const postData = {'orderList': []}
     const response = await fetch(apiURL + "/options-flow-feed", {
-      method: "POST",
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
         "X-API-KEY": apiKey,
       },
-      body: JSON.stringify(postData),
     });
     let output = await response.json();
-    output = user?.tier !== "Pro" ? output?.slice(0, 6) : output;
-
+    output = user?.tier !== "Pro" ? output?.slice(-6) : output;
     return output;
   };
 
@@ -55,5 +51,6 @@ export const load = async ({ locals, cookies }) => {
     getOptionsFlowFeed: await getOptionsFlowFeed(),
     getPredefinedCookieRuleOfList: await getPredefinedCookieRuleOfList(),
     getOptionsWatchlist: await getOptionsWatchlist(),
+    wsURL: wsURL,
   };
 };

@@ -5,6 +5,7 @@
   import { onMount, onDestroy } from "svelte";
   import { toast } from "svelte-sonner";
   import { mode } from "mode-watcher";
+  import { goto } from "$app/navigation";
   import Tutorial from "$lib/components/Tutorial.svelte";
 
   import { DateFormatter, type DateValue } from "@internationalized/date";
@@ -43,6 +44,12 @@
   let searchTerm = "";
   let showFilters = true;
   let filteredRows = [];
+
+  // WebSocket connection
+  let socket = null;
+  let reconnectInterval = null;
+  let reconnectAttempts = 0;
+  const maxReconnectAttempts = 5;
   const df = new DateFormatter("en-US", {
     day: "2-digit",
     month: "short",
@@ -557,112 +564,138 @@
   }
   // --------------------------------------------
 
-  // --- Reactive statement now only handles stopping/starting based on $isOpen ---
-  $: if ($isOpen) {
-    // If becoming open, ensure updates are scheduled if they aren't already running
-    // This is primarily handled by the onMount call and the recursive scheduling,
-    // but we clear/reschedule if $isOpen changes while mounted.
-    console.log("$isOpen is true. Ensuring updates are scheduled.");
-    // Clear any pending timeout just in case, then schedule the next one
-    clearScheduledUpdate();
-    // Schedule the next update after a small delay to react to the change
-    if (!isComponentDestroyed) {
-      scheduleNextUpdate(500); // Schedule next update soon after becoming open
-    }
-  } else {
-    // If $isOpen becomes false, clear any pending timeout
-    console.log("$isOpen is false. Clearing scheduled update.");
-    clearScheduledUpdate();
-  }
-
-  async function updateOptionsFlowData() {
-    // --- Check the destroy flag immediately ---
-    if (isComponentDestroyed) {
-      // Ensure no further updates are scheduled if we abort due to destruction
-      clearScheduledUpdate();
+  // WebSocket connection functions
+  function connectWebSocket() {
+    if (data?.user?.tier !== "Pro" || !data?.wsURL) {
       return;
     }
-    // ------------------------------------------
-
-    // --- Check $isOpen before proceeding (double check) ---
-    if (!$isOpen) {
-      console.log(
-        "updateOptionsFlowData called but $isOpen is false. Aborting.",
-      );
-      // Ensure no further updates are scheduled if $isOpen is false
-      clearScheduledUpdate();
-      return;
-    }
-    // ---------------------------------------------------
 
     try {
-      if (!modeStatus) {
-        // --- Schedule the next update even if modeStatus is false ---
-        // You might want to adjust this logic: if modeStatus is false, maybe you don't want to poll?
-        // If you want to stop polling when modeStatus is false, remove this line:
-        scheduleNextUpdate();
-        // Instead, maybe clearScheduledUpdate() if modeStatus becomes false?
-        // For now, assuming it should still schedule the next check.
-        return;
-      }
+      socket = new WebSocket(data.wsURL + "/options-flow");
 
-      if (data?.user?.tier === "Pro") {
-        const orderList = rawData?.map((item) => item?.id);
-        const postData = { orderList: orderList };
-        const response = await fetch("/api/options-flow-feed", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(postData),
-        });
+      socket.addEventListener("open", () => {
+        console.log("Options Flow WebSocket connection opened");
+        reconnectAttempts = 0;
 
-        const totalVolume = displayCallVolume + displayPutVolume;
+        // Send initial orderList
+        const orderList = rawData?.map((item) => item?.id) || [];
+        const message = {
+          type: "init",
+          orderList: orderList,
+        };
+        socket.send(JSON.stringify(message));
+      });
 
+      socket.addEventListener("message", (event) => {
         try {
-          const newData = (await response.json()) || [];
+          const newData = JSON.parse(event.data);
 
           if (newData?.length > 0) {
-            console.log("Received new data, length:", newData.length);
-            newData?.forEach((item) => {
+            console.log(
+              "Received new options flow data, length:",
+              newData.length,
+            );
+
+            // Add DTE calculation for new items
+            newData.forEach((item) => {
               item.dte = daysLeft(item?.date_expiration);
             });
 
+            // Prepend new data to existing data
             rawData = [...newData, ...rawData];
 
+            // Update the orderList to include new items
+            const updatedOrderList = rawData?.map((item) => item?.id) || [];
+            const updateMessage = {
+              type: "update",
+              orderList: updatedOrderList,
+            };
+            socket.send(JSON.stringify(updateMessage));
+
+            // Process filters if needed
             if (ruleOfList?.length > 0 || filterQuery?.length > 0) {
               shouldLoadWorker.set(true);
               console.log("Should load worker set to true");
             } else {
-              // Ensure displayedData exists
-              // let displayedData; // If not imported, declare it
               displayedData = [...rawData];
               calculateStats(displayedData);
               console.log("Updating displayedData and calculating stats");
             }
 
+            // Play notification sound if enabled
             if (!muted && audio) {
               console.log("Attempting to play audio...");
               audio?.play()?.catch((error) => {
                 console.log("Audio play failed:", error);
               });
             }
-          } else {
-            console.log("No new data received!");
           }
-          previousVolume = totalVolume;
-        } catch (e) {
-          console.error("Message processing error:", e);
+        } catch (error) {
+          console.error("Error processing WebSocket message:", error);
         }
-      }
-    } catch (error) {
-      console.error("Update Realtime Data connection error:", error);
-    } finally {
-      // --- Schedule the next update regardless of success or failure ---
+      });
 
-      scheduleNextUpdate();
-      // -------------------------------------------------------------
+      socket.addEventListener("close", (event) => {
+        console.log("Options Flow WebSocket connection closed:", event.reason);
+        socket = null;
+
+        // Attempt to reconnect if market is open and not destroyed
+        if (
+          $isOpen &&
+          !isComponentDestroyed &&
+          reconnectAttempts < maxReconnectAttempts
+        ) {
+          reconnectAttempts++;
+          console.log(
+            `Attempting to reconnect (${reconnectAttempts}/${maxReconnectAttempts})...`,
+          );
+          reconnectInterval = setTimeout(() => {
+            connectWebSocket();
+          }, 5000 * reconnectAttempts); // Exponential backoff
+        }
+      });
+
+      socket.addEventListener("error", (error) => {
+        console.error("Options Flow WebSocket error:", error);
+      });
+    } catch (error) {
+      console.error("Failed to establish WebSocket connection:", error);
     }
+  }
+
+  function disconnectWebSocket() {
+    if (reconnectInterval) {
+      clearTimeout(reconnectInterval);
+      reconnectInterval = null;
+    }
+
+    if (socket) {
+      socket.close();
+      socket = null;
+    }
+  }
+
+  // --- Reactive statement now only handles stopping/starting based on $isOpen ---
+  $: if ($isOpen && data?.user?.tier === "Pro") {
+    console.log("$isOpen is true. Connecting to WebSocket.");
+    connectWebSocket();
+  } else {
+    console.log(
+      "$isOpen is false or user is not Pro. Disconnecting WebSocket.",
+    );
+    disconnectWebSocket();
+  }
+
+  // Keep the old REST API function for non-Pro users
+  async function updateOptionsFlowData() {
+    // This function is now only used for non-Pro users
+    // Pro users use WebSocket instead
+    if (data?.user?.tier === "Pro") {
+      return; // Pro users use WebSocket
+    }
+
+    // Non-Pro users continue to use the initial data from server-side load
+    // No real-time updates for non-Pro users
   }
 
   function daysLeft(targetDate) {
@@ -714,7 +747,10 @@
 
     await loadWorker();
 
-    scheduleNextUpdate(0); // Start polling immediately if market is open
+    // Only schedule polling for non-Pro users
+    if (data?.user?.tier !== "Pro") {
+      scheduleNextUpdate(0); // Start polling immediately if market is open for non-Pro users
+    }
 
     shouldLoadWorker.subscribe(async (value) => {
       if (value) {
@@ -731,6 +767,8 @@
     isComponentDestroyed = true;
     // --- Clear any pending timeout on destroy ---
     clearScheduledUpdate();
+    // --- Disconnect WebSocket on destroy ---
+    disconnectWebSocket();
 
     if (audio) {
       audio?.pause();
@@ -853,9 +891,7 @@
         }
       }
     } else {
-      toast.error("Unlock Feature with Pro Tier 🔥", {
-        style: `border-radius: 5px; background: #fff; color: #000; border-color: ${$mode === "light" ? "#F9FAFB" : "#4B5563"}; font-size: 15px;`,
-      });
+      goto("/pricing");
     }
   };
 
