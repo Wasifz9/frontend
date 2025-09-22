@@ -1051,7 +1051,7 @@
                 <Table
                   title={`${rawTableData?.length} ${
                     rawTableData?.length > 1 ? "Stocks" : "Stock"
-                  } Comparison`}
+                  }`}
                   {data}
                   rawData={rawTableData}
                   {defaultList}

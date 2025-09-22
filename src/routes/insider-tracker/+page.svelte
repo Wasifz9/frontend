@@ -7,41 +7,17 @@
   import HoverStockChart from "$lib/components/HoverStockChart.svelte";
   import RatingsChart from "$lib/components/RatingsChart.svelte";
   import Infobox from "$lib/components/Infobox.svelte";
+  import DownloadData from "$lib/components/DownloadData.svelte";
 
   import SEO from "$lib/components/SEO.svelte";
 
   export let data;
 
-  let rawData = processTickerData(data?.getInsiderTracker) ?? [];
+  let rawData = data?.getData ?? [];
   let stockList = rawData?.slice(0, 50) ?? [];
 
-  function processTickerData(data) {
-    const symbolMap = new Map();
-
-    data.forEach((item) => {
-      const { symbol } = item;
-
-      if (!symbol) return; // Skip if symbol is not defined
-
-      if (!symbolMap.has(symbol)) {
-        // Add the item and initialize count
-        symbolMap.set(symbol, { ...item, ratings: 1 });
-      } else {
-        const existing = symbolMap.get(symbol);
-
-        // Increment the ratings count
-        existing.ratings += 1;
-
-        // Keep the item with the latest date
-        if (new Date(item.filingDate) > new Date(existing.filingDate)) {
-          symbolMap.set(symbol, { ...item, ratings: existing.ratings });
-        }
-      }
-    });
-
-    // Convert the Map back to an array
-    return Array.from(symbolMap.values());
-  }
+  let inputValue = "";
+  let searchWorker: Worker | undefined;
 
   async function handleScroll() {
     const scrollThreshold = document.body.offsetHeight * 0.8; // 80% of the website height
@@ -53,13 +29,58 @@
     }
   }
 
-  onMount(() => {
-    if (["Pro", "Plus"]?.includes(data?.user?.tier)) {
-      window.addEventListener("scroll", handleScroll);
-      return () => {
-        window.removeEventListener("scroll", handleScroll);
-      };
+  async function resetTableSearch() {
+    inputValue = "";
+    search();
+  }
+
+  async function search() {
+    inputValue = inputValue?.toLowerCase();
+
+    setTimeout(async () => {
+      if (inputValue?.length > 0) {
+        await loadSearchWorker();
+      } else {
+        // Reset to original data if filter is empty
+        rawData = data?.getData || [];
+        stockList = rawData?.slice(0, 50);
+      }
+    }, 100);
+  }
+
+  const loadSearchWorker = async () => {
+    if (searchWorker && rawData?.length > 0) {
+      searchWorker.postMessage({
+        rawData: data?.getData,
+        inputValue: inputValue,
+      });
     }
+  };
+
+  const handleSearchMessage = (event) => {
+    if (event.data?.message === "success") {
+      rawData = event.data?.output ?? [];
+      stockList = rawData?.slice(0, 50);
+    }
+  };
+
+  onMount(async () => {
+    if (!searchWorker) {
+      const SearchWorker = await import(
+        "$lib/workers/tableSearchWorker?worker"
+      );
+      searchWorker = new SearchWorker.default();
+      searchWorker.onmessage = handleSearchMessage;
+    }
+
+    window.addEventListener("scroll", handleScroll);
+    //window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      // Cleanup the event listeners when the component is unmounted
+      window.removeEventListener("scroll", handleScroll);
+      //window.removeEventListener('keydown', handleKeyDown);
+    };
   });
 
   $: columns = [
@@ -233,7 +254,57 @@
                       filings with a minimum transaction value of 1 million dollars."
           />
 
-          <div class="w-full m-auto mt-20 sm:mt-10">
+          <div class="items-center lg:overflow-visible px-1 py-1 mt-4">
+            <div
+              class="col-span-2 flex flex-col lg:flex-row items-start sm:items-center lg:order-2 lg:grow py-1 border-t border-b border-gray-300 dark:border-gray-800"
+            >
+              <h2
+                class="text-start whitespace-nowrap text-xl sm:text-2xl font-semibold py-1 border-b border-gray-300 dark:border-gray-800 lg:border-none w-full"
+              >
+                {rawData?.length?.toLocaleString("en-US")} Stocks
+              </h2>
+              <div
+                class="mt-1 w-full flex flex-row lg:flex order-1 items-center ml-auto pb-1 pt-1 sm:pt-0 w-full order-0 lg:order-1"
+              >
+                <div class="relative lg:ml-auto w-full lg:w-fit">
+                  <div
+                    class="inline-block cursor-pointer absolute right-2 top-2 text-sm"
+                  >
+                    {#if inputValue?.length > 0}
+                      <label
+                        class="cursor-pointer"
+                        on:click={() => resetTableSearch()}
+                      >
+                        <svg
+                          class="w-5 h-5"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          ><path
+                            fill="currentColor"
+                            d="m6.4 18.308l-.708-.708l5.6-5.6l-5.6-5.6l.708-.708l5.6 5.6l5.6-5.6l.708.708l-5.6 5.6l5.6 5.6l-.708.708l-5.6-5.6z"
+                          /></svg
+                        >
+                      </label>
+                    {/if}
+                  </div>
+
+                  <input
+                    bind:value={inputValue}
+                    on:input={search}
+                    type="text"
+                    placeholder="Find..."
+                    class=" py-[7px] text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-800 grow w-full sm:min-w-56 lg:max-w-14"
+                  />
+                </div>
+
+                <div class="ml-2">
+                  <DownloadData {data} {rawData} title={"insider_tracker"} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="w-full m-auto mt-5">
             <div
               class="w-full m-auto rounded-none sm:rounded mb-4 overflow-x-auto"
             >
@@ -364,7 +435,7 @@
                                     style="position: relative; height: 0px; z-index: 1;"
                                   >
                                     <RatingsChart
-                                      ratingsList={data?.getInsiderTracker?.map(
+                                      ratingsList={data?.getData?.map(
                                         (item) => ({
                                           ...item,
                                           type: item?.transactionType,

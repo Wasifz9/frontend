@@ -280,6 +280,9 @@
                 {excludedRules}
                 {defaultList}
                 {specificRows}
+                title={rawData?.length?.toLocaleString("en-US") +
+                  " " +
+                  "Stocks"}
               />
             {/key}
           {/if}
