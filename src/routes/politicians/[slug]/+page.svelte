@@ -13,7 +13,8 @@
   let rawData = data?.getData?.output;
   let numOfTrades = rawData?.history?.length;
 
-  let rawDataTable = rawData?.history || [];
+  let rawDataTable = processTickerData(rawData?.history) || [];
+  let originalData = rawDataTable;
   let stockList = rawDataTable?.slice(0, 50);
   let inputValue = "";
   let searchWorker: Worker | undefined;
@@ -64,6 +65,39 @@
     return 0;
   }
 
+  function processTickerData(data) {
+    const tickerMap = new Map();
+
+    data?.forEach((item) => {
+      const { ticker } = item;
+
+      if (!ticker) return; // Skip if ticker is not defined
+
+      if (!tickerMap?.has(ticker)) {
+        // Add the item and initialize count
+        tickerMap?.set(ticker, { ...item, transaction: 1 });
+      } else {
+        const existing = tickerMap?.get(ticker);
+
+        // Increment the ratings count
+        existing.transaction += 1;
+
+        // Keep the item with the latest date
+        if (
+          new Date(item?.transactionDate) > new Date(existing?.transactionDate)
+        ) {
+          tickerMap?.set(ticker, {
+            ...item,
+            transaction: existing?.transaction,
+          });
+        }
+      }
+    });
+
+    // Convert the Map back to an array
+    return Array?.from(tickerMap?.values());
+  }
+
   async function resetTableSearch() {
     inputValue = "";
     search();
@@ -77,7 +111,7 @@
         await loadSearchWorker();
       } else {
         // Reset to original data if filter is empty
-        rawDataTable = data?.getData?.output?.history || [];
+        rawDataTable = originalData || [];
         stockList = rawDataTable?.slice(0, 50);
       }
     }, 100);
@@ -86,7 +120,7 @@
   const loadSearchWorker = async () => {
     if (searchWorker && rawDataTable?.length > 0) {
       searchWorker.postMessage({
-        rawData: data?.getData?.output?.history,
+        rawData: originalData,
         inputValue: inputValue,
       });
     }

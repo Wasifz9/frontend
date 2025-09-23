@@ -1,38 +1,6 @@
 import { getPartyForPoliticians } from "$lib/utils";
 
-  function processTickerData(data) {
-    const tickerMap = new Map();
 
-    data?.forEach((item) => {
-      const { ticker } = item;
-
-      if (!ticker) return; // Skip if ticker is not defined
-
-      if (!tickerMap?.has(ticker)) {
-        // Add the item and initialize count
-        tickerMap?.set(ticker, { ...item, transaction: 1 });
-      } else {
-        const existing = tickerMap?.get(ticker);
-
-        // Increment the ratings count
-        existing.transaction += 1;
-
-        // Keep the item with the latest date
-        if (
-          new Date(item?.transactionDate) > new Date(existing?.transactionDate)
-        ) {
-          tickerMap?.set(ticker, {
-            ...item,
-            transaction: existing?.transaction,
-          });
-        }
-      }
-    });
-
-    // Convert the Map back to an array
-    return Array?.from(tickerMap?.values());
-  }
-  
 
 export const load = async ({ locals, params }) => {
 
@@ -57,7 +25,7 @@ export const load = async ({ locals, params }) => {
     });
 
     let output = await response?.json();
-    let history = processTickerData(output?.history);
+    let history = (output?.history);
     // Cache the data for this specific tickerID with a specific name 'getData'
 
     if (output && history?.length > 0) {
@@ -82,7 +50,7 @@ export const load = async ({ locals, params }) => {
       politicianCongress = firstItem?.congress;
     }
 
-    output.history = history;
+    //output.history = history;
     res = { output, politicianParty, politicianDistrict, politicianCongress };
 
     return res;
