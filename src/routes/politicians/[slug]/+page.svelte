@@ -3,14 +3,20 @@
   import HoverStockChart from "$lib/components/HoverStockChart.svelte";
   import RatingsChart from "$lib/components/RatingsChart.svelte";
   import SEO from "$lib/components/SEO.svelte";
+  import { onMount } from "svelte";
+  import Infobox from "$lib/components/Infobox.svelte";
+
+  import DownloadData from "$lib/components/DownloadData.svelte";
 
   export let data;
 
-  let rawData = data?.getPolitician?.output;
+  let rawData = data?.getData?.output;
   let numOfTrades = rawData?.history?.length;
 
-  let tableData =
-    rawData?.history?.length > 0 ? processTickerData(rawData?.history) : [];
+  let rawDataTable = rawData?.history || [];
+  let stockList = rawDataTable?.slice(0, 50);
+  let inputValue = "";
+  let searchWorker: Worker | undefined;
 
   let name = rawData?.history?.at(0)?.representative ?? "n/a";
   let mainSectors = rawData?.mainSectors || [];
@@ -33,11 +39,11 @@
     const parsedAmount = extractNumberFromAmount(amount);
     return sum + parsedAmount;
   }, 0);
-  let politicianDistrict = data?.getPolitician?.politicianDistrict;
-  let politicianCongress = data?.getPolitician?.politicianCongress;
+  let politicianDistrict = data?.getData?.politicianDistrict;
+  let politicianCongress = data?.getData?.politicianCongress;
   let lastTradedDate = rawData?.history?.at(0)?.transactionDate;
 
-  let politicianParty = data?.getPolitician?.politicianParty;
+  let politicianParty = data?.getData?.politicianParty;
 
   // Function to extract the number from the amount string
   function extractNumberFromAmount(amount) {
@@ -58,38 +64,70 @@
     return 0;
   }
 
-  function processTickerData(data) {
-    const tickerMap = new Map();
-
-    data.forEach((item) => {
-      const { ticker } = item;
-
-      if (!ticker) return; // Skip if ticker is not defined
-
-      if (!tickerMap.has(ticker)) {
-        // Add the item and initialize count
-        tickerMap.set(ticker, { ...item, transaction: 1 });
-      } else {
-        const existing = tickerMap.get(ticker);
-
-        // Increment the ratings count
-        existing.transaction += 1;
-
-        // Keep the item with the latest date
-        if (
-          new Date(item?.transactionDate) > new Date(existing?.transactionDate)
-        ) {
-          tickerMap.set(ticker, {
-            ...item,
-            transaction: existing?.transaction,
-          });
-        }
-      }
-    });
-
-    // Convert the Map back to an array
-    return Array?.from(tickerMap?.values());
+  async function resetTableSearch() {
+    inputValue = "";
+    search();
   }
+
+  async function search() {
+    inputValue = inputValue?.toLowerCase();
+
+    setTimeout(async () => {
+      if (inputValue?.length > 0) {
+        await loadSearchWorker();
+      } else {
+        // Reset to original data if filter is empty
+        rawDataTable = data?.getData?.output?.history || [];
+        stockList = rawDataTable?.slice(0, 50);
+      }
+    }, 100);
+  }
+
+  const loadSearchWorker = async () => {
+    if (searchWorker && rawDataTable?.length > 0) {
+      searchWorker.postMessage({
+        rawData: data?.getData?.output?.history,
+        inputValue: inputValue,
+      });
+    }
+  };
+
+  const handleSearchMessage = (event) => {
+    if (event.data?.message === "success") {
+      rawDataTable = event.data?.output ?? [];
+      stockList = rawDataTable?.slice(0, 50);
+    }
+  };
+
+  async function handleScroll() {
+    const scrollThreshold = document.body.offsetHeight * 0.8; // 80% of the website height
+    const isBottom = window.innerHeight + window.scrollY >= scrollThreshold;
+
+    if (isBottom && stockList?.length !== rawDataTable?.length) {
+      const nextIndex = stockList?.length;
+      const filteredNewResults = rawDataTable?.slice(nextIndex, nextIndex + 50);
+      stockList = [...stockList, ...filteredNewResults];
+    }
+  }
+
+  onMount(async () => {
+    if (!searchWorker) {
+      const SearchWorker = await import(
+        "$lib/workers/tableSearchWorker?worker"
+      );
+      searchWorker = new SearchWorker.default();
+      searchWorker.onmessage = handleSearchMessage;
+    }
+
+    window.addEventListener("scroll", handleScroll);
+    //window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      // Cleanup the event listeners when the component is unmounted
+      window.removeEventListener("scroll", handleScroll);
+      //window.removeEventListener('keydown', handleKeyDown);
+    };
+  });
 
   $: checkedSymbol = "";
   function openGraph(symbol) {
@@ -268,170 +306,235 @@
               </div>
             {/if}
 
-            <h3 class="text-xl font-bold mt-10">Trading History</h3>
-
-            <div class="w-full overflow-x-auto">
-              <table
-                class="mt-5 table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
+            <div class="items-center lg:overflow-visible px-1 py-1 mt-4">
+              <div
+                class="col-span-2 flex flex-col lg:flex-row items-start sm:items-center lg:order-2 lg:grow py-1 border-t border-b border-gray-300 dark:border-gray-800"
               >
-                <!-- head -->
-                <thead class="text-white bg-default">
-                  <tr class="">
-                    <th
-                      class="hidden lg:table-cell text-start text-sm font-semibold"
+                <h2
+                  class="text-start whitespace-nowrap text-xl sm:text-2xl font-semibold py-1 border-b border-gray-300 dark:border-gray-800 lg:border-none w-full"
+                >
+                  {stockList?.length?.toLocaleString("en-US")} Stocks
+                </h2>
+                <div
+                  class="mt-1 w-full flex flex-row lg:flex order-1 items-center ml-auto pb-1 pt-1 sm:pt-0 w-full order-0 lg:order-1"
+                >
+                  <div class="relative lg:ml-auto w-full lg:w-fit">
+                    <div
+                      class="inline-block cursor-pointer absolute right-2 top-2 text-sm"
                     >
-                    </th>
-                    <th class="text-start text-sm font-semibold"> Symbol </th>
-                    <th class="text-start text-sm font-semibold"> Name </th>
-                    <th class="text-end text-sm font-semibold">
-                      Transaction Type
-                    </th>
-                    <th class="text-end text-sm font-semibold"> Amount </th>
-                    <th class="text-end text-sm font-semibold">
-                      Transaction
-                    </th>
-                    <th class="text-end text-sm font-semibold"> Last Trade </th>
-                    <th class="text-end text-sm font-semibold"> Filed </th>
-                  </tr>
-                </thead>
-                <tbody class="p-0">
-                  {#each tableData as item, index}
-                    <tr
-                      class="dark:sm:hover:bg-[#245073]/10 odd:bg-[#F6F7F8] dark:odd:bg-odd"
-                    >
-                      <td class="hidden lg:table-cell"
-                        ><button
-                          on:click={() => openGraph(item?.ticker)}
-                          class="cursor-pointer h-full pl-2 pr-2 align-middle lg:pl-3"
-                          ><svg
-                            class="w-5 h-5 text-icon {(checkedSymbol ===
-                              item?.ticker ?? item?.symbol)
-                              ? 'rotate-180'
-                              : ''}"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                            style="max-width:40px"
+                      {#if inputValue?.length > 0}
+                        <label
+                          class="cursor-pointer"
+                          on:click={() => resetTableSearch()}
+                        >
+                          <svg
+                            class="w-5 h-5"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
                             ><path
-                              fill-rule="evenodd"
-                              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                              clip-rule="evenodd"
-                            ></path></svg
-                          ></button
-                        ></td
-                      >
+                              fill="currentColor"
+                              d="m6.4 18.308l-.708-.708l5.6-5.6l-5.6-5.6l.708-.708l5.6 5.6l5.6-5.6l.708.708l-5.6 5.6l5.6 5.6l-.708.708l-5.6-5.6z"
+                            /></svg
+                          >
+                        </label>
+                      {/if}
+                    </div>
 
-                      <td
-                        class="text-start text-sm sm:text-[1rem] whitespace-nowrap"
-                      >
-                        <HoverStockChart
-                          symbol={item?.symbol ?? item?.ticker}
-                          assetType={item?.assetType}
-                        />
-                      </td>
+                    <input
+                      bind:value={inputValue}
+                      on:input={search}
+                      type="text"
+                      placeholder="Find..."
+                      class=" py-[7px] text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-800 grow w-full sm:min-w-56 lg:max-w-14"
+                    />
+                  </div>
 
-                      <td class="text-sm sm:text-[1rem] whitespace-nowrap">
-                        {item?.name?.length > 20
-                          ? item?.name?.slice(0, 20) + "..."
-                          : item?.name}
-                      </td>
-
-                      <td
-                        class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
+                  <div class="ml-2">
+                    <DownloadData
+                      {data}
+                      rawData={stockList}
+                      title={`${name}`}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            {#if stockList?.length > 0}
+              <div class="w-full overflow-x-auto">
+                <table
+                  class="mt-5 table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
+                >
+                  <!-- head -->
+                  <thead class="text-white bg-default">
+                    <tr class="">
+                      <th
+                        class="hidden lg:table-cell text-start text-sm font-semibold"
                       >
-                        <span class="">
-                          {#if item?.type === "Bought"}
-                            <span class="text-green-800 dark:text-[#00FC50]"
-                              >Buy</span
-                            >
-                          {:else if item?.type === "Sold"}
-                            <span class="text-red-800 dark:text-[#FF2F1F]"
-                              >Sell</span
-                            >
-                          {:else if item?.type === "Exchange"}
-                            <span class="text-orange-800 dark:text-[#C6A755]"
-                              >Exchange</span
-                            >
-                          {/if}
-                        </span></td
-                      >
-
-                      <td
-                        class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
-                      >
-                        {item?.amount}</td
-                      >
-
-                      <td
-                        class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
-                      >
-                        {item?.transaction?.toLocaleString("en-US")}</td
-                      >
-
-                      <td
-                        class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
-                      >
-                        {new Date(item?.transactionDate)?.toLocaleString(
-                          "en-US",
-                          {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                            daySuffix: "2-digit",
-                          },
-                        )}
-                      </td>
-
-                      <td
-                        class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
-                      >
-                        {new Date(item?.disclosureDate)?.toLocaleString(
-                          "en-US",
-                          {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                            daySuffix: "2-digit",
-                          },
-                        )}
-                      </td>
+                      </th>
+                      <th class="text-start text-sm font-semibold"> Symbol </th>
+                      <th class="text-start text-sm font-semibold"> Name </th>
+                      <th class="text-end text-sm font-semibold">
+                        Transaction Type
+                      </th>
+                      <th class="text-end text-sm font-semibold"> Amount </th>
+                      <th class="text-end text-sm font-semibold">
+                        Transaction
+                      </th>
+                      <th class="text-end text-sm font-semibold">
+                        Last Trade
+                      </th>
+                      <th class="text-end text-sm font-semibold"> Filed </th>
                     </tr>
-                    {#if checkedSymbol === (item?.ticker ?? item?.symbol)}
+                  </thead>
+                  <tbody class="p-0">
+                    {#each stockList as item, index}
                       <tr
-                        ><td colspan="8" class="px-0" style=""
-                          ><div class="-mt-0.5 px-0 pb-2">
-                            <div class="relative h-[350px]">
-                              <div class="absolute top-0 w-full">
-                                <div
-                                  class="h-[250px] w-full xs:h-[300px] sm:h-[350px]"
-                                  style="overflow: hidden;"
-                                >
+                        class="dark:sm:hover:bg-[#245073]/10 odd:bg-[#F6F7F8] dark:odd:bg-odd"
+                      >
+                        <td class="hidden lg:table-cell"
+                          ><button
+                            on:click={() => openGraph(item?.ticker)}
+                            class="cursor-pointer h-full pl-2 pr-2 align-middle lg:pl-3"
+                            ><svg
+                              class="w-5 h-5 text-icon {(checkedSymbol ===
+                                item?.ticker ?? item?.symbol)
+                                ? 'rotate-180'
+                                : ''}"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                              style="max-width:40px"
+                              ><path
+                                fill-rule="evenodd"
+                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                clip-rule="evenodd"
+                              ></path></svg
+                            ></button
+                          ></td
+                        >
+
+                        <td
+                          class="text-start text-sm sm:text-[1rem] whitespace-nowrap"
+                        >
+                          <HoverStockChart
+                            symbol={item?.symbol ?? item?.ticker}
+                            assetType={item?.assetType}
+                          />
+                        </td>
+
+                        <td class="text-sm sm:text-[1rem] whitespace-nowrap">
+                          {item?.name?.length > 20
+                            ? item?.name?.slice(0, 20) + "..."
+                            : item?.name}
+                        </td>
+
+                        <td
+                          class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
+                        >
+                          <span class="">
+                            {#if item?.type === "Bought"}
+                              <span class="text-green-800 dark:text-[#00FC50]"
+                                >Buy</span
+                              >
+                            {:else if item?.type === "Sold"}
+                              <span class="text-red-800 dark:text-[#FF2F1F]"
+                                >Sell</span
+                              >
+                            {:else if item?.type === "Exchange"}
+                              <span class="text-orange-800 dark:text-[#C6A755]"
+                                >Exchange</span
+                              >
+                            {/if}
+                          </span></td
+                        >
+
+                        <td
+                          class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
+                        >
+                          {item?.amount}</td
+                        >
+
+                        <td
+                          class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
+                        >
+                          {item?.transaction?.toLocaleString("en-US")}</td
+                        >
+
+                        <td
+                          class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
+                        >
+                          {new Date(item?.transactionDate)?.toLocaleString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                              daySuffix: "2-digit",
+                            },
+                          )}
+                        </td>
+
+                        <td
+                          class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
+                        >
+                          {new Date(item?.disclosureDate)?.toLocaleString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                              daySuffix: "2-digit",
+                            },
+                          )}
+                        </td>
+                      </tr>
+                      {#if checkedSymbol === (item?.ticker ?? item?.symbol)}
+                        <tr
+                          ><td colspan="8" class="px-0" style=""
+                            ><div class="-mt-0.5 px-0 pb-2">
+                              <div class="relative h-[350px]">
+                                <div class="absolute top-0 w-full">
                                   <div
-                                    style="position: relative; height: 0px; z-index: 1;"
+                                    class="h-[250px] w-full xs:h-[300px] sm:h-[350px]"
+                                    style="overflow: hidden;"
                                   >
-                                    <RatingsChart
-                                      {data}
-                                      title="Transactions"
-                                      ratingsList={rawData?.history?.map(
-                                        (item) => ({
-                                          ...item,
-                                          date: item.transactionDate,
-                                        }),
-                                      )}
-                                      symbol={item?.ticker ?? item?.symbol}
-                                      numOfRatings={item?.transaction}
-                                    />
+                                    <div
+                                      style="position: relative; height: 0px; z-index: 1;"
+                                    >
+                                      <RatingsChart
+                                        {data}
+                                        title="Transactions"
+                                        ratingsList={rawData?.history?.map(
+                                          (item) => ({
+                                            ...item,
+                                            date: item.transactionDate,
+                                          }),
+                                        )}
+                                        symbol={item?.ticker ?? item?.symbol}
+                                        numOfRatings={item?.transaction}
+                                      />
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          </div></td
-                        >
-                      </tr>
-                    {/if}
-                  {/each}
-                </tbody>
-              </table>
-            </div>
+                            </div></td
+                          >
+                        </tr>
+                      {/if}
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
+            {:else if stockList?.length === 0 && inputValue?.length > 0}
+              <div class="pt-5">
+                <Infobox text={`No data is available for "${inputValue}"`} />
+              </div>
+            {:else}
+              <div class="pt-5">
+                <Infobox
+                  text="No data is available for the searched analyst."
+                />
+              </div>
+            {/if}
           </div>
         </main>
       </div>

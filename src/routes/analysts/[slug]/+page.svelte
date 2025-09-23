@@ -7,15 +7,19 @@
   import RatingsChart from "$lib/components/RatingsChart.svelte";
   import Infobox from "$lib/components/Infobox.svelte";
   import SEO from "$lib/components/SEO.svelte";
+  import DownloadData from "$lib/components/DownloadData.svelte";
 
   export let data;
 
-  let analystStats = data?.getAnalystStats;
+  let analystStats = data?.getData;
 
-  let rawData = processTickerData(data?.getAnalystStats?.ratingsList);
+  let rawData = data?.getData?.ratingsList;
   let originalData = [...rawData]; // Unaltered copy of raw data
 
   let stockList = rawData?.slice(0, 50) ?? [];
+
+  let inputValue = "";
+  let searchWorker: Worker | undefined;
 
   let analystScore = analystStats?.analystScore;
   let rank = analystStats?.rank;
@@ -28,51 +32,69 @@
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(analystStats?.numOfAnalysts);
-  let numOfStocks = analystStats?.numOfStocks;
-
-  function processTickerData(data) {
-    const tickerMap = new Map();
-
-    data?.forEach((item) => {
-      const { ticker } = item;
-
-      if (!ticker) return; // Skip if ticker is not defined
-
-      if (!tickerMap.has(ticker)) {
-        // Add the item and initialize count
-        tickerMap.set(ticker, { ...item, ratings: 1 });
-      } else {
-        const existing = tickerMap.get(ticker);
-
-        // Increment the ratings count
-        existing.ratings += 1;
-
-        // Keep the item with the latest date
-        if (new Date(item.date) > new Date(existing.date)) {
-          tickerMap.set(ticker, { ...item, ratings: existing.ratings });
-        }
-      }
-    });
-
-    // Convert the Map back to an array
-    return Array.from(tickerMap.values());
-  }
 
   async function handleScroll() {
     const scrollThreshold = document.body.offsetHeight * 0.8; // 80% of the website height
     const isBottom = window.innerHeight + window.scrollY >= scrollThreshold;
 
-    if (isBottom && stockList?.length !== originalData?.length) {
+    if (isBottom && stockList?.length !== rawData?.length) {
       const nextIndex = stockList?.length;
-      const filteredNewResults = originalData?.slice(nextIndex, nextIndex + 50);
+      const filteredNewResults = rawData?.slice(nextIndex, nextIndex + 50);
       stockList = [...stockList, ...filteredNewResults];
     }
   }
 
+  async function resetTableSearch() {
+    inputValue = "";
+    search();
+  }
+
+  async function search() {
+    inputValue = inputValue?.toLowerCase();
+
+    setTimeout(async () => {
+      if (inputValue?.length > 0) {
+        await loadSearchWorker();
+      } else {
+        // Reset to original data if filter is empty
+        rawData = data?.getData?.ratingsList || [];
+        stockList = rawData?.slice(0, 50);
+      }
+    }, 100);
+  }
+
+  const loadSearchWorker = async () => {
+    if (searchWorker && rawData?.length > 0) {
+      searchWorker.postMessage({
+        rawData: data?.getData?.ratingsList,
+        inputValue: inputValue,
+      });
+    }
+  };
+
+  const handleSearchMessage = (event) => {
+    if (event.data?.message === "success") {
+      rawData = event.data?.output ?? [];
+      stockList = rawData?.slice(0, 50);
+    }
+  };
+
   onMount(async () => {
+    if (!searchWorker) {
+      const SearchWorker = await import(
+        "$lib/workers/tableSearchWorker?worker"
+      );
+      searchWorker = new SearchWorker.default();
+      searchWorker.onmessage = handleSearchMessage;
+    }
+
     window.addEventListener("scroll", handleScroll);
+    //window.addEventListener('keydown', handleKeyDown);
+
     return () => {
+      // Cleanup the event listeners when the component is unmounted
       window.removeEventListener("scroll", handleScroll);
+      //window.removeEventListener('keydown', handleKeyDown);
     };
   });
 
@@ -177,25 +199,26 @@
   structuredData={{
     "@context": "https://schema.org",
     "@type": "Person",
-    "name": analystName,
-    "jobTitle": "Stock Analyst",
-    "worksFor": {
+    name: analystName,
+    jobTitle: "Stock Analyst",
+    worksFor: {
       "@type": "Organization",
-      "name": companyName
+      name: companyName,
     },
-    "description": "Wall Street equity research analyst specializing in stock analysis and recommendations",
-    "url": "https://stocknear.com/analysts/{data?.getAnalystStats?.analystId}",
-    "hasCredential": {
+    description:
+      "Wall Street equity research analyst specializing in stock analysis and recommendations",
+    url: "https://stocknear.com/analysts/{data?.getData?.analystId}",
+    hasCredential: {
       "@type": "EducationalOccupationalCredential",
-      "credentialCategory": "Financial Analysis"
+      credentialCategory: "Financial Analysis",
     },
-    "knowsAbout": data?.getAnalystStats?.mainSectors || [],
-    "aggregateRating": {
+    knowsAbout: data?.getData?.mainSectors || [],
+    aggregateRating: {
       "@type": "AggregateRating",
-      "ratingValue": analystScore,
-      "bestRating": 5,
-      "worstRating": 1
-    }
+      ratingValue: analystScore,
+      bestRating: 5,
+      worstRating: 1,
+    },
   }}
 />
 
@@ -388,7 +411,7 @@
               </div>
             </div>
 
-            {#if data?.getAnalystStats?.mainSectors?.length > 0}
+            {#if data?.getData?.mainSectors?.length > 0}
               <div class="mb-10 mt-10">
                 <div
                   class="relative my-3 space-y-2 rounded border border-gray-300 dark:border-gray-600 sm:my-6 p-4"
@@ -396,7 +419,7 @@
                   <div class="flex flex-col sm:flex-row">
                     <div class="mb-2 font-semibold sm:mb-0">Main Sectors:</div>
                     <div class="flex flex-wrap gap-x-2 gap-y-3 sm:ml-2">
-                      {#each data?.getAnalystStats?.mainSectors as item}
+                      {#each data?.getData?.mainSectors as item}
                         <a
                           href={sectorNavigation?.find(
                             (listItem) => listItem?.title === item,
@@ -413,7 +436,7 @@
                       Top Industries:
                     </div>
                     <div class="flex flex-wrap gap-x-2 gap-y-3 sm:ml-2">
-                      {#each data?.getAnalystStats?.mainIndustries as item}
+                      {#each data?.getData?.mainIndustries as item}
                         <a
                           href={`/list/industry/${item?.replace(/ /g, "-")?.replace(/&/g, "and")?.replace(/-{2,}/g, "-")?.toLowerCase()}`}
                           class="inline-block badge border-gray-300 dark:border-gray-800 rounded-[3px] bg-blue-100 dark:bg-primary duration-0 ml-1 px-3 m-auto text-blue-800 dark:text-blue-400 dark:sm:hover:text-white sm:hover:text-muted text-[1rem]"
@@ -427,11 +450,61 @@
               </div>
             {/if}
 
-            {#if rawData?.length > 0}
-              <span class=" font-semibold text-xl sm:text-2xl">
-                {numOfStocks} Stocks
-              </span>
+            <div class="items-center lg:overflow-visible px-1 py-1 mt-4">
+              <div
+                class="col-span-2 flex flex-col lg:flex-row items-start sm:items-center lg:order-2 lg:grow py-1 border-t border-b border-gray-300 dark:border-gray-800"
+              >
+                <h2
+                  class="text-start whitespace-nowrap text-xl sm:text-2xl font-semibold py-1 border-b border-gray-300 dark:border-gray-800 lg:border-none w-full"
+                >
+                  {rawData?.length?.toLocaleString("en-US")} Stocks
+                </h2>
+                <div
+                  class="mt-1 w-full flex flex-row lg:flex order-1 items-center ml-auto pb-1 pt-1 sm:pt-0 w-full order-0 lg:order-1"
+                >
+                  <div class="relative lg:ml-auto w-full lg:w-fit">
+                    <div
+                      class="inline-block cursor-pointer absolute right-2 top-2 text-sm"
+                    >
+                      {#if inputValue?.length > 0}
+                        <label
+                          class="cursor-pointer"
+                          on:click={() => resetTableSearch()}
+                        >
+                          <svg
+                            class="w-5 h-5"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            ><path
+                              fill="currentColor"
+                              d="m6.4 18.308l-.708-.708l5.6-5.6l-5.6-5.6l.708-.708l5.6 5.6l5.6-5.6l.708.708l-5.6 5.6l5.6 5.6l-.708.708l-5.6-5.6z"
+                            /></svg
+                          >
+                        </label>
+                      {/if}
+                    </div>
 
+                    <input
+                      bind:value={inputValue}
+                      on:input={search}
+                      type="text"
+                      placeholder="Find..."
+                      class=" py-[7px] text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-800 grow w-full sm:min-w-56 lg:max-w-14"
+                    />
+                  </div>
+
+                  <div class="ml-2">
+                    <DownloadData
+                      {data}
+                      {rawData}
+                      title={`${analystName}_ratings`}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {#if stockList?.length > 0}
               <div class="w-full m-auto mt-4">
                 <div
                   class="w-full m-auto rounded-none sm:rounded mb-4 overflow-x-auto"
@@ -613,7 +686,7 @@
                                         style="position: relative; height: 0px; z-index: 1;"
                                       >
                                         <RatingsChart
-                                          ratingsList={data?.getAnalystStats?.ratingsList?.map(
+                                          ratingsList={data?.getData?.ratingsList?.map(
                                             (item) => ({
                                               ...item,
                                               type: item?.rating_current,
@@ -635,6 +708,10 @@
                     </tbody>
                   </table>
                 </div>
+              </div>
+            {:else if stockList?.length === 0 && inputValue?.length > 0}
+              <div class="pt-5">
+                <Infobox text={`No data is available for "${inputValue}"`} />
               </div>
             {:else}
               <div class="pt-5">

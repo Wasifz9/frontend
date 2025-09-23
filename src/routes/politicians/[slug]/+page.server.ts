@@ -1,12 +1,46 @@
 import { getPartyForPoliticians } from "$lib/utils";
 
-let politicianDistrict;
-let politicianCongress;
-let politicianParty = "n/a";
-// Function to load images only when they are viewed
+  function processTickerData(data) {
+    const tickerMap = new Map();
+
+    data?.forEach((item) => {
+      const { ticker } = item;
+
+      if (!ticker) return; // Skip if ticker is not defined
+
+      if (!tickerMap?.has(ticker)) {
+        // Add the item and initialize count
+        tickerMap?.set(ticker, { ...item, transaction: 1 });
+      } else {
+        const existing = tickerMap?.get(ticker);
+
+        // Increment the ratings count
+        existing.transaction += 1;
+
+        // Keep the item with the latest date
+        if (
+          new Date(item?.transactionDate) > new Date(existing?.transactionDate)
+        ) {
+          tickerMap?.set(ticker, {
+            ...item,
+            transaction: existing?.transaction,
+          });
+        }
+      }
+    });
+
+    // Convert the Map back to an array
+    return Array?.from(tickerMap?.values());
+  }
+  
 
 export const load = async ({ locals, params }) => {
-  const getPolitician = async () => {
+
+  let politicianDistrict;
+  let politicianCongress;
+  let politicianParty = "n/a";
+
+  const getData = async () => {
     let res;
 
     const { apiURL, apiKey } = locals;
@@ -19,12 +53,12 @@ export const load = async ({ locals, params }) => {
         "Content-Type": "application/json",
         "X-API-KEY": apiKey,
       },
-      body: JSON.stringify(postData),
+      body: JSON?.stringify(postData),
     });
 
-    const output = await response.json();
-    const history = output?.history;
-    // Cache the data for this specific tickerID with a specific name 'getPolitician'
+    let output = await response?.json();
+    let history = processTickerData(output?.history);
+    // Cache the data for this specific tickerID with a specific name 'getData'
 
     if (output && history?.length > 0) {
       let firstItem = history?.at(0);
@@ -48,6 +82,7 @@ export const load = async ({ locals, params }) => {
       politicianCongress = firstItem?.congress;
     }
 
+    output.history = history;
     res = { output, politicianParty, politicianDistrict, politicianCongress };
 
     return res;
@@ -55,6 +90,6 @@ export const load = async ({ locals, params }) => {
 
   // Make sure to return a promise
   return {
-    getPolitician: await getPolitician(),
+    getData: await getData(),
   };
 };
