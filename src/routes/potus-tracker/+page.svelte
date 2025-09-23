@@ -460,7 +460,7 @@
                   <DropdownMenu.Trigger asChild let:builder>
                     <Button
                       builders={[builder]}
-                      class="shadow-xs w-full border-gray-300 dark:border-gray-800 border bg-default text-white dark:bg-default dark:sm:hover:bg-primary ease-out  flex flex-row justify-between items-center px-3 py-2  rounded truncate"
+                      class="shadow w-full border-gray-300 bg-black sm:hover:bg-default text-white  dark:border-gray-600 border dark:bg-primary dark:sm:hover:bg-secondary ease-out ease-out  flex flex-row justify-between items-center px-3 py-2  rounded truncate"
                     >
                       <span class="truncate">{selectedSector}</span>
                       <svg
@@ -529,7 +529,7 @@
             </div>
 
             <div
-              class="chart-driver shadow-xs mt-5 border border-gray-300 dark:border-gray-800 rounded"
+              class="chart-driver shadow mt-5 border border-gray-300 dark:border-gray-800 rounded"
               use:highcharts={config}
             ></div>
 
@@ -733,10 +733,10 @@
                               href={item?.link}
                               rel="noopener noreferrer"
                               target="_blank"
-                              class="mr-3 cursor-pointer bg-black sm:hover:bg-default dark:bg-white dark:text-muted text-white rounded px-3 py-1.5 text-sm font-semibold dark:sm:hover:bg-gray-100 ml-auto"
+                              class="mr-3 cursor-pointer border-gray-300 bg-black sm:hover:bg-default text-white dark:border-gray-600 border dark:bg-primary dark:sm:hover:bg-secondary ease-out rounded px-3 py-1.5 text-sm font-semibold ml-auto"
                             >
                               Open link <svg
-                                class="size-5 inline-block text-black"
+                                class="size-5 inline-block"
                                 viewBox="0 0 24 24"
                                 fill="none"
                                 xmlns="http://www.w3.org/2000/svg"
@@ -765,7 +765,7 @@
                                 postDate = item?.date;
                                 postUrl = item?.link;
                               }}
-                              class=" cursor-pointer bg-black sm:hover:bg-default dark:bg-white dark:text-muted text-white rounded px-3 py-1.5 text-sm font-semibold dark:sm:hover:bg-gray-100"
+                              class=" cursor-pointer border-gray-300 bg-black sm:hover:bg-default text-white dark:border-gray-600 border dark:bg-primary dark:sm:hover:bg-secondary ease-out rounded px-3 py-1.5 text-sm font-semibold"
                             >
                               Read More
                             </label>
@@ -860,7 +860,7 @@
                             postContent = item?.content;
                             postDate = item?.date;
                           }}
-                          class="cursor-pointer bg-black sm:hover:bg-default dark:bg-white dark:text-muted text-white rounded px-3 py-1.5 text-sm font-semibold dark:sm:hover:bg-gray-100 ml-auto"
+                          class="cursor-pointer border-gray-300 bg-black sm:hover:bg-default text-white dark:border-gray-600 border dark:bg-primary dark:sm:hover:bg-secondary ease-out rounded px-3 py-1.5 text-sm font-semibold ml-auto"
                         >
                           Read More
                         </label>

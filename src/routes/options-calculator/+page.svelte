@@ -876,13 +876,13 @@
 
                     <Combobox.Input
                       on:input={search}
-                      class="text-sm  controls-input shadow-xs focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-600 dark:placeholder:text-gray-200 px-3 py-2 pl-8 xs:pl-10 grow w-full "
+                      class="text-sm  controls-input shadow focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-600 dark:placeholder:text-gray-200 px-3 py-2 pl-8 xs:pl-10 grow w-full "
                       placeholder="Find..."
                       aria-label="Find..."
                     />
                   </div>
                   <Combobox.Content
-                    class="z-10 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-default px-1 py-2 shadow-xs outline-hidden"
+                    class="z-10 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-default px-1 py-2 shadow outline-hidden"
                     sideOffset={8}
                   >
                     {#if inputValue?.length !== 0 && inputValue !== selectedTicker}
@@ -930,46 +930,25 @@
                 <button
                   type="button"
                   on:click={() => handleAddOptionLeg()}
-                  class="cursor-pointer mt-3 sm:mt-0 sm:ml-3 align-middle inline-flex items-center gap-x-1.5 rounded px-2.5 py-2 text-sm shadow-xs border-gray-300 dark:border-gray-600 border bg-default sm:hover:bg-black text-white dark:sm:hover:bg-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus:outline-none transition duration-150 ease-in-out whitespace-nowrap"
+                  class="cursor-pointer mt-3 sm:mt-0 sm:ml-3 align-middle inline-flex items-center gap-x-1.5 rounded px-2.5 py-2 text-sm shadow text-white border-gray-300 bg-black sm:hover:bg-default text-white dark:border-gray-600 border dark:bg-primary dark:sm:hover:bg-secondary ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus:outline-none transition duration-150 ease-in-out whitespace-nowrap"
                 >
-                  <svg
-                    class="-ml-0.5 h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
-                      clip-rule="evenodd"
-                    ></path>
-                  </svg>
                   Add Option Leg
                 </button>
                 <button
                   type="button"
                   on:click={handleSaveStrategy}
-                  class="cursor-pointer mt-3 sm:mt-0 sm:ml-3 align-middle inline-flex items-center gap-x-1.5 rounded px-2.5 py-2 text-sm shadow-xs border-gray-300 bg-default sm:hover:bg-black text-white dark:border-gray-600 border dark:sm:hover:bg-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus:outline-none transition duration-150 ease-in-out whitespace-nowrap"
+                  class="cursor-pointer mt-3 sm:mt-0 sm:ml-3 align-middle inline-flex items-center gap-x-1.5 rounded px-2.5 py-2 text-sm shadow border-gray-300 bg-black sm:hover:bg-default text-white dark:border-gray-600 border dark:bg-primary dark:sm:hover:bg-secondary ease-out text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus:outline-none transition duration-150 ease-in-out whitespace-nowrap"
                 >
-                  <svg
-                    class="w-3.5 h-3.5 inline-block cursor-pointer shrink-0"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 16 16"
-                    ><path
-                      fill="currentColor"
-                      d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327l4.898.696c.441.062.612.636.282.95l-3.522 3.356l.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"
-                    /></svg
-                  >
                   Save Strategy
                 </button>
                 <div
-                  class="order-last relative inline-block text-left cursor-pointer mt-3 sm:mt-0 sm:ml-3 shadow-xs"
+                  class="order-last relative inline-block text-left cursor-pointer mt-3 sm:mt-0 sm:ml-3 shadow"
                 >
                   <DropdownMenu.Root>
                     <DropdownMenu.Trigger asChild let:builder>
                       <Button
                         builders={[builder]}
-                        class="w-full border-gray-300 font-semibold dark:font-normal dark:border-gray-600 border bg-default sm:hover:bg-black text-white dark:bg-default  dark:sm:hover:bg-primary ease-out  flex flex-row justify-between items-center px-3 py-2  rounded truncate"
+                        class="w-full  font-semibold dark:font-normal text-white dark:bg-default  border-gray-300 bg-black sm:hover:bg-default text-white  dark:border-gray-600 border dark:bg-primary dark:sm:hover:bg-secondary ease-out flex flex-row justify-between items-center px-3 py-2  rounded truncate"
                       >
                         <span class="truncate">Custom Strategy</span>
                         <svg
@@ -1249,7 +1228,7 @@
                 </h2>
 
                 <div
-                  class="shadow-xs border border-gray-300 dark:border-gray-800 rounded"
+                  class="shadow border border-gray-300 dark:border-gray-800 rounded"
                   use:highcharts={config}
                 ></div>
               {:else}
@@ -1258,7 +1237,7 @@
                 >
                   <div class="relative">
                     <label
-                      class="shadow-xs bg-default dark:bg-secondary rounded h-14 w-14 flex justify-center items-center absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                      class="shadow bg-default dark:bg-secondary rounded h-14 w-14 flex justify-center items-center absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
                     >
                       <span
                         class="loading loading-spinner loading-md text-white dark:text-white"
@@ -1277,7 +1256,7 @@
 
                 <!-- Trade Information Card -->
                 <div
-                  class="border border-gray-300 dark:border-gray-800 rounded p-3 sm:p-4 mb-6 shadow-xs max-w-sm"
+                  class="border border-gray-300 dark:border-gray-800 rounded p-3 sm:p-4 mb-6 shadow max-w-sm"
                 >
                   {#each userStrategy as item, index}
                     <div>
