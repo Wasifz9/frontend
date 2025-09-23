@@ -36,16 +36,15 @@
     }
 
     // Google Ads conversion tracking
-    /*
+
     if (typeof window !== "undefined" && window.gtag && value) {
       window?.gtag("event", "conversion", {
         send_to: "AW-11328922950/FfVkCPuTupcbEMbKhpoq",
         value: value || 1.0,
-        currency: "EUR",
+        currency: "USD",
         transaction_id: data?.user?.id || "",
       });
     }
-      */
 
     function randomInRange(min, max) {
       return Math.random() * (max - min) + min;

@@ -5,8 +5,7 @@
     assetType,
     etfTicker,
   } from "$lib/store";
-  import { abbreviateNumber, removeCompanyStrings } from "$lib/utils";
-  import { goto } from "$app/navigation";
+  import { removeCompanyStrings } from "$lib/utils";
   import highcharts from "$lib/highcharts.ts";
   import { mode } from "mode-watcher";
 

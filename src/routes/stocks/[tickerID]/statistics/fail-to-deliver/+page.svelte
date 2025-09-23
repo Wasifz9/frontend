@@ -4,7 +4,6 @@
   import Infobox from "$lib/components/Infobox.svelte";
   import FailToDeliver from "$lib/components/FailToDeliver.svelte";
   import SEO from "$lib/components/SEO.svelte";
-  import Tutorial from "$lib/components/Tutorial.svelte";
 
   export let data;
 
@@ -58,86 +57,6 @@
   }
 
   changePercentageYearAgo = computeYearOverYearChange(originalData);
-
-  let steps = [
-    {
-      popover: {
-        title: "Fail‑To‑Deliver (FTD)",
-        description: `This dashboard shows total fail-to-deliver shares, their ratio to average volume, and how these metrics have trended over the past year. Traders use this data to assess potential settlement issues. High FTD shares or a high FTD/volume ratio may indicate problems with short selling or clearing inefficiencies, while low values typically suggest a healthier trading environment.`,
-        side: "center",
-        align: "center",
-      },
-    },
-    {
-      element: ".ftd-total-driver",
-      popover: {
-        title: "Total FTD Shares",
-        description: `The company’s total fail-to-deliver shares this month is ${abbreviateNumber(
-          rawData?.slice(-1)?.at(0)?.failToDeliver,
-          false,
-        )}. Elevated totals can point to significant clearing or delivery issues for the stock.`,
-        side: "left",
-        align: "start",
-      },
-    },
-    {
-      element: ".ftd-ratio-driver",
-      popover: {
-        title: "FTD / Avg. Volume",
-        description: `Shows failed deliveries as a percentage of the stock’s average daily volume. Higher ratios may indicate increased settlement risk or short selling activity.`,
-        side: "bottom",
-        align: "start",
-      },
-    },
-    {
-      element: ".oneYearChange-driver",
-      popover: {
-        title: "1‑Year Change",
-        description: `Shows how FTD shares have moved in the last year. A sharp decline reflects improved delivery efficiency, while an increase may raise concerns for traders.`,
-        side: "right",
-        align: "start",
-      },
-    },
-    {
-      element: ".chart-driver",
-      popover: {
-        title: "FTD Over Time",
-        description:
-          "This chart displays fail-to-deliver shares and the stock price over time, highlighting spikes that may correspond to settlement failures, short squeezes, or other unusual trading behavior.",
-        side: "right",
-        align: "start",
-      },
-    },
-    {
-      element: ".history-driver",
-      popover: {
-        title: "FTD History Table",
-        description:
-          "Browse the historical table of FTD shares and % change alongside stock prices to spot patterns and correlations that may inform trading decisions.",
-        side: "right",
-        align: "start",
-      },
-    },
-    {
-      element: ".timeframe-toggle-driver",
-      popover: {
-        title: "Adjust Timeframe",
-        description:
-          "Switch between monthly and quarterly views to zoom in on shorter or longer-term FTD trends.",
-        side: "bottom",
-        align: "start",
-      },
-    },
-    {
-      popover: {
-        title: "You’re All Set!",
-        description:
-          "Now you know how to interpret FTD metrics and apply these insights to your trading strategies. Happy investing!",
-        side: "center",
-        align: "center",
-      },
-    },
-  ];
 </script>
 
 <SEO
@@ -193,9 +112,8 @@
             class="w-full flex flex-col items-start sm:items-center sm:flex-row justify-between mb-3"
           >
             <h1 class="text-xl sm:text-2xl font-bold">
-              {removeCompanyStrings($displayCompanyName)} Fail-to-Deliver
+              SEC Fail-to-Deliver Shares
             </h1>
-            <Tutorial {steps} />
           </div>
 
           {#if rawData?.length > 0}

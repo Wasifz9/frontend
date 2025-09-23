@@ -649,8 +649,7 @@
                         {#each allList as item}
                           <DropdownMenu.Item
                             on:click={() => changeWatchList(item)}
-                            class="text-sm sm:text-[1rem] {item?.id ===
-                            displayWatchList?.id
+                            class="text-sm {item?.id === displayWatchList?.id
                               ? 'bg-gray-200 dark:bg-primary'
                               : ''} cursor-pointer sm:hover:bg-gray-200 dark:sm:hover:bg-primary"
                           >
