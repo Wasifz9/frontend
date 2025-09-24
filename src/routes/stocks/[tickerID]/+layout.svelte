@@ -71,7 +71,7 @@
     }
 
     try {
-      prePostSocket = new WebSocket(data.wsURL + "/pre-post-quote");
+      prePostSocket = new WebSocket(data?.wsURL + "/pre-post-quote");
 
       prePostSocket.addEventListener("open", () => {
         console.log("Pre-post quote WebSocket connection opened");
@@ -85,9 +85,9 @@
 
       prePostSocket.addEventListener("message", (event) => {
         try {
-          const newData = JSON.parse(event.data);
+          const newData = JSON?.parse(event.data);
 
-          if (newData && Object.keys(newData).length > 0) {
+          if (newData && Object?.keys(newData).length > 0) {
             //console.log("Received pre-post quote update:", newData);
             prePostData = newData;
           }
