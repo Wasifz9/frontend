@@ -14,6 +14,10 @@
   import { chatReasoning } from "$lib/store";
 
   import { schema } from "prosemirror-schema-basic";
+  
+  // Debug: Check what nodes are available in the schema
+  console.log("Available schema nodes:", Object.keys(schema.nodes));
+  console.log("Hard break node exists:", !!schema.nodes.hard_break);
 
   export let data;
   export let form;
@@ -141,7 +145,32 @@
       dispatchTransaction(transaction) {
         const newState = editorView.state.apply(transaction);
         editorView.updateState(newState);
-        editorText = editorView?.state.doc?.textContent;
+        
+        // DEBUG: Log document structure
+        console.log("=== DOCUMENT STRUCTURE ===");
+        console.log("Raw textContent:", JSON.stringify(newState.doc.textContent));
+        newState.doc.descendants((node, pos) => {
+          console.log(`Node at ${pos}:`, {
+            type: node.type.name,
+            text: node.text || 'no-text',
+            isText: node.isText
+          });
+        });
+        console.log("=========================");
+        
+        // Extract text with line breaks preserved
+        let extractedText = "";
+        newState.doc.descendants((node, pos) => {
+          if (node.isText) {
+            extractedText += node.text;
+          } else if (node.type.name === "hard_break") {
+            console.log("Found hard_break, adding newline");
+            extractedText += "\n";
+          }
+        });
+        
+        console.log("Extracted text with breaks:", JSON.stringify(extractedText));
+        editorText = extractedText;
         checkAutocomplete(editorView);
       },
     });
@@ -298,6 +327,16 @@
   }
   function agentMentionDeletePlugin(agentNames: string[]) {
     return keymap({
+      "Shift-Enter": (state, dispatch) => {
+        console.log("Shift+Enter pressed!");
+        if (dispatch) {
+          const br = schema.nodes.hard_break.create();
+          console.log("Creating hard_break node:", br);
+          const tr = state.tr.replaceSelectionWith(br).scrollIntoView();
+          dispatch(tr);
+        }
+        return true;
+      },
       Backspace: (state, dispatch, view) => {
         const { $cursor } = state.selection as any;
 
