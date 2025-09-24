@@ -44,6 +44,7 @@ export const clearCache = () => {
 };
 
 export const activePopupParameter = writable<string | null>(null);
+export const chatReasoning = writable(<boolean>false);
 
 export const showCookieConsent = writable(<boolean>false);
 export const shouldUpdatePriceChart = writable(<boolean>false);
