@@ -293,7 +293,9 @@
             >
               {@html isStreaming && message?.role === "system"
                 ? displayedContent
-                : message?.content}
+                : message?.role === "user"
+                  ? message?.content?.replace(/\n/g, "<br/>")
+                  : message?.content}
               {#if isStreaming && message?.role === "system" && typewriterInterval}
                 <span
                   class="inline-block w-1 h-4 ml-0.5 bg-gray-600 dark:bg-gray-400 animate-pulse"
