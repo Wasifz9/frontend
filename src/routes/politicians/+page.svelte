@@ -328,7 +328,7 @@
 />
 
 <section
-  class="w-full max-w-3xl sm:max-w-[1400px] overflow-hidden min-h-screen pt-5 px-3"
+  class="w-full max-w-3xl sm:max-w-[1400px] overflow-hidden min-h-screen pt-5 px-3 pb-20"
 >
   <div class="text-sm sm:text-[1rem] breadcrumbs">
     <ul>
@@ -353,7 +353,7 @@
               <h2
                 class="text-start w-full mb-2 sm:mb-0 text-xl sm:text-2xl font-semibold"
               >
-                {rawData?.length?.toLocaleString("en-US")} Congress Members
+                {rawData?.length?.toLocaleString("en-US")} Members
               </h2>
             </div>
 
@@ -372,7 +372,7 @@
                 <DropdownMenu.Trigger asChild let:builder>
                   <Button
                     builders={[builder]}
-                    class="ml-2 transition-all min-w-fit sm:min-w-[110px]  bg-default text-white shadow-xs dark:border-gray-600 border sm:hover:bg-black dark:sm:hover:bg-primary ease-out flex flex-row justify-between items-center px-3 py-2 rounded truncate"
+                    class="ml-2 transition-all min-w-fit sm:min-w-[110px] text-white dark:bg-primary dark:sm:hover:bg-secondary bg-black sm:hover:bg-default border border-gray-300 dark:border-gray-600 ease-out flex flex-row justify-between items-center px-3 py-2 rounded truncate"
                   >
                     <span class="truncate">Filter by Party</span>
                     <svg
@@ -398,7 +398,7 @@
                   class="w-56 h-fit max-h-72 overflow-y-auto scroller"
                 >
                   <DropdownMenu.Group>
-                    {#each ["Democratic", "Republican"] as item}
+                    {#each ["Democratic", "Republican", "Other"] as item}
                       <DropdownMenu.Item
                         class="sm:hover:bg-gray-300 dark:sm:hover:bg-primary"
                       >

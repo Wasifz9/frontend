@@ -13,7 +13,7 @@
 
   let analystStats = data?.getData;
 
-  let rawData = data?.getData?.ratingsList;
+  let rawData = processTickerData(data?.getData?.ratingsList);
   let originalData = [...rawData]; // Unaltered copy of raw data
 
   let stockList = rawData?.slice(0, 50) ?? [];
@@ -32,6 +32,34 @@
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(analystStats?.numOfAnalysts);
+
+  function processTickerData(data) {
+    const tickerMap = new Map();
+
+    data?.forEach((item) => {
+      const { ticker } = item;
+
+      if (!ticker) return; // Skip if ticker is not defined
+
+      if (!tickerMap.has(ticker)) {
+        // Add the item and initialize count
+        tickerMap.set(ticker, { ...item, ratings: 1 });
+      } else {
+        const existing = tickerMap.get(ticker);
+
+        // Increment the ratings count
+        existing.ratings += 1;
+
+        // Keep the item with the latest date
+        if (new Date(item.date) > new Date(existing.date)) {
+          tickerMap.set(ticker, { ...item, ratings: existing.ratings });
+        }
+      }
+    });
+
+    // Convert the Map back to an array
+    return Array.from(tickerMap.values());
+  }
 
   async function handleScroll() {
     const scrollThreshold = document.body.offsetHeight * 0.8; // 80% of the website height
@@ -57,7 +85,7 @@
         await loadSearchWorker();
       } else {
         // Reset to original data if filter is empty
-        rawData = data?.getData?.ratingsList || [];
+        rawData = originalData || [];
         stockList = rawData?.slice(0, 50);
       }
     }, 100);
@@ -66,7 +94,7 @@
   const loadSearchWorker = async () => {
     if (searchWorker && rawData?.length > 0) {
       searchWorker.postMessage({
-        rawData: data?.getData?.ratingsList,
+        rawData: originalData,
         inputValue: inputValue,
       });
     }
