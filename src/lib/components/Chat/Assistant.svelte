@@ -93,6 +93,14 @@
   // --- editor plugins & helpers (kept from your original) ---
   function agentMentionDeletePlugin(agentNames: string[]) {
     return keymap({
+      "Shift-Enter": (state, dispatch) => {
+        if (dispatch) {
+          const br = schema.nodes.hard_break.create();
+          const tr = state.tr.replaceSelectionWith(br).scrollIntoView();
+          dispatch(tr);
+        }
+        return true;
+      },
       Backspace: (state, dispatch, view) => {
         const { $cursor } = state.selection as any;
         if (!$cursor) return false;
@@ -842,7 +850,18 @@
 
         const newState = editorView.state.apply(transaction);
         editorView.updateState(newState);
-        editorText = editorView?.state.doc?.textContent || "";
+        
+        // Extract text with line breaks preserved
+        let extractedText = "";
+        newState.doc.descendants((node, pos) => {
+          if (node.isText) {
+            extractedText += node.text;
+          } else if (node.type.name === "hard_break") {
+            extractedText += "\n";
+          }
+        });
+        
+        editorText = extractedText;
         checkAutocomplete(editorView);
       },
     });
