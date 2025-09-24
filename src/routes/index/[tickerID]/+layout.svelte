@@ -15,6 +15,7 @@
     assetType,
     displayCompanyName,
     isOpen,
+    isWeekend,
     shouldUpdatePriceChart,
     priceChartData,
   } from "$lib/store";
@@ -34,6 +35,7 @@
   let previousRealtimePrice = null;
   let previousTicker;
   let socket;
+  let prePostSocket = null;
 
   $indexTicker = data?.getParams;
   $assetType = "index";
@@ -49,6 +51,8 @@
 
   let displaySection = "";
   let displayLegend = {};
+
+  let isComponentDestroyed = false;
 
   function changeSection(state) {
     const sectionMap = {
@@ -179,6 +183,93 @@
     }
   }
 
+  // Pre-Post Quote WebSocket connection
+  function connectPrePostWebSocket() {
+    if (!data?.wsURL || $isOpen || $isWeekend) {
+      return;
+    }
+
+    // Prevent duplicate connections
+    if (
+      prePostSocket &&
+      (prePostSocket.readyState === WebSocket.CONNECTING ||
+        prePostSocket.readyState === WebSocket.OPEN)
+    ) {
+      console.log("Pre-post WebSocket already connected or connecting");
+      return;
+    }
+
+    try {
+      prePostSocket = new WebSocket(data?.wsURL + "/pre-post-quote");
+
+      prePostSocket.addEventListener("open", () => {
+        console.log("Pre-post quote WebSocket connection opened");
+
+        // Send the ticker to the server
+        const message = {
+          ticker: $indexTicker,
+        };
+        prePostSocket.send(JSON.stringify(message));
+      });
+
+      prePostSocket.addEventListener("message", (event) => {
+        try {
+          const newData = JSON.parse(event.data);
+
+          if (newData && Object.keys(newData).length > 0) {
+            //console.log("Received pre-post quote update:", newData);
+            prePostData = newData;
+          }
+        } catch (error) {
+          console.error(
+            "Error processing pre-post quote WebSocket message:",
+            error,
+          );
+        }
+      });
+
+      prePostSocket.addEventListener("close", (event) => {
+        console.log(
+          "Pre-post quote WebSocket connection closed:",
+          event.reason,
+        );
+        prePostSocket = null;
+
+        // Attempt to reconnect if market is closed and component not destroyed
+        if (!$isOpen && !$isWeekend && !isComponentDestroyed) {
+          setTimeout(() => {
+            connectPrePostWebSocket();
+          }, 5000);
+        }
+      });
+
+      prePostSocket.addEventListener("error", (error) => {
+        console.error("Pre-post quote WebSocket error:", error);
+      });
+    } catch (error) {
+      console.error(
+        "Failed to establish pre-post quote WebSocket connection:",
+        error,
+      );
+    }
+  }
+
+  function disconnectPrePostWebSocket() {
+    if (prePostSocket) {
+      prePostSocket.close();
+      prePostSocket = null;
+    }
+  }
+
+  // Connect/disconnect based on market status
+  $: {
+    if (!$isOpen && !$isWeekend) {
+      connectPrePostWebSocket();
+    } else {
+      disconnectPrePostWebSocket();
+    }
+  }
+
   async function websocketRealtimeData() {
     try {
       socket = new WebSocket(data?.wsURL + "/price-data");
@@ -239,28 +330,45 @@
   }
 
   afterUpdate(async () => {
-    if (previousTicker !== $indexTicker && typeof socket !== "undefined") {
+    if (previousTicker !== $indexTicker) {
       previousTicker = $indexTicker;
-      //socket.send('close')
-      socket?.close();
-      await new Promise((resolve, reject) => {
-        socket?.addEventListener("close", resolve);
-      });
 
-      if (socket?.readyState === WebSocket?.CLOSED) {
-        await websocketRealtimeData();
-        console.log("connecting again");
+      // Handle price data WebSocket reconnection
+      if (typeof socket !== "undefined") {
+        socket?.close();
+        await new Promise((resolve, reject) => {
+          socket?.addEventListener("close", resolve);
+        });
+
+        if (socket?.readyState === WebSocket?.CLOSED) {
+          await websocketRealtimeData();
+          console.log("Price WebSocket connecting again");
+        }
+        $wsAskPrice = null;
+        $wsBidPrice = null;
+        $wsShares = null;
       }
-      $wsAskPrice = null;
-      $wsBidPrice = null;
-      $wsShares = null;
+
+      // Handle pre-post quote WebSocket reconnection
+      if (prePostSocket) {
+        disconnectPrePostWebSocket();
+        // Small delay to ensure clean disconnect
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        if (!$isOpen && !$isWeekend) {
+          connectPrePostWebSocket();
+          console.log("Pre-post WebSocket connecting for new ticker");
+        }
+      }
     }
   });
 
   onDestroy(() => {
+    isComponentDestroyed = true;
     try {
       //socket?.send('close')
       socket?.close();
+      disconnectPrePostWebSocket();
     } catch (e) {
       console.log(e);
     }
