@@ -36,6 +36,7 @@
     isBeforeMarketOpen,
     isWeekend,
     previousPage,
+    chatReasoning,
   } from "$lib/store";
 
   import { Button } from "$lib/components/shadcn/button/index.ts";
@@ -139,6 +140,16 @@
   let cacheInterval: number;
 
   onMount(async () => {
+    try {
+      const chatSettings = localStorage?.getItem("chat-settings");
+      if (chatSettings) {
+        let parsedData = JSON.parse(chatSettings);
+        $chatReasoning = parsedData?.reasoning || false;
+      }
+    } catch (e) {
+      console.log(e);
+    }
+
     checkMarketHour();
 
     if (!browser) return;

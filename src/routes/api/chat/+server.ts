@@ -4,7 +4,7 @@ import { getCreditFromQuery, agentOptions } from "$lib/utils";
 
 export const POST: RequestHandler = async ({ request, locals }) => {
   const { apiURL, apiKey, user, pb } = locals;
-  const { query, chatId } = await request.json();
+  const { query, chatId, reasoning } = await request.json();
 
   // simple premium check
   /*
@@ -18,9 +18,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     
   }
     */
-
-  const costOfCredit = getCreditFromQuery(query, agentOptions);
-
+  const multiplier = reasoning === true ? 2 : 1;
+  const costOfCredit = getCreditFromQuery(query, agentOptions)*multiplier;
+  
   if (user?.credits < costOfCredit) {
     return new Response(
       JSON.stringify({
@@ -28,8 +28,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       }),
       { status: 400 }
     );
-    
-    
     
   }
   
@@ -61,7 +59,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         "Content-Type": "application/json",
         "X-API-KEY": apiKey
       },
-      body: JSON?.stringify({ query: query, messages: messages, reasoning: 'low'})
+      body: JSON?.stringify({ query: query, messages: messages, reasoning: reasoning})
     });
 
     if (!upstream.ok || !upstream.body) {

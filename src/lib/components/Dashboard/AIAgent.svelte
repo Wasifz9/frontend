@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import Arrow from "lucide-svelte/icons/arrow-up";
-  import Settings from "lucide-svelte/icons/sliders-horizontal";
 
   import { mode } from "mode-watcher";
   import { toast } from "svelte-sonner";
@@ -117,6 +116,15 @@
     },
   });
 
+  function saveSettings() {
+    if (localStorage && typeof localStorage !== "undefined") {
+      localStorage.setItem(
+        "chat-settings",
+        JSON.stringify({ reasoning: $chatReasoning }),
+      );
+    }
+  }
+
   onMount(() => {
     editorView = new EditorView(editorDiv, {
       state: EditorState.create({
@@ -214,6 +222,7 @@
     if (isLoading) {
       return;
     }
+
     const costOfCredit = getCreditFromQuery(editorText, agentOptions);
 
     isLoading = true;
@@ -390,7 +399,7 @@
         >
           <div class="flex flex-row justify-between w-full">
             <div
-              class="order-first relative inline-block text-left cursor-pointer shadow"
+              class="order-first relative inline-block text-left cursor-pointer"
             >
               <DropdownMenu.Root>
                 <DropdownMenu.Trigger asChild let:builder>
@@ -438,6 +447,7 @@
                         on:click|capture={(event) => {
                           event.preventDefault();
                           $chatReasoning = !$chatReasoning;
+                          saveSettings();
                         }}
                         class="inline-flex justify-between w-full items-center cursor-pointer"
                       >

@@ -237,15 +237,6 @@
   let indicatorsTabRules = [];
   let indicatorsTabCheckedItems = new Set();
 
-  // Helper function to check if two arrays have the same rules
-  function arraysEqual(arr1, arr2) {
-    if (!arr1 || !arr2) return false;
-    if (arr1.length !== arr2.length) return false;
-    const rules1 = arr1.map((item) => item.rule).sort();
-    const rules2 = arr2.map((item) => item.rule).sort();
-    return rules1.every((rule, index) => rule === rules2[index]);
-  }
-
   // Function to load indicators tab rules from localStorage
   function loadIndicatorsTabRules() {
     // Get current page path

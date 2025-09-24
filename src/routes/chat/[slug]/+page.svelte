@@ -14,6 +14,7 @@
   import { EditorView, Decoration, DecorationSet } from "prosemirror-view";
   import { keymap } from "prosemirror-keymap";
   import { schema } from "prosemirror-schema-basic";
+  import { chatReasoning } from "$lib/store";
 
   import { onMount, afterUpdate, tick, onDestroy } from "svelte";
   import SEO from "$lib/components/SEO.svelte";
@@ -310,7 +311,11 @@
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: userQuery, chatId: chatId }),
+        body: JSON.stringify({
+          query: userQuery,
+          chatId: chatId,
+          reasoning: $chatReasoning,
+        }),
       });
 
       if (!res.ok || !res.body) {
