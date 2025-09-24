@@ -20,6 +20,8 @@
     export let data;
     export let form;
 
+    let LoginPopup;
+
     let strategyList = data?.getAllStrategies;
     let selectedStrategy = strategyList?.at(0)?.id ?? "";
     let strategyData = strategyList?.at(0)?.rules ?? {};
@@ -837,7 +839,7 @@
                 "10": "Weak Bullish (10)",
                 "25": "Bullish (25)",
                 "50": "Strong Bullish (50)",
-                "tsi_signal": "TSI Signal Line",
+                tsi_signal: "TSI Signal Line",
             },
         },
         tsi_signal: {
@@ -865,7 +867,7 @@
                 "50": "Moderate Uptrend (50)",
                 "70": "Strong Uptrend (70)",
                 "100": "Very Strong Uptrend (100)",
-                "aroon_down": "Aroon Down Line",
+                aroon_down: "Aroon Down Line",
             },
         },
         aroon_down: {
@@ -880,7 +882,7 @@
                 "50": "Moderate Downtrend (50)",
                 "70": "Strong Downtrend (70)",
                 "100": "Very Strong Downtrend (100)",
-                "aroon_up": "Aroon Up Line",
+                aroon_up: "Aroon Up Line",
             },
         },
         aroon_oscillator: {
@@ -1887,7 +1889,12 @@
             ?.slice(0, 50);
     };
 
-    onMount(() => {
+    onMount(async () => {
+        if (!data?.user) {
+            LoginPopup = (await import("$lib/components/LoginPopup.svelte"))
+                .default;
+        }
+
         window.addEventListener("scroll", handleScroll);
 
         // Initialize blocks from initial conditions
@@ -2242,7 +2249,7 @@
     <div class="sm:rounded">
         <div class="flex flex-col md:flex-row items-start md:items-center mb-5">
             <div class="w-full flex flex-row items-center sm:mt-4">
-                <h1 class=" text-3xl font-semibold">Backtesting</h1>
+                <h1 class=" text-3xl font-semibold">Backtesting Strategy</h1>
             </div>
 
             <div class="flex flex-row items-center w-full mt-5">
@@ -2259,7 +2266,7 @@
                             <DropdownMenu.Trigger asChild let:builder>
                                 <Button
                                     builders={[builder]}
-                                    class="w-full  border-gray-300 dark:border-gray-600 border text-white bg-black sm:hover:bg-default dark:bg-default dark:sm:hover:bg-primary ease-out flex flex-row justify-between items-center px-3 py-2  rounded truncate"
+                                    class="w-full border border-gray-300 dark:border-gray-600 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary  ease-out flex flex-row justify-between items-center px-3 py-2  rounded truncate"
                                 >
                                     <span class="truncate">Select Popular</span>
                                     <svg
@@ -2315,7 +2322,7 @@
                             <DropdownMenu.Trigger asChild let:builder>
                                 <Button
                                     builders={[builder]}
-                                    class="min-w-[110px]  w-full border-gray-300 dark:border-gray-600 border text-white bg-black sm:hover:bg-default dark:bg-default  dark:sm:hover:bg-primary ease-out flex flex-row justify-between items-center px-3 py-2  rounded truncate"
+                                    class="min-w-[110px]  w-full border border-gray-300 dark:border-gray-600 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary ease-out flex flex-row justify-between items-center px-3 py-2  rounded truncate"
                                 >
                                     <span class="truncate max-w-48"
                                         >{selectedStrategy?.length !== 0
@@ -2521,7 +2528,7 @@
                                 </h3>
                                 <div class="flex gap-2 ml-auto sm:ml-0">
                                     <button
-                                        class="cursor-pointer inline-flex items-center text-sm gap-1 px-3 py-2 bg-black sm:hover:bg-default text-white dark:text-muted dark:bg-white dark:sm:hover:bg-gray-100 rounded font-medium transition-colors"
+                                        class="cursor-pointer inline-flex items-center text-sm gap-1 px-3 py-2 border border-gray-300 dark:border-gray-600 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary ease-out rounded font-medium transition-colors"
                                         on:click={handleRunBacktest}
                                     >
                                         <svg
@@ -2650,28 +2657,31 @@
                             Define Backtesting Settings
                         </h3>
                         <div class="w-full sm:ml-auto flex justify-end">
-                            {#if data?.user}
-                                <label
-                                    on:click={() => handleSave(true)}
-                                    class=" cursor-pointer inline-flex items-center text-sm gap-1 px-3 py-2 bg-black sm:hover:bg-default disabled:bg-black/80 text-white dark:text-muted dark:bg-white dark:sm:hover:bg-gray-100 dark:disabled:bg-white/80 rounded font-medium transition-colors"
+                            <label
+                                for={!data?.user ? "userLogin" : ""}
+                                on:click={() => {
+                                    if (data?.user) {
+                                        handleSave(true);
+                                    }
+                                }}
+                                class=" cursor-pointer inline-flex items-center text-sm gap-1 px-3 py-2 border border-gray-300 dark:border-gray-600 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary ease-out rounded font-medium transition-colors"
+                            >
+                                <svg
+                                    class="w-3.5 h-3.5 mr-0.5 inline-block cursor-pointer shrink-0"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 16 16"
+                                    ><path
+                                        fill="currentColor"
+                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327l4.898.696c.441.062.612.636.282.95l-3.522 3.356l.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"
+                                    /></svg
                                 >
-                                    <svg
-                                        class="w-3.5 h-3.5 mr-0.5 inline-block cursor-pointer shrink-0"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 16 16"
-                                        ><path
-                                            fill="currentColor"
-                                            d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327l4.898.696c.441.062.612.636.282.95l-3.522 3.356l.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"
-                                        /></svg
-                                    >
-                                    <div>Save</div>
-                                </label>
-                            {/if}
+                                <div>Save</div>
+                            </label>
 
                             <button
                                 on:click={runBacktest}
                                 disabled={isBacktesting}
-                                class=" cursor-pointer ml-3 inline-flex items-center text-sm gap-1 px-3 py-2 bg-black sm:hover:bg-default disabled:bg-black/80 text-white dark:text-muted dark:bg-white dark:sm:hover:bg-gray-100 dark:disabled:bg-white/80 rounded font-medium transition-colors"
+                                class=" cursor-pointer ml-3 inline-flex items-center text-sm gap-1 px-3 py-2 border border-gray-300 dark:border-gray-600 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary ease-out rounded font-medium transition-colors"
                             >
                                 {#if isBacktesting}
                                     <svg
@@ -3496,3 +3506,8 @@
         </div>
     </div>
 </dialog>
+
+<!--Start Login Modal-->
+{#if LoginPopup}
+    <LoginPopup {form} />
+{/if}

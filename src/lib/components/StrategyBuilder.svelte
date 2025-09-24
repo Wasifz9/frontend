@@ -315,7 +315,7 @@
         </h3>
         <div class="flex gap-2 ml-auto sm:ml-0">
             <button
-                class="cursor-pointer flex items-center gap-1.5 px-2 py-2 bg-black dark:bg-white sm:hover:bg-default text-white dark:text-black rounded text-sm font-medium transition-colors"
+                class="cursor-pointer flex items-center gap-1.5 px-2 py-2 border border-gray-300 dark:border-gray-600 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary ease-out rounded text-sm font-medium transition-colors"
                 on:click={() => {
                     addBlock(BLOCK_TYPES.CONDITION);
                 }}
@@ -324,7 +324,7 @@
                 <span class="mr-1">Add Block</span>
             </button>
             <button
-                class="cursor-pointer inline-flex items-center text-sm gap-1 px-3 py-2 bg-black sm:hover:bg-default text-white dark:text-muted dark:bg-white dark:sm:hover:bg-gray-100 rounded font-medium transition-colors"
+                class="cursor-pointer inline-flex items-center text-sm gap-1 px-3 py-2 border border-gray-300 dark:border-gray-600 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary ease-out rounded font-medium transition-colors"
                 on:click={() => {
                     dispatch("runBacktest");
                 }}
