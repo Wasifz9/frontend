@@ -18,7 +18,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     
   }
     */
-  const multiplier = reasoning === true ? 2 : 1;
+  const multiplier = reasoning === true ? 3 : 1;
   const costOfCredit = getCreditFromQuery(query, agentOptions)*multiplier;
   
   if (user?.credits < costOfCredit) {
