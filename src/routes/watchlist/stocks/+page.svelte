@@ -311,7 +311,7 @@
     } else {
       rawTabData = groupedEarnings;
     }
-    displayList = rawTabData?.slice(0, 8);
+    displayList = rawTabData?.slice(0, 3);
   }
 
   async function handleAddTicker(event, ticker) {
@@ -405,7 +405,7 @@
     const isBottom = window.innerHeight + window.scrollY >= scrollThreshold;
     if (isBottom && displayList?.length !== rawTabData?.length) {
       const nextIndex = displayList?.length;
-      const filteredItem = rawTabData?.slice(nextIndex, nextIndex + 8);
+      const filteredItem = rawTabData?.slice(nextIndex, nextIndex + 3);
       displayList = [...displayList, ...filteredItem];
     }
   }

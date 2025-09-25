@@ -102,7 +102,14 @@
   let downloadWorker: Worker | undefined;
   let checkedItems;
 
-  let stockList = originalData?.slice(0, 150);
+  // Pagination state
+  let currentPage = 1;
+  let rowsPerPage = 20;
+  let rowsPerPageOptions = [10, 20, 50, 100];
+  let totalPages = 1;
+  
+  // Initialize stockList with pagination
+  let stockList = [];
   let scrollPosition = 0;
   //$: stockList = originalData.slice(0, 150);
 
@@ -330,7 +337,7 @@
     // Trigger reactivity by creating a new reference
     originalData = [...updatedRawData];
     rawData = originalData;
-    stockList = rawData?.slice(0, 100);
+    updatePaginatedData();
 
     // Validate and clean rules after updating data
     validateAndCleanRules();
@@ -597,18 +604,31 @@
     saveRules();
   }
 
-  async function handleScroll() {
-    const scrollThreshold = document.body.offsetHeight * 0.8;
-    const isBottom = window.innerHeight + window.scrollY >= scrollThreshold;
-
-    if (isBottom && stockList.length !== originalData.length) {
-      const nextIndex = stockList.length;
-      const filteredNewResults = originalData?.slice(
-        nextIndex,
-        nextIndex + 150,
-      );
-      stockList = [...stockList, ...filteredNewResults];
+  // Pagination functions
+  function updatePaginatedData() {
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    // Use rawData for filtered results, originalData is the unfiltered full dataset
+    const dataSource = inputValue?.length > 0 ? rawData : originalData;
+    stockList = dataSource?.slice(startIndex, endIndex) || [];
+    totalPages = Math.ceil((dataSource?.length || 0) / rowsPerPage);
+  }
+  
+  function goToPage(page) {
+    if (page >= 1 && page <= totalPages) {
+      currentPage = page;
+      updatePaginatedData();
     }
+  }
+  
+  function changeRowsPerPage(newRowsPerPage) {
+    rowsPerPage = newRowsPerPage;
+    currentPage = 1; // Reset to first page when changing rows per page
+    updatePaginatedData();
+  }
+  
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   // Save scroll position before data changes
@@ -672,7 +692,10 @@
     }
   }
 
-  $: stockList = [...stockList];
+  // Update pagination when originalData or rawData changes
+  $: if ((originalData && originalData.length > 0) || (rawData && inputValue?.length > 0)) {
+    updatePaginatedData();
+  }
 
   // Reactive statement to load indicators when page changes
   $: if ($page?.url?.pathname && $page?.url?.pathname !== pagePathName) {
@@ -711,7 +734,8 @@
   async function resetTableSearch() {
     inputValue = "";
     rawData = originalData;
-    stockList = originalData?.slice(0, 50);
+    currentPage = 1; // Reset to first page
+    updatePaginatedData();
     changeTab(displayTableTab || "general");
   }
 
@@ -724,7 +748,8 @@
       } else {
         // Reset to original data if filter is empty
         rawData = originalData;
-        stockList = originalData?.slice(0, 50);
+        currentPage = 1; // Reset to first page
+        updatePaginatedData();
       }
     }, 100);
   }
@@ -732,8 +757,8 @@
   const handleSearchMessage = (event) => {
     if (event.data?.message === "success") {
       rawData = event.data?.output ?? [];
-
-      stockList = rawData?.slice(0, 50);
+      currentPage = 1; // Reset to first page after search
+      updatePaginatedData();
     }
   };
 
@@ -781,11 +806,9 @@
       }
 
       await updateStockScreenerData();
-
-      window.addEventListener("scroll", handleScroll);
-      return () => {
-        window.removeEventListener("scroll", handleScroll);
-      };
+      
+      // Initialize pagination
+      updatePaginatedData();
     } catch (e) {
       console.log(e);
     }
@@ -952,8 +975,14 @@
 
     // Reset to original data when 'none' and stop further sorting
     if (sortOrder === "none") {
-      originalData = [...rawData]; // Reset originalData to rawData
-      stockList = originalData?.slice(0, 150); // Reset displayed data
+      if (inputValue?.length > 0) {
+        // If filtering, don't change rawData
+        stockList = rawData?.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage) || [];
+      } else {
+        originalData = [...rawData]; // Reset originalData to rawData
+        currentPage = 1; // Reset to first page
+        updatePaginatedData(); // Reset displayed data
+      }
       return;
     }
 
@@ -997,17 +1026,23 @@
             : 0;
     };
 
-    // Sort and update the originalData and stockList
-    originalData = [...rawData].sort(compareValues);
+    // Sort and update the data
+    if (inputValue?.length > 0) {
+      // If filtering, sort the filtered data
+      rawData = [...rawData].sort(compareValues);
+    } else {
+      // If not filtering, sort the original data
+      originalData = [...originalData].sort(compareValues);
+    }
+    
     if (
       ["changesPercentage", "price"]?.includes(activeSortKey) &&
       input === true
     ) {
-      //stockList = originalData?.slice(0, Math.min(stockList?.length, 50)); // Update the displayed data
-      originalData = [...rawData].sort(compareValues);
-      stockList = originalData;
+      updatePaginatedData();
     } else {
-      stockList = originalData?.slice(0, 150); // Update the displayed data
+      currentPage = 1; // Reset to first page when sorting
+      updatePaginatedData(); // Update the displayed data
     }
   };
 
@@ -1488,6 +1523,64 @@
   <div class="w-full flex items-center justify-start text-start">
     <Infobox text={`No results found for "${inputValue}" `} />
   </div>
+{/if}
+
+<!-- Pagination controls -->
+{#if stockList?.length > 0}
+<div class="flex flex-col sm:flex-row items-center justify-between mt-4 gap-4 px-2">
+  <!-- Previous and Next buttons -->
+  <div class="flex items-center gap-2">
+    <button
+      on:click={() => goToPage(currentPage - 1)}
+      disabled={currentPage === 1}
+      class="px-3 py-2 rounded border {currentPage === 1 
+        ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600 dark:border-gray-700' 
+        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-800'}"
+    >
+      ← Previous
+    </button>
+  </div>
+
+  <!-- Page info and rows selector in center -->
+  <div class="flex items-center gap-4">
+    <span class="text-sm text-gray-700 dark:text-gray-300">
+      Page {currentPage} of {totalPages}
+    </span>
+    
+    <select
+      bind:value={rowsPerPage}
+      on:change={(e) => changeRowsPerPage(Number(e.target.value))}
+      class="px-3 py-2 rounded border border-gray-300 bg-white text-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600"
+    >
+      {#each rowsPerPageOptions as option}
+        <option value={option}>{option} Rows</option>
+      {/each}
+    </select>
+  </div>
+
+  <!-- Next button and Back to Top -->
+  <div class="flex items-center gap-2">
+    <button
+      on:click={() => goToPage(currentPage + 1)}
+      disabled={currentPage === totalPages}
+      class="px-3 py-2 rounded border {currentPage === totalPages 
+        ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600 dark:border-gray-700' 
+        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-800'}"
+    >
+      Next →
+    </button>
+  </div>
+</div>
+
+<!-- Back to Top button -->
+<div class="flex justify-center mt-4">
+  <button
+    on:click={scrollToTop}
+    class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium"
+  >
+    Back to Top ↑
+  </button>
+</div>
 {/if}
 
 <style>
