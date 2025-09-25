@@ -37,6 +37,7 @@
   let searchQuery = "";
   let inputValue = "";
   let originalFilteredData = [];
+  let currentUnsortedData = []; // Current unsorted data (could be search results or screener results)
   let infoText = {};
   let tooltipTitle;
   let removeList = false;
@@ -1859,7 +1860,8 @@
     );
 
     filteredData = event.data?.filteredData ?? [];
-    originalFilteredData = filteredData; // Store original filtered data for search
+    originalFilteredData = [...filteredData]; // Store original filtered data for search
+    currentUnsortedData = [...filteredData]; // Store current unsorted data
     currentPage = 1; // Reset to first page
     updatePaginatedData();
   };
@@ -1891,10 +1893,10 @@
         await loadSearchWorker();
       } else {
         // Reset to original data if filter is empty
-        filteredData = originalFilteredData;
+        filteredData = [...originalFilteredData];
+        currentUnsortedData = [...originalFilteredData];
         currentPage = 1; // Reset to first page
         updatePaginatedData();
-        displayResults = originalFilteredData?.slice(0, 50);
       }
     }, 100);
   }
@@ -1911,6 +1913,7 @@
   const handleSearchMessage = (event) => {
     if (event.data?.message === "success") {
       filteredData = event.data?.output ?? [];
+      currentUnsortedData = [...filteredData]; // Store unsorted search results
       currentPage = 1; // Reset to first page after search
       updatePaginatedData();
     }
@@ -2843,8 +2846,6 @@ const handleKeyDown = (event) => {
     // Cycle through 'none', 'asc', 'desc' for the clicked key
     const orderCycle = ["none", "asc", "desc"];
 
-    let originalData = filteredData;
-
     const currentOrderIndex = orderCycle.indexOf(sortOrders[key].order);
     sortOrders[key].order =
       orderCycle[(currentOrderIndex + 1) % orderCycle.length];
@@ -2852,7 +2853,7 @@ const handleKeyDown = (event) => {
 
     // Reset to original data when 'none' and stop further sorting
     if (sortOrder === "none") {
-      filteredData = [...originalData]; // Reset to original data (spread to avoid mutation)
+      filteredData = [...currentUnsortedData]; // Reset to current unsorted data
       currentPage = 1; // Reset to first page
       updatePaginatedData();
       return;
@@ -2889,7 +2890,7 @@ const handleKeyDown = (event) => {
     };
 
     // Sort using the generic comparison function and update filteredData
-    filteredData = [...originalData].sort(compareValues);
+    filteredData = [...currentUnsortedData].sort(compareValues);
     currentPage = 1; // Reset to first page after sorting
     updatePaginatedData();
   };
