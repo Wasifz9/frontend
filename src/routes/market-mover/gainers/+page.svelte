@@ -25,19 +25,21 @@
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    "name": "Top Stock Gainers Today",
-    "description": "Real-time list of today's top performing stocks with the highest percentage gains, featuring winning stocks and market leaders.",
-    "url": "https://stocknear.com/market-mover/gainers",
-    "mainEntity": {
+    name: "Top Stock Gainers Today",
+    description:
+      "Real-time list of today's top performing stocks with the highest percentage gains, featuring winning stocks and market leaders.",
+    url: "https://stocknear.com/market-mover/gainers",
+    mainEntity: {
       "@type": "ItemList",
-      "name": "Top Stock Gainers",
-      "description": "Today's best performing stocks by percentage increase"
+      name: "Top Stock Gainers",
+      description: "Today's best performing stocks by percentage increase",
     },
-    "about": {
+    about: {
       "@type": "Thing",
-      "name": "Stock Market Gainers",
-      "description": "Stocks with highest percentage price increases and positive market performance"
-    }
+      name: "Stock Market Gainers",
+      description:
+        "Stocks with highest percentage price increases and positive market performance",
+    },
   };
 </script>
 
@@ -48,11 +50,13 @@
   {structuredData}
 />
 
-<Table
-  {data}
-  {rawData}
-  {excludedRules}
-  {defaultList}
-  title={$displayTitle}
-  date={$displayDate}
-/>
+<div class="w-full">
+  <Table
+    {data}
+    {rawData}
+    {excludedRules}
+    {defaultList}
+    title={$displayTitle}
+    date={$displayDate}
+  />
+</div>

@@ -50,11 +50,14 @@
   keywords="afterhours gainers, after-hours stocks, extended hours trading, aftermarket winners, evening trading, post-market movers, extended hours gainers, aftermarket trading, after-hours performance"
   {structuredData}
 />
-<Table
-  {data}
-  {rawData}
-  {excludedRules}
-  {defaultList}
-  title={$displayTitle}
-  date={$displayDate}
-/>
+
+<div class="w-full">
+  <Table
+    {data}
+    {rawData}
+    {excludedRules}
+    {defaultList}
+    title={$displayTitle}
+    date={$displayDate}
+  />
+</div>

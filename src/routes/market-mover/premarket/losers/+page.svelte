@@ -25,19 +25,22 @@
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    "name": "Top Premarket Stock Losers Today",
-    "description": "Real-time list of the worst performing stocks in premarket trading, featuring stocks with highest percentage losses during extended hours.",
-    "url": "https://stocknear.com/market-mover/premarket/losers",
-    "mainEntity": {
+    name: "Top Premarket Stock Losers Today",
+    description:
+      "Real-time list of the worst performing stocks in premarket trading, featuring stocks with highest percentage losses during extended hours.",
+    url: "https://stocknear.com/market-mover/premarket/losers",
+    mainEntity: {
       "@type": "ItemList",
-      "name": "Premarket Stock Losers",
-      "description": "Worst performing stocks in premarket trading by percentage decrease"
+      name: "Premarket Stock Losers",
+      description:
+        "Worst performing stocks in premarket trading by percentage decrease",
     },
-    "about": {
+    about: {
       "@type": "Thing",
-      "name": "Premarket Stock Trading Losers",
-      "description": "Stocks with highest percentage price decreases during premarket extended hours trading"
-    }
+      name: "Premarket Stock Trading Losers",
+      description:
+        "Stocks with highest percentage price decreases during premarket extended hours trading",
+    },
   };
 </script>
 
@@ -48,11 +51,13 @@
   {structuredData}
 />
 
-<Table
-  {data}
-  {rawData}
-  {excludedRules}
-  {defaultList}
-  title={$displayTitle}
-  date={$displayDate}
-/>
+<div class="w-full">
+  <Table
+    {data}
+    {rawData}
+    {excludedRules}
+    {defaultList}
+    title={$displayTitle}
+    date={$displayDate}
+  />
+</div>

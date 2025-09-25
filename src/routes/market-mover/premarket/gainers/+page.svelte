@@ -25,19 +25,22 @@
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    "name": "Top Premarket Stock Gainers Today",
-    "description": "Real-time list of the best performing stocks in premarket trading, featuring stocks with highest percentage increases during extended hours.",
-    "url": "https://stocknear.com/market-mover/premarket/gainers",
-    "mainEntity": {
+    name: "Top Premarket Stock Gainers Today",
+    description:
+      "Real-time list of the best performing stocks in premarket trading, featuring stocks with highest percentage increases during extended hours.",
+    url: "https://stocknear.com/market-mover/premarket/gainers",
+    mainEntity: {
       "@type": "ItemList",
-      "name": "Premarket Stock Gainers",
-      "description": "Top performing stocks in premarket trading by percentage increase"
+      name: "Premarket Stock Gainers",
+      description:
+        "Top performing stocks in premarket trading by percentage increase",
     },
-    "about": {
+    about: {
       "@type": "Thing",
-      "name": "Premarket Stock Trading Gainers",
-      "description": "Stocks with highest percentage price increases during premarket extended hours trading"
-    }
+      name: "Premarket Stock Trading Gainers",
+      description:
+        "Stocks with highest percentage price increases during premarket extended hours trading",
+    },
   };
 </script>
 
@@ -48,11 +51,13 @@
   {structuredData}
 />
 
-<Table
-  {data}
-  {rawData}
-  {excludedRules}
-  {defaultList}
-  title={$displayTitle}
-  date={$displayDate}
-/>
+<div class="w-full">
+  <Table
+    {data}
+    {rawData}
+    {excludedRules}
+    {defaultList}
+    title={$displayTitle}
+    date={$displayDate}
+  />
+</div>

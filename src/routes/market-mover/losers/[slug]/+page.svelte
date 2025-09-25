@@ -42,7 +42,7 @@
             const path = $page?.url?.pathname;
             const lastSegment = path.split("/").filter(Boolean).pop(); // e.g., "1M"
             currentSlug = lastSegment;
-            
+
             // Resolve the time key
             const timeKey = timePeriodMap[lastSegment]; // fallback to "week"
             rawData = data?.getMarketMover[timeKey];
@@ -53,30 +53,33 @@
                 month: { display: "Monthly", desc: "past month" },
                 year: { display: "Yearly", desc: "past year" },
                 "3Y": { display: "3-Year", desc: "past 3 years" },
-                "5Y": { display: "5-Year", desc: "past 5 years" }
+                "5Y": { display: "5-Year", desc: "past 5 years" },
             };
 
-            const period = periodMap[lastSegment] || { display: "Weekly", desc: "past week" };
-            
+            const period = periodMap[lastSegment] || {
+                display: "Weekly",
+                desc: "past week",
+            };
+
             seoTitle = `Top Stock Losers ${period.display} - Worst Performing Stocks`;
             seoDescription = `Track the top stock losers with highest percentage declines over the ${period.desc}. Monitor historical declining stocks, worst performers, and negative market trends.`;
 
             structuredData = {
                 "@context": "https://schema.org",
                 "@type": "CollectionPage",
-                "name": `Top Stock Losers - ${period.display}`,
-                "description": `Historical list of worst performing stocks with highest percentage losses over the ${period.desc}`,
-                "url": `https://stocknear.com/market-mover/losers/${lastSegment}`,
-                "mainEntity": {
+                name: `Top Stock Losers - ${period.display}`,
+                description: `Historical list of worst performing stocks with highest percentage losses over the ${period.desc}`,
+                url: `https://stocknear.com/market-mover/losers/${lastSegment}`,
+                mainEntity: {
                     "@type": "ItemList",
-                    "name": `Top Stock Losers ${period.display}`,
-                    "description": `${period.display} worst performing stocks by percentage decrease`
+                    name: `Top Stock Losers ${period.display}`,
+                    description: `${period.display} worst performing stocks by percentage decrease`,
                 },
-                "about": {
+                about: {
                     "@type": "Thing",
-                    "name": "Historical Stock Losers",
-                    "description": `Stocks with highest percentage price decreases over ${period.desc}`
-                }
+                    name: "Historical Stock Losers",
+                    description: `Stocks with highest percentage price decreases over ${period.desc}`,
+                },
             };
         }
     }
@@ -90,12 +93,14 @@
         {structuredData}
     />
 
-    <Table
-        {data}
-        {rawData}
-        {excludedRules}
-        {defaultList}
-        title={$displayTitle}
-        date={$displayDate}
-    />
+    <div class="w-full">
+        <Table
+            {data}
+            {rawData}
+            {excludedRules}
+            {defaultList}
+            title={$displayTitle}
+            date={$displayDate}
+        />
+    </div>
 {/key}

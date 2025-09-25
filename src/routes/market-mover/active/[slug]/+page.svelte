@@ -42,7 +42,7 @@
             const path = $page?.url?.pathname;
             const lastSegment = path.split("/").filter(Boolean).pop(); // e.g., "1M"
             currentSlug = lastSegment;
-            
+
             // Resolve the time key
             const timeKey = timePeriodMap[lastSegment]; // fallback to "week"
             rawData = data?.getMarketMover[timeKey];
@@ -53,30 +53,33 @@
                 month: { display: "Monthly", desc: "past month" },
                 year: { display: "Yearly", desc: "past year" },
                 "3Y": { display: "3-Year", desc: "past 3 years" },
-                "5Y": { display: "5-Year", desc: "past 5 years" }
+                "5Y": { display: "5-Year", desc: "past 5 years" },
             };
 
-            const period = periodMap[lastSegment] || { display: "Weekly", desc: "past week" };
-            
+            const period = periodMap[lastSegment] || {
+                display: "Weekly",
+                desc: "past week",
+            };
+
             seoTitle = `Most Active Stocks ${period.display} - High Volume Trading History`;
             seoDescription = `Discover the most actively traded stocks by volume over the ${period.desc}. Track historical high-volume securities, market activity trends, and trading patterns.`;
 
             structuredData = {
                 "@context": "https://schema.org",
                 "@type": "CollectionPage",
-                "name": `Most Active Stocks - ${period.display}`,
-                "description": `Historical list of most actively traded stocks by volume over the ${period.desc}`,
-                "url": `https://stocknear.com/market-mover/active/${lastSegment}`,
-                "mainEntity": {
+                name: `Most Active Stocks - ${period.display}`,
+                description: `Historical list of most actively traded stocks by volume over the ${period.desc}`,
+                url: `https://stocknear.com/market-mover/active/${lastSegment}`,
+                mainEntity: {
                     "@type": "ItemList",
-                    "name": `Most Active Stocks ${period.display}`,
-                    "description": `${period.display} most actively traded stocks by volume`
+                    name: `Most Active Stocks ${period.display}`,
+                    description: `${period.display} most actively traded stocks by volume`,
                 },
-                "about": {
+                about: {
                     "@type": "Thing",
-                    "name": "Historical Active Stock Trading",
-                    "description": `Stock market securities with highest trading volume over ${period.desc}`
-                }
+                    name: "Historical Active Stock Trading",
+                    description: `Stock market securities with highest trading volume over ${period.desc}`,
+                },
             };
         }
     }
@@ -90,12 +93,14 @@
         {structuredData}
     />
 
-    <Table
-        {data}
-        {rawData}
-        {excludedRules}
-        {defaultList}
-        title={$displayTitle}
-        date={$displayDate}
-    />
+    <div class="w-full">
+        <Table
+            {data}
+            {rawData}
+            {excludedRules}
+            {defaultList}
+            title={$displayTitle}
+            date={$displayDate}
+        />
+    </div>
 {/key}
