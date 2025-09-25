@@ -42,7 +42,7 @@
   let removeList = false;
 
   $: testList = [];
-  
+
   // Update pagination when filteredData changes
   $: if (filteredData && filteredData.length >= 0) {
     updatePaginatedData();
@@ -1587,7 +1587,7 @@
 
   let filteredData = [];
   let displayResults = [];
-  
+
   // Pagination state
   let currentPage = 1;
   let rowsPerPage = 20; // Will be loaded from localStorage
@@ -1813,7 +1813,6 @@
 
   async function switchStrategy(item) {
     displayTableTab = "general";
-    resetTableSearch();
 
     ruleName = "";
     selectedPopularStrategy = "";
@@ -1832,6 +1831,7 @@
       filteredData = [];
       displayResults = [];
     }
+
     await updateStockScreenerData();
     checkedItems = new Map(
       ruleOfList
@@ -2264,29 +2264,29 @@
     displayResults = dataSource?.slice(startIndex, endIndex) || [];
     totalPages = Math.ceil((dataSource?.length || 0) / rowsPerPage);
   }
-  
+
   function goToPage(page) {
     if (page >= 1 && page <= totalPages) {
       currentPage = page;
       updatePaginatedData();
     }
   }
-  
+
   function changeRowsPerPage(newRowsPerPage) {
     rowsPerPage = newRowsPerPage;
     currentPage = 1; // Reset to first page when changing rows per page
     updatePaginatedData();
     saveRowsPerPage(); // Save to localStorage
   }
-  
+
   function scrollToTop() {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
-  
+
   // Save rows per page preference to localStorage
   function saveRowsPerPage() {
     if (typeof localStorage === "undefined") return;
-    
+
     try {
       const paginationKey = `/stock-screener_rowsPerPage`;
       localStorage.setItem(paginationKey, String(rowsPerPage));
@@ -2294,18 +2294,18 @@
       console.warn("Failed to save rows per page preference:", e);
     }
   }
-  
+
   // Load rows per page preference from localStorage
   function loadRowsPerPage() {
     if (typeof localStorage === "undefined") {
       rowsPerPage = 20; // Default value
       return;
     }
-    
+
     try {
       const paginationKey = `/stock-screener_rowsPerPage`;
       const savedRows = localStorage.getItem(paginationKey);
-      
+
       if (savedRows && rowsPerPageOptions.includes(Number(savedRows))) {
         rowsPerPage = Number(savedRows);
       } else {
@@ -2332,7 +2332,7 @@ const handleKeyDown = (event) => {
   onMount(async () => {
     // Load pagination preference
     loadRowsPerPage();
-    
+
     if (!syncWorker) {
       const SyncWorker = await import("./workers/filterWorker?worker");
       syncWorker = new SyncWorker.default();
@@ -3022,6 +3022,9 @@ const handleKeyDown = (event) => {
 
   async function changeTab(state) {
     displayTableTab = state;
+    if (inputValue?.length > 0) {
+      search();
+    }
 
     // Clear hover timeout when actually switching tabs
     handleTabHoverLeave();
@@ -4463,7 +4466,7 @@ const handleKeyDown = (event) => {
           </table>
         </div>
       {/if}
-      
+
       <!-- Pagination controls -->
       {#if displayResults?.length > 0}
         <div class="flex flex-row items-center justify-between mt-8 sm:mt-5">
