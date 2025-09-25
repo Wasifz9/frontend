@@ -123,6 +123,7 @@
     <div
       class="border-b border-gray-100 dark:border-gray-800 rounded-[5px] px-4 bg-gray-100 dark:bg-[#1C1E22] pt-8 sm:pt-12 shadow-sm pb-26 landscape:border-t-2 landscape:md:border-t-0"
     >
+      <!--
       <div class="flex justify-center mb-5 whitespace-nowrap">
         <div class=" flex justify-center lg:mb-3">
           <a href="/backtesting"
@@ -141,7 +142,7 @@
           >
         </div>
       </div>
-
+-->
       <div class="mx-auto max-w-[850px] text-center">
         <h1
           class="mb-3 text-2xl font-bold sm:mb-5 md:text-4xl lg:mb-7 lg:text-[42px]"
