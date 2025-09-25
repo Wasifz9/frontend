@@ -694,7 +694,7 @@
                     <div class="relative sm:ml-3 w-full">
                       <Combobox.Input
                         on:input={search}
-                        class="py-[7px] text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow-xs focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-600 grow w-full "
+                        class="py-2 text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow-xs focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-600 grow w-full "
                         placeholder="Add stock..."
                         aria-label="Add stock..."
                       />
@@ -772,7 +772,7 @@
                     {/if}
                     <label
                       on:click={handleEditMode}
-                      class=" w-full border text-sm border-gray-300 dark:border-gray-600 sm:ml-3 cursor-pointer inline-flex items-center justify-start space-x-1 whitespace-nowrap rounded py-1.5 px-3 dark:bg-primary dark:sm:hover:bg-secondary bg-black sm:hover:bg-default text-white ease-out"
+                      class=" w-full border text-sm border-gray-300 dark:border-gray-600 sm:ml-3 cursor-pointer inline-flex items-center justify-start space-x-1 whitespace-nowrap rounded py-2 px-3 dark:bg-primary dark:sm:hover:bg-secondary bg-black sm:hover:bg-default text-white ease-out"
                     >
                       <svg
                         class="inline-block w-5 h-5"
