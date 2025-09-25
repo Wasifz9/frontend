@@ -170,7 +170,7 @@
       dispatchTransaction(transaction) {
         const newState = editorView.state.apply(transaction);
         editorView.updateState(newState);
-        
+
         // Extract text with line breaks preserved
         let extractedText = "";
         newState.doc.descendants((node, pos) => {
@@ -180,7 +180,7 @@
             extractedText += "\n";
           }
         });
-        
+
         editorText = extractedText;
         checkAutocomplete(editorView);
       },
@@ -605,11 +605,13 @@
                             class="w-64 h-fit max-h-56 overflow-y-auto scroller"
                           >
                             {#if selectedGroup === "overview"}
-                              <DropdownMenu.Label
-                                class="text-muted dark:text-gray-400 font-semibold dark:font-normal text-xs"
-                              >
-                                {data?.user?.credits} Credits left
-                              </DropdownMenu.Label>
+                              {#if data?.user}
+                                <DropdownMenu.Label
+                                  class="text-muted dark:text-gray-400 font-semibold dark:font-normal text-xs"
+                                >
+                                  {data?.user?.credits} Credits left
+                                </DropdownMenu.Label>
+                              {/if}
 
                               <DropdownMenu.Item
                                 class="sm:hover:bg-gray-200 dark:sm:hover:bg-primary"
