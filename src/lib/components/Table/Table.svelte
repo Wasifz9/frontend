@@ -105,9 +105,9 @@
   // Pagination state
   let currentPage = 1;
   let rowsPerPage = 20;
-  let rowsPerPageOptions = [10, 20, 50, 100];
+  let rowsPerPageOptions = [20, 50, 100];
   let totalPages = 1;
-  
+
   // Initialize stockList with pagination
   let stockList = [];
   let scrollPosition = 0;
@@ -282,8 +282,9 @@
     indicatorsTabCheckedItems = new Set(defaultList.map((item) => item.name));
   }
 
-  // Load indicators rules immediately when component initializes
+  // Load indicators rules and pagination preference immediately when component initializes
   loadIndicatorsTabRules();
+  loadRowsPerPage();
 
   allRows = sortIndicatorCheckMarks(allRows);
 
@@ -613,22 +614,59 @@
     stockList = dataSource?.slice(startIndex, endIndex) || [];
     totalPages = Math.ceil((dataSource?.length || 0) / rowsPerPage);
   }
-  
+
   function goToPage(page) {
     if (page >= 1 && page <= totalPages) {
       currentPage = page;
       updatePaginatedData();
     }
   }
-  
+
   function changeRowsPerPage(newRowsPerPage) {
     rowsPerPage = newRowsPerPage;
     currentPage = 1; // Reset to first page when changing rows per page
     updatePaginatedData();
+    saveRowsPerPage(); // Save to localStorage
   }
-  
+
+  // Save rows per page preference to localStorage
+  function saveRowsPerPage() {
+    if (!pagePathName || typeof localStorage === "undefined") return;
+
+    try {
+      const paginationKey = `${pagePathName}_rowsPerPage`;
+      localStorage.setItem(paginationKey, String(rowsPerPage));
+    } catch (e) {
+      console.warn("Failed to save rows per page preference:", e);
+    }
+  }
+
+  // Load rows per page preference from localStorage
+  function loadRowsPerPage() {
+    const currentPath = pagePathName || $page?.url?.pathname;
+
+    if (!currentPath || typeof localStorage === "undefined") {
+      rowsPerPage = 20; // Default value
+      return;
+    }
+
+    try {
+      const paginationKey = `${currentPath}_rowsPerPage`;
+      const savedRows = localStorage.getItem(paginationKey);
+
+      if (savedRows && rowsPerPageOptions.includes(Number(savedRows))) {
+        rowsPerPage = Number(savedRows);
+      } else {
+        rowsPerPage = 20; // Default if invalid or not found
+      }
+    } catch (e) {
+      console.warn("Failed to load rows per page preference:", e);
+      rowsPerPage = 20; // Default on error
+    }
+  }
+
   function scrollToTop() {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   // Save scroll position before data changes
@@ -693,14 +731,19 @@
   }
 
   // Update pagination when originalData or rawData changes
-  $: if ((originalData && originalData.length > 0) || (rawData && inputValue?.length > 0)) {
+  $: if (
+    (originalData && originalData.length > 0) ||
+    (rawData && inputValue?.length > 0)
+  ) {
     updatePaginatedData();
   }
 
-  // Reactive statement to load indicators when page changes
+  // Reactive statement to load indicators and pagination settings when page changes
   $: if ($page?.url?.pathname && $page?.url?.pathname !== pagePathName) {
     pagePathName = $page?.url?.pathname;
     loadIndicatorsTabRules();
+    loadRowsPerPage(); // Load pagination preference for new page
+    updatePaginatedData(); // Update display with loaded preference
   }
 
   let isInitialLoad = true;
@@ -769,6 +812,9 @@
       // Load indicators tab rules first - this is critical!
       loadIndicatorsTabRules();
 
+      // Load pagination preference
+      loadRowsPerPage();
+
       // Set current tab rules based on the active tab
       if (displayTableTab === "general") {
         // General tab always uses defaultList
@@ -806,7 +852,7 @@
       }
 
       await updateStockScreenerData();
-      
+
       // Initialize pagination
       updatePaginatedData();
     } catch (e) {
@@ -977,7 +1023,11 @@
     if (sortOrder === "none") {
       if (inputValue?.length > 0) {
         // If filtering, don't change rawData
-        stockList = rawData?.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage) || [];
+        stockList =
+          rawData?.slice(
+            (currentPage - 1) * rowsPerPage,
+            currentPage * rowsPerPage,
+          ) || [];
       } else {
         originalData = [...rawData]; // Reset originalData to rawData
         currentPage = 1; // Reset to first page
@@ -1034,7 +1084,7 @@
       // If not filtering, sort the original data
       originalData = [...originalData].sort(compareValues);
     }
-    
+
     if (
       ["changesPercentage", "price"]?.includes(activeSortKey) &&
       input === true
@@ -1527,60 +1577,133 @@
 
 <!-- Pagination controls -->
 {#if stockList?.length > 0}
-<div class="flex flex-col sm:flex-row items-center justify-between mt-4 gap-4 px-2">
-  <!-- Previous and Next buttons -->
-  <div class="flex items-center gap-2">
+  <div class="flex flex-col sm:flex-row items-center justify-between mt-5">
+    <!-- Previous and Next buttons -->
+    <div class="flex items-center gap-2">
+      <Button
+        on:click={() => goToPage(currentPage - 1)}
+        disabled={currentPage === 1}
+        class="w-fit transition-all flex flex-row items-center duration-50 border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary flex flex-row justify-between items-center w-full sm:w-auto px-3 rounded truncate"
+      >
+        <svg
+          class="h-5 w-5 inline-block shrink-0 rotate-90"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          style="max-width:40px"
+          aria-hidden="true"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+            clip-rule="evenodd"
+          ></path>
+        </svg> <span class="hidden sm:inline">Previous</span></Button
+      >
+    </div>
+
+    <!-- Page info and rows selector in center -->
+    <div class="flex items-center gap-4">
+      <span class="text-sm sm:text-[1rem]">
+        Page {currentPage} of {totalPages}
+      </span>
+
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger asChild let:builder>
+          <Button
+            builders={[builder]}
+            class="w-fit transition-all duration-50 border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary  flex flex-row justify-between items-center  w-full sm:w-auto px-3 rounded truncate"
+          >
+            <span class="truncate text-[0.85rem] sm:text-sm"
+              >{rowsPerPage} Rows</span
+            >
+            <svg
+              class="ml-0.5 mt-1 h-5 w-5 inline-block shrink-0"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              style="max-width:40px"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                clip-rule="evenodd"
+              ></path>
+            </svg>
+          </Button>
+        </DropdownMenu.Trigger>
+
+        <DropdownMenu.Content
+          side="bottom"
+          align="start"
+          sideOffset={10}
+          alignOffset={0}
+          class="w-auto min-w-40  max-h-[400px] overflow-y-auto scroller relative"
+        >
+          <!-- Dropdown items -->
+          <DropdownMenu.Group class="pb-2">
+            {#each rowsPerPageOptions as item}
+              <DropdownMenu.Item
+                class="sm:hover:bg-gray-200 dark:sm:hover:bg-primary"
+              >
+                <label
+                  on:click={() => changeRowsPerPage(item)}
+                  class="inline-flex justify-between w-full items-center cursor-pointer"
+                >
+                  <span class="text-sm">{item} Rows</span>
+                </label>
+              </DropdownMenu.Item>
+            {/each}
+          </DropdownMenu.Group>
+        </DropdownMenu.Content>
+      </DropdownMenu.Root>
+    </div>
+
+    <!-- Next button and Back to Top -->
+    <div class="flex items-center gap-2">
+      <Button
+        on:click={() => goToPage(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        class="w-fit transition-all flex flex-row items-center duration-50 border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary flex flex-row justify-between items-center w-full sm:w-auto px-3 rounded truncate"
+      >
+        <span class="hidden sm:inline">Next</span>
+        <svg
+          class="h-5 w-5 inline-block shrink-0 -rotate-90"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          style="max-width:40px"
+          aria-hidden="true"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+            clip-rule="evenodd"
+          ></path>
+        </svg>
+      </Button>
+    </div>
+  </div>
+
+  <!-- Back to Top button -->
+  <div class="flex justify-center mt-4">
     <button
-      on:click={() => goToPage(currentPage - 1)}
-      disabled={currentPage === 1}
-      class="px-3 py-2 rounded border {currentPage === 1 
-        ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600 dark:border-gray-700' 
-        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-800'}"
+      on:click={scrollToTop}
+      class=" cursor-pointer sm:hover:text-muted text-blue-800 dark:sm:hover:text-white dark:text-blue-400 text-sm sm:text-[1rem] font-medium"
     >
-      ← Previous
+      Back to Top <svg
+        class="h-5 w-5 inline-block shrink-0 rotate-180"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        style="max-width:40px"
+        aria-hidden="true"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+          clip-rule="evenodd"
+        ></path>
+      </svg>
     </button>
   </div>
-
-  <!-- Page info and rows selector in center -->
-  <div class="flex items-center gap-4">
-    <span class="text-sm text-gray-700 dark:text-gray-300">
-      Page {currentPage} of {totalPages}
-    </span>
-    
-    <select
-      bind:value={rowsPerPage}
-      on:change={(e) => changeRowsPerPage(Number(e.target.value))}
-      class="px-3 py-2 rounded border border-gray-300 bg-white text-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600"
-    >
-      {#each rowsPerPageOptions as option}
-        <option value={option}>{option} Rows</option>
-      {/each}
-    </select>
-  </div>
-
-  <!-- Next button and Back to Top -->
-  <div class="flex items-center gap-2">
-    <button
-      on:click={() => goToPage(currentPage + 1)}
-      disabled={currentPage === totalPages}
-      class="px-3 py-2 rounded border {currentPage === totalPages 
-        ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600 dark:border-gray-700' 
-        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-800'}"
-    >
-      Next →
-    </button>
-  </div>
-</div>
-
-<!-- Back to Top button -->
-<div class="flex justify-center mt-4">
-  <button
-    on:click={scrollToTop}
-    class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium"
-  >
-    Back to Top ↑
-  </button>
-</div>
 {/if}
 
 <style>
