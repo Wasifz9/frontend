@@ -1577,13 +1577,13 @@
 
 <!-- Pagination controls -->
 {#if stockList?.length > 0}
-  <div class="flex flex-col sm:flex-row items-center justify-between mt-5">
+  <div class="flex flex-row items-center justify-between mt-8 sm:mt-5">
     <!-- Previous and Next buttons -->
     <div class="flex items-center gap-2">
       <Button
         on:click={() => goToPage(currentPage - 1)}
         disabled={currentPage === 1}
-        class="w-fit transition-all flex flex-row items-center duration-50 border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary flex flex-row justify-between items-center w-full sm:w-auto px-3 rounded truncate"
+        class="w-fit transition-all flex flex-row items-center duration-50 border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary flex flex-row justify-between items-center  sm:w-auto px-1.5 sm:px-3 rounded truncate"
       >
         <svg
           class="h-5 w-5 inline-block shrink-0 rotate-90"
@@ -1602,7 +1602,7 @@
     </div>
 
     <!-- Page info and rows selector in center -->
-    <div class="flex items-center gap-4">
+    <div class="flex flex-row items-center gap-4">
       <span class="text-sm sm:text-[1rem]">
         Page {currentPage} of {totalPages}
       </span>
@@ -1611,7 +1611,7 @@
         <DropdownMenu.Trigger asChild let:builder>
           <Button
             builders={[builder]}
-            class="w-fit transition-all duration-50 border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary  flex flex-row justify-between items-center  w-full sm:w-auto px-3 rounded truncate"
+            class="w-fit transition-all duration-50 border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary  flex flex-row justify-between items-center  sm:w-auto px-2 sm:px-3 rounded truncate"
           >
             <span class="truncate text-[0.85rem] sm:text-sm"
               >{rowsPerPage} Rows</span
@@ -1634,7 +1634,7 @@
 
         <DropdownMenu.Content
           side="bottom"
-          align="start"
+          align="end"
           sideOffset={10}
           alignOffset={0}
           class="w-auto min-w-40  max-h-[400px] overflow-y-auto scroller relative"
@@ -1663,7 +1663,7 @@
       <Button
         on:click={() => goToPage(currentPage + 1)}
         disabled={currentPage === totalPages}
-        class="w-fit transition-all flex flex-row items-center duration-50 border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary flex flex-row justify-between items-center w-full sm:w-auto px-3 rounded truncate"
+        class="w-fit transition-all flex flex-row items-center duration-50 border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary flex flex-row justify-between items-center sm:w-auto px-1.5 sm:px-3 rounded truncate"
       >
         <span class="hidden sm:inline">Next</span>
         <svg
