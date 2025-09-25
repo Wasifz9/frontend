@@ -2852,7 +2852,9 @@ const handleKeyDown = (event) => {
 
     // Reset to original data when 'none' and stop further sorting
     if (sortOrder === "none") {
-      displayResults = [...originalData]?.slice(0, 50); // Reset to original data (spread to avoid mutation)
+      filteredData = [...originalData]; // Reset to original data (spread to avoid mutation)
+      currentPage = 1; // Reset to first page
+      updatePaginatedData();
       return;
     }
 
@@ -2886,8 +2888,10 @@ const handleKeyDown = (event) => {
       }
     };
 
-    // Sort using the generic comparison function
-    displayResults = [...originalData].sort(compareValues)?.slice(0, 50);
+    // Sort using the generic comparison function and update filteredData
+    filteredData = [...originalData].sort(compareValues);
+    currentPage = 1; // Reset to first page after sorting
+    updatePaginatedData();
   };
 
   let columns;
