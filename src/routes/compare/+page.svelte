@@ -233,7 +233,7 @@
 
     downloadWorker?.postMessage({
       tickerList: tickerList,
-      category: selectedPlotCategory,
+      category: getCategoryForAPI(selectedPlotCategory),
     });
   }
 
@@ -274,7 +274,7 @@
 
       downloadWorker?.postMessage({
         tickerList,
-        category: selectedPlotCategory,
+        category: getCategoryForAPI(selectedPlotCategory),
       });
     }
   }
@@ -295,7 +295,7 @@
     handleSave();
     downloadWorker?.postMessage({
       tickerList: tickerList,
-      category: selectedPlotCategory,
+      category: getCategoryForAPI(selectedPlotCategory),
     });
   }
 
@@ -348,7 +348,7 @@
     selectedPlotPeriod = timePeriod;
     downloadWorker?.postMessage({
       tickerList: tickerList,
-      category: selectedPlotCategory,
+      category: getCategoryForAPI(selectedPlotCategory),
     });
   }
 
@@ -803,7 +803,7 @@
 
     downloadWorker?.postMessage({
       tickerList: tickerList,
-      category: selectedPlotCategory,
+      category: getCategoryForAPI(selectedPlotCategory),
     });
   });
 </script>
