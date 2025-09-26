@@ -51,6 +51,7 @@
 
   let categoryList = [
     { name: "Stock Price", value: "close", type: "price" },
+    { name: "Total Return [%]", value: "totalReturn", type: "price" },
     { name: "Market Cap", value: "marketCap", type: "marketCap" },
     { name: "Dividend Yield", value: "yield", type: "dividend" },
     { name: "Dividends", value: "adjDividend", type: "dividend" },
@@ -198,13 +199,20 @@
     isLoaded = true;
   };
 
+  // Helper function to get the correct category for API calls
+  function getCategoryForAPI(category) {
+    return category?.value === "totalReturn"
+      ? { name: "Stock Price", value: "close", type: "price" }
+      : category;
+  }
+
   async function changeCategory(category) {
     isLoaded = false;
     selectedPlotCategory = category;
 
     downloadWorker?.postMessage({
       tickerList: tickerList,
-      category: selectedPlotCategory,
+      category: getCategoryForAPI(selectedPlotCategory),
     });
   }
   function addTicker(data) {
@@ -387,21 +395,47 @@
     for (const [symbol, data] of Object?.entries(rawGraphData)) {
       // Ensure `history` exists and is an array
       const series = Array?.isArray(data?.history) ? data?.history : [];
+      const filteredSeries = filterDataByTimePeriod(series);
 
-      // Filter by the desired time period and map to [timestamp, value] pairs
-      parsedData[symbol] = filterDataByTimePeriod(series)?.map((item) => {
-        const d = new Date(item?.date);
-        return [
-          Date.UTC(
-            d.getUTCFullYear(),
-            d.getUTCMonth(),
-            d.getUTCDate(),
-            d.getUTCHours(),
-            d.getUTCMinutes(),
-          ),
-          item?.value,
-        ];
-      });
+      if (
+        selectedPlotCategory?.value === "totalReturn" &&
+        filteredSeries?.length > 0
+      ) {
+        // Calculate total return percentage from first price to each subsequent price
+        const firstPrice = filteredSeries[0]?.value;
+
+        parsedData[symbol] = filteredSeries?.map((item) => {
+          const d = new Date(item?.date);
+          const totalReturnPct = firstPrice
+            ? ((item?.value - firstPrice) / firstPrice) * 100
+            : 0;
+          return [
+            Date.UTC(
+              d.getUTCFullYear(),
+              d.getUTCMonth(),
+              d.getUTCDate(),
+              d.getUTCHours(),
+              d.getUTCMinutes(),
+            ),
+            totalReturnPct,
+          ];
+        });
+      } else {
+        // Filter by the desired time period and map to [timestamp, value] pairs
+        parsedData[symbol] = filteredSeries?.map((item) => {
+          const d = new Date(item?.date);
+          return [
+            Date.UTC(
+              d.getUTCFullYear(),
+              d.getUTCMonth(),
+              d.getUTCDate(),
+              d.getUTCHours(),
+              d.getUTCMinutes(),
+            ),
+            item?.value,
+          ];
+        });
+      }
     }
 
     // 3) build series entries
@@ -421,6 +455,7 @@
 
     // Check if the selected category is percentage-based
     const isPercentageCategory = [
+      "totalReturn",
       "dividendPayoutRatio",
       "yield",
       "netProfitMargin",
