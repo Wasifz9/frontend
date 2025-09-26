@@ -85,6 +85,7 @@
   export let onToggleDeleteTicker = null;
 
   let originalData = [...rawData]; // Unaltered copy of raw data
+  let initialRawData = [...rawData]; // Store the truly initial data
   let ruleOfList = [...defaultList];
   let socket;
   let sortMode = false;
@@ -760,15 +761,21 @@
   }
 
   let isInitialLoad = true;
+  let isSorting = false;
 
   // Reactive statement to validate and clean rules when rawData changes
-  $: if (rawData && rawData.length > 0) {
+  $: if (rawData && rawData.length > 0 && !isSorting) {
     // Validate indicator rules but don't let it reset everything
     const wasCleanedUp = validateAndCleanRules(isInitialLoad);
 
     // Always regenerate columns when data changes
     columns = generateColumns(rawData);
-    sortOrders = generateSortOrders(rawData);
+    if (isInitialLoad) {
+      sortOrders = generateSortOrders(rawData);
+      // Preserve the initial unsorted data on first load
+      initialRawData = [...rawData];
+      originalData = [...rawData];
+    }
 
     // After the first reactive run, allow auto-saving
     isInitialLoad = false;
@@ -779,9 +786,9 @@
     console.log("WebSocket restarted");
   }
   const loadSearchWorker = async () => {
-    if (searchWorker && rawData?.length > 0) {
+    if (searchWorker && originalData?.length > 0) {
       searchWorker.postMessage({
-        rawData: rawData,
+        rawData: originalData,
         inputValue: inputValue,
       });
     }
@@ -1011,6 +1018,8 @@
   let sortOrders = generateSortOrders(rawData);
 
   const sortData = (key, input = false) => {
+    isSorting = true; // Prevent reactive statement from interfering
+
     // Reset all other keys to 'none' except the current key
     for (const k in sortOrders) {
       if (k !== key) {
@@ -1035,17 +1044,17 @@
     // Reset to original data when 'none' and stop further sorting
     if (sortOrder === "none") {
       if (inputValue?.length > 0) {
-        // If filtering, don't change rawData
-        stockList =
-          rawData?.slice(
-            (currentPage - 1) * rowsPerPage,
-            currentPage * rowsPerPage,
-          ) || [];
+        // If searching, restore originalData first, then re-run the search
+        originalData = [...initialRawData];
+        search();
       } else {
-        originalData = [...rawData]; // Reset originalData to rawData
+        // Reset to original unsorted state using the truly initial data
+        originalData = [...initialRawData];
+        rawData = [...initialRawData];
         currentPage = 1; // Reset to first page
         updatePaginatedData(); // Reset displayed data
       }
+      isSorting = false; // Allow reactive statements again
       return;
     }
 
@@ -1089,24 +1098,26 @@
             : 0;
     };
 
-    // Sort and update the data
+    // Get the data to sort and sort it
+    const dataToSort = inputValue?.length > 0 ? rawData : originalData;
+    const sortedData = [...dataToSort].sort(compareValues);
+
+    // Update the appropriate data source based on whether we're filtering or not
     if (inputValue?.length > 0) {
-      // If filtering, sort the filtered data
-      rawData = [...rawData].sort(compareValues);
+      rawData = sortedData;
     } else {
-      // If not filtering, sort the original data
-      originalData = [...originalData].sort(compareValues);
+      // When not filtering, update originalData to preserve sort and update rawData for display
+      originalData = sortedData;
+      rawData = sortedData;
     }
 
-    if (
-      ["changesPercentage", "price"]?.includes(activeSortKey) &&
-      input === true
-    ) {
-      updatePaginatedData();
-    } else {
-      currentPage = 1; // Reset to first page when sorting
-      updatePaginatedData(); // Update the displayed data
-    }
+    currentPage = 1; // Reset to first page when sorting
+    updatePaginatedData(); // Update the displayed data
+
+    // Force reactivity by triggering the sortOrders reactivity
+    sortOrders = { ...sortOrders };
+
+    isSorting = false; // Allow reactive statements again
   };
 
   $: charNumber = $screenWidth < 640 ? 15 : 20;
