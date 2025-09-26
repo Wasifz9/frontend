@@ -193,11 +193,6 @@
     isLoaded = true;
   });
 
-  // Update pagination when rawData changes
-  $: if (rawData && rawData.length > 0) {
-    updatePaginatedData();
-  }
-
   // Reactive statement to load pagination settings when page changes
   $: if ($page?.url?.pathname && $page?.url?.pathname !== pagePathName) {
     pagePathName = $page?.url?.pathname;
@@ -214,7 +209,7 @@
     updatePaginatedData();
   }
 
-  function search() {
+  async function search() {
     clearTimeout(timeoutId); // Clear any existing timeout
     newData = [];
 
@@ -238,7 +233,7 @@
           updatePaginatedData();
         } else {
           if (filterList?.length === 0) {
-            rawData = [];
+            rawData = [...originalData];
             currentPage = 1; // Reset to first page
             updatePaginatedData();
           } else {
@@ -369,8 +364,16 @@
       }
     };
 
-    // Sort and update the data
-    rawData = [...rawData].sort(compareValues);
+    // Get the data to sort and sort it
+    const dataToSort = rawData;
+    const sortedData = [...dataToSort].sort(compareValues);
+
+    // Update rawData with sorted results
+    rawData = sortedData;
+
+    // Force reactivity by triggering the sortOrders reactivity
+    sortOrders = { ...sortOrders };
+
     currentPage = 1; // Reset to first page when sorting
     updatePaginatedData(); // Update the displayed data
   };
