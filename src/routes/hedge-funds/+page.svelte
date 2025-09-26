@@ -1,5 +1,8 @@
 <script lang="ts">
   import TableHeader from "$lib/components/Table/TableHeader.svelte";
+  import * as DropdownMenu from "$lib/components/shadcn/dropdown-menu/index.js";
+  import { Button } from "$lib/components/shadcn/button/index.js";
+  import { page } from "$app/stores";
 
   import { abbreviateNumber, formatString } from "$lib/utils";
   import { onMount } from "svelte";
@@ -9,24 +12,88 @@
 
   export let data;
 
-  let rawData = data?.getData;
-  let displayList = rawData?.slice(0, 100) ?? [];
+  let originalData = data?.getData;
+  let rawData = originalData;
+  let displayList = [];
   let inputValue = "";
   let searchWorker: Worker | undefined;
 
-  async function handleScroll() {
-    const scrollThreshold = document.body.offsetHeight * 0.8; // 80% of the website height
-    const isBottom = window.innerHeight + window.scrollY >= scrollThreshold;
-    if (isBottom && displayList?.length !== rawData?.length) {
-      const nextIndex = displayList?.length;
-      const filteredNewResults = rawData?.slice(nextIndex, nextIndex + 50);
-      displayList = [...displayList, ...filteredNewResults];
+  let pagePathName = $page?.url?.pathname;
+
+  // Pagination state
+  let currentPage = 1;
+  let rowsPerPage = 20;
+  let rowsPerPageOptions = [20, 50, 100];
+  let totalPages = 1;
+
+  // Pagination functions
+  function updatePaginatedData() {
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    const dataSource = inputValue?.length > 0 ? rawData : originalData;
+    displayList = dataSource?.slice(startIndex, endIndex) || [];
+    totalPages = Math.ceil((dataSource?.length || 0) / rowsPerPage);
+  }
+
+  function goToPage(page) {
+    if (page >= 1 && page <= totalPages) {
+      currentPage = page;
+      updatePaginatedData();
+    }
+  }
+
+  function changeRowsPerPage(newRowsPerPage) {
+    rowsPerPage = newRowsPerPage;
+    currentPage = 1; // Reset to first page when changing rows per page
+    updatePaginatedData();
+    saveRowsPerPage(); // Save to localStorage
+  }
+
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // Save rows per page preference to localStorage
+  function saveRowsPerPage() {
+    if (!pagePathName || typeof localStorage === "undefined") return;
+
+    try {
+      const paginationKey = `${pagePathName}_rowsPerPage`;
+      localStorage.setItem(paginationKey, String(rowsPerPage));
+    } catch (e) {
+      console.warn("Failed to save rows per page preference:", e);
+    }
+  }
+
+  // Load rows per page preference from localStorage
+  function loadRowsPerPage() {
+    const currentPath = pagePathName || $page?.url?.pathname;
+
+    if (!currentPath || typeof localStorage === "undefined") {
+      rowsPerPage = 20; // Default value
+      return;
+    }
+
+    try {
+      const paginationKey = `${currentPath}_rowsPerPage`;
+      const savedRows = localStorage.getItem(paginationKey);
+
+      if (savedRows && rowsPerPageOptions.includes(Number(savedRows))) {
+        rowsPerPage = Number(savedRows);
+      } else {
+        rowsPerPage = 20; // Default if invalid or not found
+      }
+    } catch (e) {
+      console.warn("Failed to load rows per page preference:", e);
+      rowsPerPage = 20; // Default on error
     }
   }
 
   async function resetTableSearch() {
     inputValue = "";
-    search();
+    rawData = originalData;
+    currentPage = 1; // Reset to first page
+    updatePaginatedData();
   }
 
   async function search() {
@@ -37,16 +104,17 @@
         await loadSearchWorker();
       } else {
         // Reset to original data if filter is empty
-        rawData = data?.getData || [];
-        displayList = rawData?.slice(0, 50);
+        rawData = originalData || [];
+        currentPage = 1; // Reset to first page
+        updatePaginatedData();
       }
     }, 100);
   }
 
   const loadSearchWorker = async () => {
-    if (searchWorker && rawData?.length > 0) {
+    if (searchWorker && originalData?.length > 0) {
       searchWorker.postMessage({
-        rawData: data?.getData,
+        rawData: originalData,
         inputValue: inputValue,
       });
     }
@@ -55,11 +123,15 @@
   const handleSearchMessage = (event) => {
     if (event.data?.message === "success") {
       rawData = event.data?.output ?? [];
-      displayList = rawData?.slice(0, 50);
+      currentPage = 1; // Reset to first page after search
+      updatePaginatedData();
     }
   };
 
   onMount(async () => {
+    // Load pagination preference
+    loadRowsPerPage();
+
     if (!searchWorker) {
       const SearchWorker = await import(
         "$lib/workers/tableSearchWorker?worker"
@@ -68,15 +140,16 @@
       searchWorker.onmessage = handleSearchMessage;
     }
 
-    window.addEventListener("scroll", handleScroll);
-    //window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      // Cleanup the event listeners when the component is unmounted
-      window.removeEventListener("scroll", handleScroll);
-      //window.removeEventListener('keydown', handleKeyDown);
-    };
+    // Initialize pagination
+    updatePaginatedData();
   });
+
+  // Reactive statement to load pagination settings when page changes
+  $: if ($page?.url?.pathname && $page?.url?.pathname !== pagePathName) {
+    pagePathName = $page?.url?.pathname;
+    loadRowsPerPage(); // Load pagination preference for new page
+    updatePaginatedData(); // Update display with loaded preference
+  }
 
   let columns = [
     { key: "rank", label: "Rank", align: "left" },
@@ -100,8 +173,6 @@
 
   const sortData = (key) => {
     // Reset all other keys to 'none' except the current key
-    let originalData = [];
-
     for (const k in sortOrders) {
       if (k !== key) {
         sortOrders[k].order = "none";
@@ -121,8 +192,16 @@
 
     // Reset to original data when 'none' and stop further sorting
     if (sortOrder === "none") {
-      let originalData = [...rawData]; // Reset originalData to rawData
-      displayList = originalData?.slice(0, 50); // Reset displayed data
+      if (inputValue?.length > 0) {
+        // If searching, re-run the search to get the original filtered order
+        search();
+      } else {
+        // Reset to original unsorted state
+        originalData = data?.getData || [];
+        rawData = [...originalData];
+        currentPage = 1; // Reset to first page
+        updatePaginatedData(); // Reset displayed data
+      }
       return;
     }
 
@@ -173,9 +252,23 @@
       }
     };
 
-    // Sort and update the originalData and analystList
-    originalData = [...rawData].sort(compareValues);
-    displayList = originalData?.slice(0, 50); // Update the displayed data
+    // Get the data to sort and sort it
+    const dataToSort = inputValue?.length > 0 ? rawData : originalData;
+    const sortedData = [...dataToSort].sort(compareValues);
+
+    // Update the appropriate data source based on whether we're filtering or not
+    if (inputValue?.length > 0) {
+      rawData = sortedData;
+    } else {
+      originalData = sortedData;
+      rawData = sortedData; // Keep rawData in sync for consistency
+    }
+
+    currentPage = 1; // Reset to first page when sorting
+    updatePaginatedData(); // Update the displayed data
+
+    // Force reactivity by triggering the sortOrders reactivity
+    sortOrders = { ...sortOrders };
   };
 </script>
 
@@ -212,7 +305,7 @@
       name: "Hedge Fund List",
       description:
         "List of hedge funds and institutional investors with their holdings",
-      numberOfItems: rawData?.length || 0,
+      numberOfItems: originalData?.length || 0,
     },
   }}
 />
@@ -251,7 +344,7 @@
                 <h2
                   class="text-start whitespace-nowrap text-xl sm:text-2xl font-semibold py-1 border-b border-gray-300 dark:border-gray-800 lg:border-none w-full"
                 >
-                  {rawData?.length?.toLocaleString("en-US")} Institutes
+                  {originalData?.length?.toLocaleString("en-US")} Institutes
                 </h2>
                 <div
                   class="mt-1 w-full flex flex-row lg:flex order-1 items-center ml-auto pb-1 pt-1 sm:pt-0 w-full order-0 lg:order-1"
@@ -397,6 +490,140 @@
                   </tbody>
                 </table>
               </div>
+
+              <!-- Pagination controls -->
+              {#if displayList?.length > 0}
+                <div
+                  class="flex flex-row items-center justify-between mt-8 sm:mt-5"
+                >
+                  <!-- Previous button -->
+                  <div class="flex items-center gap-2">
+                    <Button
+                      on:click={() => goToPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      class="w-fit transition-all flex flex-row items-center duration-50 border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary flex flex-row justify-between items-center  sm:w-auto px-1.5 sm:px-3 rounded truncate"
+                    >
+                      <svg
+                        class="h-5 w-5 inline-block shrink-0 rotate-90"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        style="max-width:40px"
+                        aria-hidden="true"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          clip-rule="evenodd"
+                        ></path>
+                      </svg>
+                      <span class="hidden sm:inline">Previous</span></Button
+                    >
+                  </div>
+
+                  <!-- Page info and rows selector in center -->
+                  <div class="flex flex-row items-center gap-4">
+                    <span class="text-sm sm:text-[1rem]">
+                      Page {currentPage} of {totalPages}
+                    </span>
+
+                    <DropdownMenu.Root>
+                      <DropdownMenu.Trigger asChild let:builder>
+                        <Button
+                          builders={[builder]}
+                          class="w-fit transition-all duration-50 border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary  flex flex-row justify-between items-center  sm:w-auto px-2 sm:px-3 rounded truncate"
+                        >
+                          <span class="truncate text-[0.85rem] sm:text-sm"
+                            >{rowsPerPage} Rows</span
+                          >
+                          <svg
+                            class="ml-0.5 mt-1 h-5 w-5 inline-block shrink-0"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            style="max-width:40px"
+                            aria-hidden="true"
+                          >
+                            <path
+                              fill-rule="evenodd"
+                              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                              clip-rule="evenodd"
+                            ></path>
+                          </svg>
+                        </Button>
+                      </DropdownMenu.Trigger>
+
+                      <DropdownMenu.Content
+                        side="bottom"
+                        align="end"
+                        sideOffset={10}
+                        alignOffset={0}
+                        class="w-auto min-w-40  max-h-[400px] overflow-y-auto scroller relative"
+                      >
+                        <!-- Dropdown items -->
+                        <DropdownMenu.Group class="pb-2">
+                          {#each rowsPerPageOptions as item}
+                            <DropdownMenu.Item
+                              class="sm:hover:bg-gray-200 dark:sm:hover:bg-primary"
+                            >
+                              <label
+                                on:click={() => changeRowsPerPage(item)}
+                                class="inline-flex justify-between w-full items-center cursor-pointer"
+                              >
+                                <span class="text-sm">{item} Rows</span>
+                              </label>
+                            </DropdownMenu.Item>
+                          {/each}
+                        </DropdownMenu.Group>
+                      </DropdownMenu.Content>
+                    </DropdownMenu.Root>
+                  </div>
+
+                  <!-- Next button -->
+                  <div class="flex items-center gap-2">
+                    <Button
+                      on:click={() => goToPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      class="w-fit transition-all flex flex-row items-center duration-50 border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary flex flex-row justify-between items-center sm:w-auto px-1.5 sm:px-3 rounded truncate"
+                    >
+                      <span class="hidden sm:inline">Next</span>
+                      <svg
+                        class="h-5 w-5 inline-block shrink-0 -rotate-90"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        style="max-width:40px"
+                        aria-hidden="true"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          clip-rule="evenodd"
+                        ></path>
+                      </svg>
+                    </Button>
+                  </div>
+                </div>
+
+                <!-- Back to Top button -->
+                <div class="flex justify-center mt-4">
+                  <button
+                    on:click={scrollToTop}
+                    class=" cursor-pointer sm:hover:text-muted text-blue-800 dark:sm:hover:text-white dark:text-blue-400 text-sm sm:text-[1rem] font-medium"
+                  >
+                    Back to Top <svg
+                      class="h-5 w-5 inline-block shrink-0 rotate-180"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      style="max-width:40px"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                        clip-rule="evenodd"
+                      ></path>
+                    </svg>
+                  </button>
+                </div>
+              {/if}
             </div>
           </main>
         </div>
