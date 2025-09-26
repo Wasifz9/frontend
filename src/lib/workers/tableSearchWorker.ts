@@ -16,11 +16,12 @@ onmessage = (event: MessageEvent) => {
   const output = [];
   for (let i = 0; i < rawData.length; i++) {
     const item = rawData[i];
-    const name = item?.name?.toLowerCase() || item?.assetDescription?.toLowerCase()  || "";
-    const symbol = item?.symbol?.toLowerCase()  || item?.ticker?.toLowerCase() || "";
+    const name = item?.name?.toLowerCase() || item?.assetDescription?.toLowerCase() || "";
+    const symbol = item?.symbol?.toLowerCase() || item?.ticker?.toLowerCase() || "";
+    const representative = item?.representative?.toLowerCase()?.replace("_", " ") || "";
 
     // Fast includes check (cheap)
-    if (name.includes(filterQuery) || symbol.includes(filterQuery)) {
+    if (name.includes(filterQuery) || symbol.includes(filterQuery) || representative.includes(filterQuery)) {
       output.push(item);
       continue;
     }
@@ -28,8 +29,9 @@ onmessage = (event: MessageEvent) => {
     // Fuzzy check (expensive) - fallback only if necessary
     const nameSim = compareTwoStrings(name, filterQuery);
     const symbolSim = compareTwoStrings(symbol, filterQuery);
+    const representativeSim = compareTwoStrings(representative, filterQuery);
 
-    if (nameSim > similarityThreshold || symbolSim > similarityThreshold) {
+    if (nameSim > similarityThreshold || symbolSim > similarityThreshold || representativeSim > similarityThreshold) {
       output.push(item);
     }
   }

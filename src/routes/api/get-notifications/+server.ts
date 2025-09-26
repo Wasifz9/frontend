@@ -19,6 +19,15 @@ export const POST: RequestHandler = async ({ locals, request }) => {
       expand: "user",
       sort: "-created",
     });
+
+    await Promise?.all(
+      output?.map((n) =>
+        pb.collection("notifications")?.update(n.id, { readed: true })
+      )
+    );
+
+
+
     }
   
   } catch (e) {

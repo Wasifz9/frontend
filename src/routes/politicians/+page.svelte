@@ -9,14 +9,12 @@
   import { onMount } from "svelte";
   import { page } from "$app/stores";
 
-  import { compareTwoStrings } from "string-similarity";
-
   export let data;
 
   let syncWorker: Worker | undefined;
+  let searchWorker: Worker | undefined;
 
   let pagePathName = $page?.url?.pathname;
-  let timeoutId;
 
   let originalData = data?.getAllPolitician;
   let rawData = originalData;
@@ -40,8 +38,10 @@
   function updatePaginatedData() {
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
-    displayList = rawData?.slice(startIndex, endIndex) || [];
-    totalPages = Math.ceil((rawData?.length || 0) / rowsPerPage);
+    const dataSource =
+      inputValue?.length > 0 || filterList?.length > 0 ? rawData : originalData;
+    displayList = dataSource?.slice(startIndex, endIndex) || [];
+    totalPages = Math.ceil((dataSource?.length || 0) / rowsPerPage);
   }
 
   function goToPage(page) {
@@ -170,10 +170,19 @@
     // Load pagination preference
     loadRowsPerPage();
 
+    // Initialize workers
     if (!syncWorker) {
       const SyncWorker = await import("./workers/filterWorker?worker");
       syncWorker = new SyncWorker.default();
       syncWorker.onmessage = handleMessage;
+    }
+
+    if (!searchWorker) {
+      const SearchWorker = await import(
+        "$lib/workers/tableSearchWorker?worker"
+      );
+      searchWorker = new SearchWorker.default();
+      searchWorker.onmessage = handleSearchMessage;
     }
 
     rawData?.sort((a, b) => {
@@ -200,58 +209,54 @@
     updatePaginatedData(); // Update display with loaded preference
   }
 
-  let newData = [];
-
-  function resetTableSearch() {
+  async function resetTableSearch() {
     inputValue = "";
-    rawData = [...originalData];
+    if (filterList?.length === 0) {
+      rawData = originalData;
+    } else {
+      await loadWorker(); // Re-apply party filters
+    }
     currentPage = 1; // Reset to first page
     updatePaginatedData();
   }
 
   async function search() {
-    clearTimeout(timeoutId); // Clear any existing timeout
-    newData = [];
+    inputValue = inputValue?.toLowerCase();
 
-    timeoutId = setTimeout(async () => {
+    setTimeout(async () => {
       if (inputValue?.length > 0) {
-        newData = rawData?.filter((item) => {
-          const representative = item?.representative?.toLowerCase();
-          // Check if representative includes inputValue
-          if (representative?.includes(inputValue)) return true;
-
-          // Implement fuzzy search by checking similarity
-          // You can adjust the threshold as needed
-          const similarityThreshold = 0.5;
-          const similarity = compareTwoStrings(representative, inputValue);
-          return similarity > similarityThreshold;
-        });
-
-        if (newData?.length > 0) {
-          rawData = newData;
-          currentPage = 1; // Reset to first page after search
-          updatePaginatedData();
-        } else {
-          if (filterList?.length === 0) {
-            rawData = [...originalData];
-            currentPage = 1; // Reset to first page
-            updatePaginatedData();
-          } else {
-            await loadWorker();
-          }
-        }
+        await loadSearchWorker();
       } else {
-        // Reset to original data if filter is empty
+        // Reset to original data or re-apply party filters if they exist
         if (filterList?.length === 0) {
-          rawData = [...originalData];
-          currentPage = 1; // Reset to first page
-          updatePaginatedData();
+          rawData = originalData || [];
         } else {
-          await loadWorker();
+          await loadWorker(); // Re-apply party filters
         }
+        currentPage = 1; // Reset to first page
+        updatePaginatedData();
       }
-    }, 50);
+    }, 100);
   }
+
+  const loadSearchWorker = async () => {
+    if (searchWorker) {
+      // Use the base data (original or party-filtered) for search
+      const baseData = filterList?.length > 0 ? rawData : originalData;
+      searchWorker.postMessage({
+        rawData: baseData,
+        inputValue: inputValue,
+      });
+    }
+  };
+
+  const handleSearchMessage = (event) => {
+    if (event.data?.message === "success") {
+      rawData = event.data?.output ?? [];
+      currentPage = 1; // Reset to first page after search
+      updatePaginatedData();
+    }
+  };
 
   function saveList() {
     try {
@@ -323,10 +328,21 @@
 
     // Reset to original data when 'none' and stop further sorting
     if (sortOrder === "none") {
-      if (inputValue?.length > 0 || filterList?.length > 0) {
-        // If filtering or searching, don't change rawData
-        updatePaginatedData();
+      if (inputValue?.length > 0) {
+        // If searching, re-run the search to get the original filtered order
+        search();
+      } else if (filterList?.length > 0) {
+        // If party filtering, re-run party filter to get original filtered order
+        loadWorker();
       } else {
+        // Reset to original unsorted state with favorites prioritized
+        originalData = data?.getAllPolitician || [];
+        originalData?.sort((a, b) => {
+          const aIsFavorite = favoriteList?.includes(a?.id);
+          const bIsFavorite = favoriteList?.includes(b?.id);
+          if (aIsFavorite === bIsFavorite) return 0;
+          return aIsFavorite ? -1 : 1;
+        });
         rawData = [...originalData];
         currentPage = 1; // Reset to first page
         updatePaginatedData(); // Reset displayed data
@@ -365,11 +381,17 @@
     };
 
     // Get the data to sort and sort it
-    const dataToSort = rawData;
+    const dataToSort =
+      inputValue?.length > 0 || filterList?.length > 0 ? rawData : originalData;
     const sortedData = [...dataToSort].sort(compareValues);
 
-    // Update rawData with sorted results
-    rawData = sortedData;
+    // Update the appropriate data source based on whether we're filtering or not
+    if (inputValue?.length > 0 || filterList?.length > 0) {
+      rawData = sortedData;
+    } else {
+      originalData = sortedData;
+      rawData = sortedData; // Keep rawData in sync for consistency
+    }
 
     // Force reactivity by triggering the sortOrders reactivity
     sortOrders = { ...sortOrders };
@@ -613,7 +635,7 @@
                 </table>
               </div>
             {:else if displayList?.length === 0 && inputValue?.length > 0}
-              <Infobox text={`No Stocks found for "${inputValue}"`} />
+              <Infobox text={`No Congress Member found for "${inputValue}"`} />
             {:else}
               <Infobox
                 text="No results found for your search or filter criteria."
