@@ -23,12 +23,12 @@ export const load = async ({ locals }) => {
 
       representative = representative
         ?.replace("Jr", "")
-        .replace(/Dr./g, "")
-        .replace(/Dr_/g, "");
+        ?.replace(/Dr./g, "")
+        ?.replace(/Dr_/g, "");
 
       const fullName = representative
         ?.replace(/(\s(?:Dr\s)?\w(?:\.|(?=\s)))?\s/g, "_")
-        .trim();
+        ?.trim();
       item.representative = fullName?.replace(/_/g, " ");
     });
 

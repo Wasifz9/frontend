@@ -2,7 +2,7 @@
   
 export const load = async ({ locals }) => {
   const getData = async () => {
-    const { apiKey, apiURL, user } = locals;
+    const { apiKey, apiURL } = locals;
 
     // make the POST request to the endpoint
     const response = await fetch(apiURL + "/insider-tracker", {
@@ -13,10 +13,9 @@ export const load = async ({ locals }) => {
       },
     });
 
-    const output = await response.json();
+    const output = await response?.json();
 
-
-    return (output);
+    return output;
   };
 
   // Make sure to return a promise

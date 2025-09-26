@@ -18,7 +18,8 @@
   let pagePathName = $page?.url?.pathname;
   let timeoutId;
 
-  let rawData = data?.getAllPolitician;
+  let originalData = data?.getAllPolitician;
+  let rawData = originalData;
 
   let displayList = [];
   let isLoaded = false;
@@ -28,6 +29,74 @@
   let inputValue = "";
   let filterList = [];
   let checkedItems: Set<any> = new Set();
+  
+  // Pagination state
+  let currentPage = 1;
+  let rowsPerPage = 20;
+  let rowsPerPageOptions = [20, 50, 100];
+  let totalPages = 1;
+
+  // Pagination functions
+  function updatePaginatedData() {
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    displayList = rawData?.slice(startIndex, endIndex) || [];
+    totalPages = Math.ceil((rawData?.length || 0) / rowsPerPage);
+  }
+
+  function goToPage(page) {
+    if (page >= 1 && page <= totalPages) {
+      currentPage = page;
+      updatePaginatedData();
+    }
+  }
+
+  function changeRowsPerPage(newRowsPerPage) {
+    rowsPerPage = newRowsPerPage;
+    currentPage = 1; // Reset to first page when changing rows per page
+    updatePaginatedData();
+    saveRowsPerPage(); // Save to localStorage
+  }
+
+  // Save rows per page preference to localStorage
+  function saveRowsPerPage() {
+    if (!pagePathName || typeof localStorage === "undefined") return;
+
+    try {
+      const paginationKey = `${pagePathName}_rowsPerPage`;
+      localStorage.setItem(paginationKey, String(rowsPerPage));
+    } catch (e) {
+      console.warn("Failed to save rows per page preference:", e);
+    }
+  }
+
+  // Load rows per page preference from localStorage
+  function loadRowsPerPage() {
+    const currentPath = pagePathName || $page?.url?.pathname;
+
+    if (!currentPath || typeof localStorage === "undefined") {
+      rowsPerPage = 20; // Default value
+      return;
+    }
+
+    try {
+      const paginationKey = `${currentPath}_rowsPerPage`;
+      const savedRows = localStorage.getItem(paginationKey);
+
+      if (savedRows && rowsPerPageOptions.includes(Number(savedRows))) {
+        rowsPerPage = Number(savedRows);
+      } else {
+        rowsPerPage = 20; // Default if invalid or not found
+      }
+    } catch (e) {
+      console.warn("Failed to load rows per page preference:", e);
+      rowsPerPage = 20; // Default on error
+    }
+  }
+
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   // Handle messages from our filtering web worker.
   const handleMessage = (event) => {
@@ -44,13 +113,14 @@
       return aIsFavorite ? -1 : 1;
     });
 
-    displayList = rawData?.slice(0, 100) ?? [];
+    currentPage = 1; // Reset to first page after filtering
+    updatePaginatedData();
   };
 
   // Tell the web worker to filter our data
   const loadWorker = async () => {
     syncWorker?.postMessage({
-      rawData: data?.getAllPolitician,
+      rawData: originalData,
       filterList: filterList,
     });
   };
@@ -68,7 +138,7 @@
     if (filterList.length > 0) {
       await loadWorker();
     } else {
-      rawData = [...data?.getAllPolitician];
+      rawData = [...originalData];
       rawData?.sort((a, b) => {
         // Check if each id is in the favoriteList
         const aIsFavorite = favoriteList?.includes(a?.id);
@@ -81,17 +151,8 @@
         return aIsFavorite ? -1 : 1;
       });
 
-      displayList = rawData?.slice(0, 100) ?? [];
-    }
-  }
-
-  async function handleScroll() {
-    const scrollThreshold = document.body.offsetHeight * 0.8; // 80% of the website height
-    const isBottom = window.innerHeight + window.scrollY >= scrollThreshold;
-    if (isBottom && displayList?.length !== rawData?.length) {
-      const nextIndex = displayList?.length;
-      const filteredNewResults = rawData?.slice(nextIndex, nextIndex + 20);
-      displayList = [...displayList, ...filteredNewResults];
+      currentPage = 1; // Reset to first page
+      updatePaginatedData();
     }
   }
 
@@ -105,6 +166,9 @@
     } catch (e) {
       console.log(e);
     }
+
+    // Load pagination preference
+    loadRowsPerPage();
 
     if (!syncWorker) {
       const SyncWorker = await import("./workers/filterWorker?worker");
@@ -124,18 +188,23 @@
       return aIsFavorite ? -1 : 1;
     });
 
-    displayList = rawData?.slice(0, 100) ?? [];
+    // Initialize pagination
+    updatePaginatedData();
     isLoaded = true;
-
-    window.addEventListener("scroll", handleScroll);
-    //window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      // Cleanup the event listeners when the component is unmounted
-      window.removeEventListener("scroll", handleScroll);
-      //window.removeEventListener('keydown', handleKeyDown);
-    };
   });
+  
+  // Update pagination when rawData changes
+  $: if (rawData && rawData.length > 0) {
+    updatePaginatedData();
+  }
+  
+  // Reactive statement to load pagination settings when page changes
+  $: if ($page?.url?.pathname && $page?.url?.pathname !== pagePathName) {
+    pagePathName = $page?.url?.pathname;
+    loadRowsPerPage(); // Load pagination preference for new page
+    updatePaginatedData(); // Update display with loaded preference
+  }
+
   let newData = [];
 
   function search() {
@@ -158,11 +227,13 @@
 
         if (newData?.length > 0) {
           rawData = newData;
-          displayList = [...newData];
+          currentPage = 1; // Reset to first page after search
+          updatePaginatedData();
         } else {
           if (filterList?.length === 0) {
-            rawData = [...data?.getAllPolitician];
-            displayList = rawData?.slice(0, 100);
+            rawData = [...originalData];
+            currentPage = 1; // Reset to first page
+            updatePaginatedData();
           } else {
             await loadWorker();
           }
@@ -170,8 +241,9 @@
       } else {
         // Reset to original data if filter is empty
         if (filterList?.length === 0) {
-          rawData = [...data?.getAllPolitician];
-          displayList = rawData?.slice(0, 100);
+          rawData = [...originalData];
+          currentPage = 1; // Reset to first page
+          updatePaginatedData();
         } else {
           await loadWorker();
         }
@@ -242,8 +314,6 @@
     // Cycle through 'none', 'asc', 'desc' for the clicked key
     const orderCycle = ["none", "asc", "desc"];
 
-    let originalData = rawData;
-
     const currentOrderIndex = orderCycle.indexOf(sortOrders[key].order);
     sortOrders[key].order =
       orderCycle[(currentOrderIndex + 1) % orderCycle.length];
@@ -251,7 +321,14 @@
 
     // Reset to original data when 'none' and stop further sorting
     if (sortOrder === "none") {
-      displayList = [...originalData]?.slice(0, 100); // Reset to original data (spread to avoid mutation)
+      if (inputValue?.length > 0 || filterList?.length > 0) {
+        // If filtering or searching, don't change rawData
+        updatePaginatedData();
+      } else {
+        rawData = [...originalData];
+        currentPage = 1; // Reset to first page
+        updatePaginatedData(); // Reset displayed data
+      }
       return;
     }
 
@@ -285,8 +362,10 @@
       }
     };
 
-    // Sort using the generic comparison function
-    displayList = [...originalData].sort(compareValues)?.slice(0, 100);
+    // Sort and update the data
+    rawData = [...rawData].sort(compareValues);
+    currentPage = 1; // Reset to first page when sorting
+    updatePaginatedData(); // Update the displayed data
   };
 </script>
 
@@ -353,7 +432,7 @@
               <h2
                 class="text-start w-full mb-2 sm:mb-0 text-xl sm:text-2xl font-semibold"
               >
-                {rawData?.length?.toLocaleString("en-US")} Members
+                {originalData?.length?.toLocaleString("en-US")} Members
               </h2>
             </div>
 
@@ -423,80 +502,223 @@
             </div>
           </div>
 
-          <div class="w-full m-auto mt-4 overflow-x-auto">
-            <table
-              class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
-            >
-              <thead>
-                <TableHeader {columns} {sortOrders} {sortData} />
-              </thead>
-              <tbody>
-                {#each displayList as item}
-                  <tr
-                    class="dark:sm:hover:bg-[#245073]/10 odd:bg-[#F6F7F8] dark:odd:bg-odd"
-                  >
-                    <td
-                      class="text-start text-sm sm:text-[1rem] whitespace-nowrap flex flex-row items-center justify-between w-full"
-                    >
-                      <a
-                        href={`/politicians/${item?.id}`}
-                        class="text-blue-800 sm:hover:text-muted dark:sm:hover:text-white dark:text-blue-400"
-                        >{item?.representative?.replace("_", " ")}</a
+          <div class="w-full m-auto mt-4">
+            {#if displayList?.length > 0}
+              <div class="overflow-x-auto">
+                <table
+                  class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
+                >
+                  <thead>
+                    <TableHeader {columns} {sortOrders} {sortData} />
+                  </thead>
+                  <tbody>
+                    {#each displayList as item}
+                      <tr
+                        class="dark:sm:hover:bg-[#245073]/10 odd:bg-[#F6F7F8] dark:odd:bg-odd"
                       >
-
-                      <div
-                        id={item?.id}
-                        on:click|stopPropagation={(event) =>
-                          addToFavorite(event, item?.id)}
-                        class=" {favoriteList?.includes(item?.id)
-                          ? 'text-yellow-500 dark:text-[#FFA500]'
-                          : 'text-gray-400 dark:text-gray-300'}"
-                      >
-                        <svg
-                          class="{item?.id === animationId
-                            ? animationClass
-                            : ''} w-5 h-5 inline-block cursor-pointer shrink-0"
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 16 16"
-                          ><path
-                            fill="currentColor"
-                            d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327l4.898.696c.441.062.612.636.282.95l-3.522 3.356l.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"
-                          /></svg
+                        <td
+                          class="text-start text-sm sm:text-[1rem] whitespace-nowrap flex flex-row items-center justify-between w-full"
                         >
-                      </div>
-                    </td>
-                    <td
-                      class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
-                    >
-                      {item?.party}
-                    </td>
+                          <a
+                            href={`/politicians/${item?.id}`}
+                            class="text-blue-800 sm:hover:text-muted dark:sm:hover:text-white dark:text-blue-400"
+                            >{item?.representative?.replace("_", " ")}</a
+                          >
 
-                    <td
-                      class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
-                    >
-                      {item?.district?.length > 0 ? item?.district : "n/a"}
-                    </td>
+                          <div
+                            id={item?.id}
+                            on:click|stopPropagation={(event) =>
+                              addToFavorite(event, item?.id)}
+                            class=" {favoriteList?.includes(item?.id)
+                              ? 'text-yellow-500 dark:text-[#FFA500]'
+                              : 'text-gray-400 dark:text-gray-300'}"
+                          >
+                            <svg
+                              class="{item?.id === animationId
+                                ? animationClass
+                                : ''} w-5 h-5 inline-block cursor-pointer shrink-0"
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 16 16"
+                              ><path
+                                fill="currentColor"
+                                d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327l4.898.696c.441.062.612.636.282.95l-3.522 3.356l.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"
+                              /></svg
+                            >
+                          </div>
+                        </td>
+                        <td
+                          class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
+                        >
+                          {item?.party}
+                        </td>
 
-                    <td
-                      class="text-end whitespace-nowrap text-sm sm:text-[1rem]"
-                    >
-                      {item?.totalTrades?.toLocaleString("en-US")}
-                    </td>
+                        <td
+                          class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
+                        >
+                          {item?.district?.length > 0 ? item?.district : "n/a"}
+                        </td>
 
-                    <td
-                      class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
+                        <td
+                          class="text-end whitespace-nowrap text-sm sm:text-[1rem]"
+                        >
+                          {item?.totalTrades?.toLocaleString("en-US")}
+                        </td>
+
+                        <td
+                          class="text-end text-sm sm:text-[1rem] whitespace-nowrap"
+                        >
+                          {new Date(item?.lastTrade)?.toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            daySuffix: "2-digit",
+                          })}
+                        </td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
+            {:else}
+              <div class="w-full flex items-center justify-start text-start">
+                <div class="bg-[#FFFBEB] dark:bg-[#111827] border border-[#F59E0B] rounded-lg p-4 mb-4 mt-8">
+                  <p class="text-[#92400E] dark:text-[#FCD34D] text-sm">
+                    No results found for your search or filter criteria.
+                  </p>
+                </div>
+              </div>
+            {/if}
+            
+            <!-- Pagination controls -->
+            {#if displayList?.length > 0}
+              <div class="flex flex-row items-center justify-between mt-8 sm:mt-5">
+                <!-- Previous button -->
+                <div class="flex items-center gap-2">
+                  <Button
+                    on:click={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    class="w-fit transition-all flex flex-row items-center duration-50 border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary flex flex-row justify-between items-center  sm:w-auto px-1.5 sm:px-3 rounded truncate"
+                  >
+                    <svg
+                      class="h-5 w-5 inline-block shrink-0 rotate-90"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      style="max-width:40px"
+                      aria-hidden="true"
                     >
-                      {new Date(item?.lastTrade)?.toLocaleString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                        daySuffix: "2-digit",
-                      })}
-                    </td>
-                  </tr>
-                {/each}
-              </tbody>
-            </table>
+                      <path
+                        fill-rule="evenodd"
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                        clip-rule="evenodd"
+                      ></path>
+                    </svg> <span class="hidden sm:inline">Previous</span></Button
+                  >
+                </div>
+
+                <!-- Page info and rows selector in center -->
+                <div class="flex flex-row items-center gap-4">
+                  <span class="text-sm sm:text-[1rem]">
+                    Page {currentPage} of {totalPages}
+                  </span>
+
+                  <DropdownMenu.Root>
+                    <DropdownMenu.Trigger asChild let:builder>
+                      <Button
+                        builders={[builder]}
+                        class="w-fit transition-all duration-50 border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary  flex flex-row justify-between items-center  sm:w-auto px-2 sm:px-3 rounded truncate"
+                      >
+                        <span class="truncate text-[0.85rem] sm:text-sm"
+                          >{rowsPerPage} Rows</span
+                        >
+                        <svg
+                          class="ml-0.5 mt-1 h-5 w-5 inline-block shrink-0"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          style="max-width:40px"
+                          aria-hidden="true"
+                        >
+                          <path
+                            fill-rule="evenodd"
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                            clip-rule="evenodd"
+                          ></path>
+                        </svg>
+                      </Button>
+                    </DropdownMenu.Trigger>
+
+                    <DropdownMenu.Content
+                      side="bottom"
+                      align="end"
+                      sideOffset={10}
+                      alignOffset={0}
+                      class="w-auto min-w-40  max-h-[400px] overflow-y-auto scroller relative"
+                    >
+                      <!-- Dropdown items -->
+                      <DropdownMenu.Group class="pb-2">
+                        {#each rowsPerPageOptions as item}
+                          <DropdownMenu.Item
+                            class="sm:hover:bg-gray-200 dark:sm:hover:bg-primary"
+                          >
+                            <label
+                              on:click={() => changeRowsPerPage(item)}
+                              class="inline-flex justify-between w-full items-center cursor-pointer"
+                            >
+                              <span class="text-sm">{item} Rows</span>
+                            </label>
+                          </DropdownMenu.Item>
+                        {/each}
+                      </DropdownMenu.Group>
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Root>
+                </div>
+
+                <!-- Next button -->
+                <div class="flex items-center gap-2">
+                  <Button
+                    on:click={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    class="w-fit transition-all flex flex-row items-center duration-50 border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary flex flex-row justify-between items-center sm:w-auto px-1.5 sm:px-3 rounded truncate"
+                  >
+                    <span class="hidden sm:inline">Next</span>
+                    <svg
+                      class="h-5 w-5 inline-block shrink-0 -rotate-90"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      style="max-width:40px"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                        clip-rule="evenodd"
+                      ></path>
+                    </svg>
+                  </Button>
+                </div>
+              </div>
+
+              <!-- Back to Top button -->
+              <div class="flex justify-center mt-4">
+                <button
+                  on:click={scrollToTop}
+                  class=" cursor-pointer sm:hover:text-muted text-blue-800 dark:sm:hover:text-white dark:text-blue-400 text-sm sm:text-[1rem] font-medium"
+                >
+                  Back to Top <svg
+                    class="h-5 w-5 inline-block shrink-0 rotate-180"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    style="max-width:40px"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clip-rule="evenodd"
+                    ></path>
+                  </svg>
+                </button>
+              </div>
+            {/if}
           </div>
         </main>
 
