@@ -420,17 +420,17 @@
                       ><td
                         class="border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-t border-l px-4 last:pr-11 w-17 last:w-24.5 px-1 text-right"
                         ><span class=" text-sm sm:text-[1rem]"
-                          >{item?.backward_2_days_close?.toFixed(2)}</span
+                          >{item?.backward_3_days_close?.toFixed(2)}</span
                         ></td
                       ><td
                         class="border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-t border-l px-4 last:pr-11 w-17 last:w-24.5 px-1 text-right"
                         ><span class=" text-sm sm:text-[1rem]"
-                          >{item?.backward_1_days_close?.toFixed(2)}</span
+                          >{item?.backward_2_days_close?.toFixed(2)}</span
                         ></td
                       ><td
                         class="border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-t border-l rounded-tr-md px-4 last:pr-11 w-17 last:w-24.5 border-r px-1 text-right"
                         ><span class=" text-sm sm:text-[1rem]"
-                          >{item?.forward_0_days_close?.toFixed(2)}</span
+                          >{item?.backward_1_days_close?.toFixed(2)}</span
                         ></td
                       ><td
                         class="border-gray-300 dark:border-gray-800 px-3.5 py-0.5 px-4 last:pr-11 w-17 last:w-24.5 px-1"
