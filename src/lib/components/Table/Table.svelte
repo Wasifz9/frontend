@@ -224,9 +224,9 @@
       type: "percentSign",
     },
     { name: "Change OI", rule: "changeOI", type: "decimalSign" },
-    { name: "Total OI", rule: "totalOI", type: "int" },
+    { name: "Total OI", rule: "totalOI", type: "decimal" },
     { name: "IV Rank", rule: "ivRank", type: "float" },
-    { name: "Total Prem", rule: "totalPrem", type: "int" },
+    { name: "Total Prem", rule: "totalPrem", type: "decimal" },
   ];
 
   allRows = [...allRows, ...specificRows];
