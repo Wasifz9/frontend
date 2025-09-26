@@ -222,7 +222,7 @@
                 <DropdownMenu.Trigger asChild let:builder>
                   <Button
                     builders={[builder]}
-                    class=" border-gray-300 dark:border-gray-600 border bg-black sm:hover:bg-default text-white dark:sm:hover:bg-gray-300 dark:sm:hover:bg-primary ease-out flex flex-row justify-between items-center px-3 py-2  rounded"
+                    class="border-gray-300 bg-black sm:hover:bg-default text-white  dark:border-gray-600 border dark:bg-primary dark:sm:hover:bg-secondary ease-out flex flex-row justify-between items-center px-3 py-2  rounded"
                     disabled={isLoading}
                   >
                     <span class="truncate">Time Period</span>
@@ -271,7 +271,7 @@
                 <DropdownMenu.Trigger asChild let:builder>
                   <Button
                     builders={[builder]}
-                    class=" border-gray-300 dark:border-gray-600 border bg-black sm:hover:bg-default text-white dark:sm:hover:bg-primary ease-out flex flex-row justify-between items-center px-3 py-2  rounded truncate"
+                    class="border-gray-300 bg-black sm:hover:bg-default text-white  dark:border-gray-600 border dark:bg-primary dark:sm:hover:bg-secondary ease-out ease-out flex flex-row justify-between items-center px-3 py-2  rounded truncate"
                     disabled={isLoading || !isLoaded}
                   >
                     <span class="truncate">Download</span>
