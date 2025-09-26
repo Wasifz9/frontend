@@ -93,17 +93,15 @@
             </p>
           </div>
 
-          <div class="w-full m-auto">
+          <div class="w-full">
             <!--Start Top Winners/Losers-->
-            <div class="flex flex-col justify-center items-center">
-              <Table
-                {data}
-                {rawData}
-                {defaultList}
-                {excludedRules}
-                title={rawData?.length?.toLocaleString("en-US") + " Stocks"}
-              />
-            </div>
+            <Table
+              {data}
+              {rawData}
+              {defaultList}
+              {excludedRules}
+              title={rawData?.length?.toLocaleString("en-US") + " Stocks"}
+            />
           </div>
         </main>
         <aside class="hidden lg:block relative fixed w-1/4 ml-4">
