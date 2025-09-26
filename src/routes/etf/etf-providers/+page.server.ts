@@ -1,5 +1,5 @@
 export const load = async ({ locals }) => {
-  const getAllETFProviders = async () => {
+  const getData = async () => {
     const { apiKey, apiURL, user } = locals;
     const response = await fetch(apiURL + "/all-etf-providers", {
       method: "GET",
@@ -10,11 +10,16 @@ export const load = async ({ locals }) => {
     });
 
     let output = await response?.json();
+    
+    for (const item of output) {
+      item.name = item?.etfProvider;
+    }
+
     return output;
   };
 
   // Make sure to return a promise
   return {
-    getAllETFProviders: await getAllETFProviders(),
+    getData: await getData(),
   };
 };
