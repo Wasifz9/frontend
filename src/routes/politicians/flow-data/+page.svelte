@@ -221,6 +221,8 @@
         // We need to re-run the search to get the original filtered order
         search();
       } else {
+        // Reset to original unsorted state
+        originalData = data?.getPoliticianRSS || [];
         rawData = [...originalData];
         currentPage = 1; // Reset to first page
         updatePaginatedData(); // Reset displayed data
@@ -262,8 +264,13 @@
     const dataToSort = inputValue?.length > 0 ? rawData : originalData;
     const sortedData = [...dataToSort].sort(compareValues);
 
-    // Force reactivity by reassigning with a new array reference
-    rawData = sortedData;
+    // Update the appropriate data source based on whether we're filtering or not
+    if (inputValue?.length > 0) {
+      rawData = sortedData;
+    } else {
+      originalData = sortedData;
+      rawData = sortedData; // Keep rawData in sync for consistency
+    }
 
     // Force a re-render by triggering the sortOrders reactivity
     sortOrders = { ...sortOrders };
