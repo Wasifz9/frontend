@@ -8,6 +8,9 @@
   import TableHeader from "$lib/components/Table/TableHeader.svelte";
   import DownloadData from "$lib/components/DownloadData.svelte";
   import Infobox from "$lib/components/Infobox.svelte";
+  import * as DropdownMenu from "$lib/components/shadcn/dropdown-menu/index.js";
+  import { Button } from "$lib/components/shadcn/button/index.js";
+  import { page } from "$app/stores";
 
   import SEO from "$lib/components/SEO.svelte";
 
@@ -15,22 +18,86 @@
   let inputValue = "";
   let searchWorker: Worker | undefined;
 
-  let rawData = data?.getPoliticianRSS;
-  let stockList = rawData?.slice(0, 50) || [];
+  let originalData = data?.getPoliticianRSS;
+  let rawData = originalData;
+  let stockList = [];
 
-  async function handleScroll() {
-    const scrollThreshold = document.body.offsetHeight * 0.8; // 80% of the website height
-    const isBottom = window.innerHeight + window.scrollY >= scrollThreshold;
-    if (isBottom && stockList?.length !== rawData?.length) {
-      const nextIndex = stockList?.length;
-      const filteredNewResults = rawData?.slice(nextIndex, nextIndex + 9);
-      stockList = [...stockList, ...filteredNewResults];
+  // Pagination state
+  let currentPage = 1;
+  let rowsPerPage = 20;
+  let rowsPerPageOptions = [20, 50, 100];
+  let totalPages = 1;
+
+  let pagePathName = $page?.url?.pathname;
+
+  // Pagination functions
+  function updatePaginatedData() {
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    const dataSource = inputValue?.length > 0 ? rawData : originalData;
+    stockList = dataSource?.slice(startIndex, endIndex) || [];
+    totalPages = Math.ceil((dataSource?.length || 0) / rowsPerPage);
+  }
+
+  function goToPage(page) {
+    if (page >= 1 && page <= totalPages) {
+      currentPage = page;
+      updatePaginatedData();
     }
+  }
+
+  function changeRowsPerPage(newRowsPerPage) {
+    rowsPerPage = newRowsPerPage;
+    currentPage = 1; // Reset to first page when changing rows per page
+    updatePaginatedData();
+    saveRowsPerPage(); // Save to localStorage
+  }
+
+  // Save rows per page preference to localStorage
+  function saveRowsPerPage() {
+    if (!pagePathName || typeof localStorage === "undefined") return;
+
+    try {
+      const paginationKey = `${pagePathName}_rowsPerPage`;
+      localStorage.setItem(paginationKey, String(rowsPerPage));
+    } catch (e) {
+      console.warn("Failed to save rows per page preference:", e);
+    }
+  }
+
+  // Load rows per page preference from localStorage
+  function loadRowsPerPage() {
+    const currentPath = pagePathName || $page?.url?.pathname;
+
+    if (!currentPath || typeof localStorage === "undefined") {
+      rowsPerPage = 20; // Default value
+      return;
+    }
+
+    try {
+      const paginationKey = `${currentPath}_rowsPerPage`;
+      const savedRows = localStorage.getItem(paginationKey);
+
+      if (savedRows && rowsPerPageOptions.includes(Number(savedRows))) {
+        rowsPerPage = Number(savedRows);
+      } else {
+        rowsPerPage = 20; // Default if invalid or not found
+      }
+    } catch (e) {
+      console.warn("Failed to load rows per page preference:", e);
+      rowsPerPage = 20; // Default on error
+    }
+  }
+
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function resetTableSearch() {
     inputValue = "";
-    search();
+    rawData = originalData;
+    currentPage = 1; // Reset to first page
+    updatePaginatedData();
   }
 
   async function search() {
@@ -41,16 +108,17 @@
         await loadSearchWorker();
       } else {
         // Reset to original data if filter is empty
-        rawData = data?.getPoliticianRSS || [];
-        stockList = rawData?.slice(0, 50);
+        rawData = originalData || [];
+        currentPage = 1; // Reset to first page
+        updatePaginatedData();
       }
     }, 100);
   }
 
   const loadSearchWorker = async () => {
-    if (searchWorker && rawData?.length > 0) {
+    if (searchWorker && originalData?.length > 0) {
       searchWorker.postMessage({
-        rawData: data?.getPoliticianRSS,
+        rawData: originalData,
         inputValue: inputValue,
       });
     }
@@ -59,11 +127,18 @@
   const handleSearchMessage = (event) => {
     if (event.data?.message === "success") {
       rawData = event.data?.output ?? [];
-      stockList = rawData?.slice(0, 50);
+      currentPage = 1; // Reset to first page after search
+      updatePaginatedData();
     }
   };
 
   onMount(async () => {
+    // Load pagination preference
+    loadRowsPerPage();
+
+    // Initialize pagination
+    updatePaginatedData();
+
     if (!searchWorker) {
       const SearchWorker = await import(
         "$lib/workers/tableSearchWorker?worker"
@@ -71,16 +146,17 @@
       searchWorker = new SearchWorker.default();
       searchWorker.onmessage = handleSearchMessage;
     }
-
-    window.addEventListener("scroll", handleScroll);
-    //window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      // Cleanup the event listeners when the component is unmounted
-      window.removeEventListener("scroll", handleScroll);
-      //window.removeEventListener('keydown', handleKeyDown);
-    };
   });
+
+  // Note: We don't use a reactive statement here because we manually call updatePaginatedData()
+  // in our sorting, searching, and pagination functions to have better control over when it runs
+
+  // Reactive statement to load pagination settings when page changes
+  $: if ($page?.url?.pathname && $page?.url?.pathname !== pagePathName) {
+    pagePathName = $page?.url?.pathname;
+    loadRowsPerPage(); // Load pagination preference for new page
+    updatePaginatedData(); // Update display with loaded preference
+  }
 
   function getAbbreviatedName(fullName) {
     if (fullName === null) {
@@ -133,8 +209,6 @@
     // Cycle through 'none', 'asc', 'desc' for the clicked key
     const orderCycle = ["none", "asc", "desc"];
 
-    let originalData = rawData;
-
     const currentOrderIndex = orderCycle.indexOf(sortOrders[key].order);
     sortOrders[key].order =
       orderCycle[(currentOrderIndex + 1) % orderCycle.length];
@@ -142,7 +216,15 @@
 
     // Reset to original data when 'none' and stop further sorting
     if (sortOrder === "none") {
-      stockList = [...originalData]?.slice(0, 50); // Reset to original data (spread to avoid mutation)
+      if (inputValue?.length > 0) {
+        // If filtering, keep the filtered rawData but reset to unsorted state
+        // We need to re-run the search to get the original filtered order
+        search();
+      } else {
+        rawData = [...originalData];
+        currentPage = 1; // Reset to first page
+        updatePaginatedData(); // Reset displayed data
+      }
       return;
     }
 
@@ -157,15 +239,15 @@
           valueB = new Date(b[key]);
           break;
         case "string":
-          valueA = a[key].toUpperCase();
-          valueB = b[key].toUpperCase();
+          valueA = a[key]?.toUpperCase() || "";
+          valueB = b[key]?.toUpperCase() || "";
           return sortOrder === "asc"
             ? valueA.localeCompare(valueB)
             : valueB.localeCompare(valueA);
         case "number":
         default:
-          valueA = parseFloat(a[key]);
-          valueB = parseFloat(b[key]);
+          valueA = parseFloat(a[key]) || 0;
+          valueB = parseFloat(b[key]) || 0;
           break;
       }
 
@@ -176,8 +258,18 @@
       }
     };
 
-    // Sort using the generic comparison function
-    stockList = [...originalData].sort(compareValues)?.slice(0, 50);
+    // Get the data to sort and sort it
+    const dataToSort = inputValue?.length > 0 ? rawData : originalData;
+    const sortedData = [...dataToSort].sort(compareValues);
+
+    // Force reactivity by reassigning with a new array reference
+    rawData = sortedData;
+
+    // Force a re-render by triggering the sortOrders reactivity
+    sortOrders = { ...sortOrders };
+
+    currentPage = 1; // Reset to first page when sorting
+    updatePaginatedData(); // Update the displayed data
   };
 
   $: charNumber = $screenWidth < 640 ? 20 : 30;
@@ -216,12 +308,13 @@
             ratio shows
             <strong
               >{(() => {
+                // Use originalData for stats to show full dataset metrics
                 const buys =
-                  stockList?.filter((item) => item?.type === "Bought")
+                  originalData?.filter((item) => item?.type === "Bought")
                     ?.length || 0;
                 const sells =
-                  stockList?.filter((item) => item?.type === "Sold")?.length ||
-                  0;
+                  originalData?.filter((item) => item?.type === "Sold")
+                    ?.length || 0;
                 const total = buys + sells;
                 return total > 0
                   ? `${((buys / total) * 100).toFixed(1)}% buys`
@@ -232,11 +325,11 @@
             <strong
               >{(() => {
                 const buys =
-                  stockList?.filter((item) => item?.type === "Bought")
+                  originalData?.filter((item) => item?.type === "Bought")
                     ?.length || 0;
                 const sells =
-                  stockList?.filter((item) => item?.type === "Sold")?.length ||
-                  0;
+                  originalData?.filter((item) => item?.type === "Sold")
+                    ?.length || 0;
                 const total = buys + sells;
                 return total > 0
                   ? `${((sells / total) * 100).toFixed(1)}% sells`
@@ -247,7 +340,7 @@
             <strong
               >{(() => {
                 const partyCount = {};
-                stockList?.forEach((item) => {
+                originalData?.forEach((item) => {
                   if (item?.party) {
                     partyCount[item.party] = (partyCount[item.party] || 0) + 1;
                   }
@@ -262,7 +355,7 @@
             <strong
               >{(() => {
                 const partyCount = {};
-                stockList?.forEach((item) => {
+                originalData?.forEach((item) => {
                   if (item?.party) {
                     partyCount[item.party] = (partyCount[item.party] || 0) + 1;
                   }
@@ -277,11 +370,11 @@
             <strong
               >{(() => {
                 const buys =
-                  stockList?.filter((item) => item?.type === "Bought")
+                  originalData?.filter((item) => item?.type === "Bought")
                     ?.length || 0;
                 const sells =
-                  stockList?.filter((item) => item?.type === "Sold")?.length ||
-                  0;
+                  originalData?.filter((item) => item?.type === "Sold")
+                    ?.length || 0;
                 if (buys > sells) return "bullish";
                 if (sells > buys) return "bearish";
                 return "neutral";
@@ -304,7 +397,7 @@
                         <h2
                           class="text-start whitespace-nowrap text-xl sm:text-2xl font-semibold py-1 border-b border-gray-300 dark:border-gray-800 lg:border-none w-full"
                         >
-                          {rawData?.length?.toLocaleString("en-US")} Congressional
+                          {originalData?.length?.toLocaleString("en-US")} Congressional
                           Trades
                         </h2>
                         <div
@@ -344,8 +437,8 @@
                           <div class="ml-2">
                             <DownloadData
                               {data}
-                              {rawData}
-                              title={"stock_screener_data"}
+                              rawData={originalData}
+                              title={"congress_flow_data"}
                             />
                           </div>
                         </div>
@@ -455,6 +548,143 @@
                           />
                         {/if}
                       </div>
+
+                      <!-- Pagination controls -->
+                      {#if stockList?.length > 0}
+                        <div
+                          class="flex flex-row items-center justify-between mt-8 sm:mt-5"
+                        >
+                          <!-- Previous button -->
+                          <div class="flex items-center gap-2">
+                            <Button
+                              on:click={() => goToPage(currentPage - 1)}
+                              disabled={currentPage === 1}
+                              class="w-fit transition-all flex flex-row items-center duration-50 border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary flex flex-row justify-between items-center  sm:w-auto px-1.5 sm:px-3 rounded truncate"
+                            >
+                              <svg
+                                class="h-5 w-5 inline-block shrink-0 rotate-90"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                                style="max-width:40px"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  fill-rule="evenodd"
+                                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                  clip-rule="evenodd"
+                                ></path>
+                              </svg>
+                              <span class="hidden sm:inline">Previous</span
+                              ></Button
+                            >
+                          </div>
+
+                          <!-- Page info and rows selector in center -->
+                          <div class="flex flex-row items-center gap-4">
+                            <span class="text-sm sm:text-[1rem]">
+                              Page {currentPage} of {totalPages}
+                            </span>
+
+                            <DropdownMenu.Root>
+                              <DropdownMenu.Trigger asChild let:builder>
+                                <Button
+                                  builders={[builder]}
+                                  class="w-fit transition-all duration-50 border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary  flex flex-row justify-between items-center  sm:w-auto px-2 sm:px-3 rounded truncate"
+                                >
+                                  <span
+                                    class="truncate text-[0.85rem] sm:text-sm"
+                                    >{rowsPerPage} Rows</span
+                                  >
+                                  <svg
+                                    class="ml-0.5 mt-1 h-5 w-5 inline-block shrink-0"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                    style="max-width:40px"
+                                    aria-hidden="true"
+                                  >
+                                    <path
+                                      fill-rule="evenodd"
+                                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                      clip-rule="evenodd"
+                                    ></path>
+                                  </svg>
+                                </Button>
+                              </DropdownMenu.Trigger>
+
+                              <DropdownMenu.Content
+                                side="bottom"
+                                align="end"
+                                sideOffset={10}
+                                alignOffset={0}
+                                class="w-auto min-w-40  max-h-[400px] overflow-y-auto scroller relative"
+                              >
+                                <!-- Dropdown items -->
+                                <DropdownMenu.Group class="pb-2">
+                                  {#each rowsPerPageOptions as item}
+                                    <DropdownMenu.Item
+                                      class="sm:hover:bg-gray-200 dark:sm:hover:bg-primary"
+                                    >
+                                      <label
+                                        on:click={() => changeRowsPerPage(item)}
+                                        class="inline-flex justify-between w-full items-center cursor-pointer"
+                                      >
+                                        <span class="text-sm">{item} Rows</span>
+                                      </label>
+                                    </DropdownMenu.Item>
+                                  {/each}
+                                </DropdownMenu.Group>
+                              </DropdownMenu.Content>
+                            </DropdownMenu.Root>
+                          </div>
+
+                          <!-- Next button -->
+                          <div class="flex items-center gap-2">
+                            <Button
+                              on:click={() => goToPage(currentPage + 1)}
+                              disabled={currentPage === totalPages}
+                              class="w-fit transition-all flex flex-row items-center duration-50 border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary flex flex-row justify-between items-center sm:w-auto px-1.5 sm:px-3 rounded truncate"
+                            >
+                              <span class="hidden sm:inline">Next</span>
+                              <svg
+                                class="h-5 w-5 inline-block shrink-0 -rotate-90"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                                style="max-width:40px"
+                                aria-hidden="true"
+                              >
+                                <path
+                                  fill-rule="evenodd"
+                                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                  clip-rule="evenodd"
+                                ></path>
+                              </svg>
+                            </Button>
+                          </div>
+                        </div>
+
+                        <!-- Back to Top button -->
+                        <div class="flex justify-center mt-4">
+                          <button
+                            on:click={scrollToTop}
+                            class=" cursor-pointer sm:hover:text-muted text-blue-800 dark:sm:hover:text-white dark:text-blue-400 text-sm sm:text-[1rem] font-medium"
+                          >
+                            Back to Top <svg
+                              class="h-5 w-5 inline-block shrink-0 rotate-180"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                              style="max-width:40px"
+                              aria-hidden="true"
+                            >
+                              <path
+                                fill-rule="evenodd"
+                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                clip-rule="evenodd"
+                              ></path>
+                            </svg>
+                          </button>
+                        </div>
+                      {/if}
+
                       <!--<InfiniteLoading on:infinite={infiniteHandler} />-->
 
                       <!--<UpgradeToPro data={data} title="Track the latest trades of corrupt US Politicians"/>-->

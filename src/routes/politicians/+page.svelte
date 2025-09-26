@@ -3,7 +3,7 @@
   import { Button } from "$lib/components/shadcn/button/index.js";
   import TableHeader from "$lib/components/Table/TableHeader.svelte";
   import ArrowLogo from "lucide-svelte/icons/move-up-right";
-
+  import Infobox from "$lib/components/Infobox.svelte";
   import SEO from "$lib/components/SEO.svelte";
 
   import { onMount } from "svelte";
@@ -29,7 +29,7 @@
   let inputValue = "";
   let filterList = [];
   let checkedItems: Set<any> = new Set();
-  
+
   // Pagination state
   let currentPage = 1;
   let rowsPerPage = 20;
@@ -192,12 +192,12 @@
     updatePaginatedData();
     isLoaded = true;
   });
-  
+
   // Update pagination when rawData changes
   $: if (rawData && rawData.length > 0) {
     updatePaginatedData();
   }
-  
+
   // Reactive statement to load pagination settings when page changes
   $: if ($page?.url?.pathname && $page?.url?.pathname !== pagePathName) {
     pagePathName = $page?.url?.pathname;
@@ -206,6 +206,13 @@
   }
 
   let newData = [];
+
+  function resetTableSearch() {
+    inputValue = "";
+    rawData = [...originalData];
+    currentPage = 1; // Reset to first page
+    updatePaginatedData();
+  }
 
   function search() {
     clearTimeout(timeoutId); // Clear any existing timeout
@@ -231,7 +238,7 @@
           updatePaginatedData();
         } else {
           if (filterList?.length === 0) {
-            rawData = [...originalData];
+            rawData = [];
             currentPage = 1; // Reset to first page
             updatePaginatedData();
           } else {
@@ -439,13 +446,36 @@
             <div
               class="flex items-center ml-auto border-t border-b border-gray-300 dark:border-gray-800 sm:border-none pt-2 pb-2 sm:pt-0 sm:pb-0 w-full"
             >
-              <input
-                type="text"
-                bind:value={inputValue}
-                on:input={search}
-                placeholder="Find..."
-                class="ml-auto py-[7px] text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow-xs focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-800 grow w-full sm:min-w-56 sm:max-w-14"
-              />
+              <div class="relative ml-auto w-full sm:min-w-56 sm:max-w-14">
+                <div
+                  class="inline-block cursor-pointer absolute right-2 top-2 text-sm"
+                >
+                  {#if inputValue?.length > 0}
+                    <label
+                      class="cursor-pointer"
+                      on:click={() => resetTableSearch()}
+                    >
+                      <svg
+                        class="w-5 h-5"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        ><path
+                          fill="currentColor"
+                          d="m6.4 18.308l-.708-.708l5.6-5.6l-5.6-5.6l.708-.708l5.6 5.6l5.6-5.6l.708.708l-5.6 5.6l5.6 5.6l-.708.708l-5.6-5.6z"
+                        /></svg
+                      >
+                    </label>
+                  {/if}
+                </div>
+
+                <input
+                  type="text"
+                  bind:value={inputValue}
+                  on:input={search}
+                  placeholder="Find..."
+                  class="py-[7px] text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow-xs focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-800 grow w-full"
+                />
+              </div>
 
               <DropdownMenu.Root>
                 <DropdownMenu.Trigger asChild let:builder>
@@ -579,19 +609,19 @@
                   </tbody>
                 </table>
               </div>
+            {:else if displayList?.length === 0 && inputValue?.length > 0}
+              <Infobox text={`No Stocks found for "${inputValue}"`} />
             {:else}
-              <div class="w-full flex items-center justify-start text-start">
-                <div class="bg-[#FFFBEB] dark:bg-[#111827] border border-[#F59E0B] rounded-lg p-4 mb-4 mt-8">
-                  <p class="text-[#92400E] dark:text-[#FCD34D] text-sm">
-                    No results found for your search or filter criteria.
-                  </p>
-                </div>
-              </div>
+              <Infobox
+                text="No results found for your search or filter criteria."
+              />
             {/if}
-            
+
             <!-- Pagination controls -->
             {#if displayList?.length > 0}
-              <div class="flex flex-row items-center justify-between mt-8 sm:mt-5">
+              <div
+                class="flex flex-row items-center justify-between mt-8 sm:mt-5"
+              >
                 <!-- Previous button -->
                 <div class="flex items-center gap-2">
                   <Button
@@ -611,7 +641,8 @@
                         d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
                         clip-rule="evenodd"
                       ></path>
-                    </svg> <span class="hidden sm:inline">Previous</span></Button
+                    </svg>
+                    <span class="hidden sm:inline">Previous</span></Button
                   >
                 </div>
 
