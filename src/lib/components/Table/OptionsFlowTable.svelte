@@ -17,6 +17,7 @@
 
   let selectedOptionData = "";
   let optionsInsightContent = "";
+  let optionsInsightThoughts = "";
   let isStreaming = false;
   //  let animationClass = "";
   //  let animationId = "";
@@ -113,6 +114,7 @@
 
   async function optionsInsight(optionsData) {
     optionsInsightContent = ""; // Clear previous content
+    optionsInsightThoughts = ""; // Clear previous thoughts
 
     if (data?.user?.tier === "Pro") {
       try {
@@ -202,6 +204,10 @@
                 return;
               }
 
+              if (json.thoughts) {
+                optionsInsightThoughts = json.thoughts;
+              }
+              
               if (json.content) {
                 optionsInsightContent = json.content;
                 finalContent = json.content; // Store for caching
@@ -1082,7 +1088,7 @@
       <!-- Content Area -->
       <div class="p-3 sm:p-6">
         <div class="flex flex-col items-start w-full">
-          {#if isStreaming && !optionsInsightContent}
+          {#if isStreaming && !optionsInsightContent && !optionsInsightThoughts}
             <div class="flex items-center gap-3 w-full">
               <img
                 class="w-8 h-8 rounded-full shrink-0 animate-pulse"
@@ -1094,6 +1100,22 @@
                 class="flex text-sm sm:text-[1rem] items-center space-x-2 py-2 animate-pulse"
               >
                 Analyzing options flow order...
+              </div>
+            </div>
+          {/if}
+          
+          {#if isStreaming && optionsInsightThoughts && !optionsInsightContent}
+            <div class="flex items-center gap-3 w-full">
+              <img
+                class="w-8 h-8 rounded-full shrink-0 animate-pulse"
+                src="/pwa-192x192.png"
+                alt="Stocknear Logo"
+                loading="lazy"
+              />
+              <div
+                class="flex text-sm sm:text-[1rem] items-center space-x-2 py-2 animate-pulse"
+              >
+                {optionsInsightThoughts}
               </div>
             </div>
           {/if}
