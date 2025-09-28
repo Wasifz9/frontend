@@ -1499,14 +1499,12 @@
       defaultValue: "any",
       category: "Forecasts, Analysts & Price Targets",
     },
-    /*
     halalStocks: {
       label: "Halal Stocks",
       step: ["Compliant", "Non-Compliant"],
       defaultCondition: "",
       defaultValue: "any",
     },
-    */
     score: {
       label: "AI Score",
       step: ["Strong Buy", "Buy", "Hold", "Sell", "Strong Sell"],
