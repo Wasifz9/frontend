@@ -1970,7 +1970,7 @@ export const agentOptions = [
   {"name": "PeterLynch", "group": 'Investors',"credit": 2},
   {"name": "BenjaminGraham", "group": 'Investors',"credit": 2},
   {"name": "CathieWood", "group": 'Investors',"credit": 2},
-  {"name": "Backtesting", "group": 'Others',"credit": 3},
+  //{"name": "Backtesting", "group": 'Others',"credit": 3},
   //{"name": "Plot", "credit": 1},
   
 ]
@@ -1989,9 +1989,9 @@ export function getCreditFromQuery(query, agentOptions) {
 
 export let defaultChats = [
   {
-    label: "Summarize Pelosi's trading moves",
+    label: "Top Gainers, Losers & Most Active",
     query:
-      "Summarize Nancy Pelosi’s most recent stock trades and provide a sentiment analysis (bullish or bearish) for each company involved, based on the nature and timing of the transactions.",
+      "Provide a summary of today’s top performing stocks (gainers), the biggest decliners (losers), and the most actively traded stocks by volume. Include key metrics such as percentage change and trading volume.",
     type: "Stocks",
   },
   {
