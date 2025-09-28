@@ -225,26 +225,11 @@
           : 'mr-auto w-fit border-b rounded-none border-gray-300 dark:border-gray-700'}"
     >
       {#if isLoading}
-        <div class="flex items-center space-x-2 py-3">
-          <div class="flex space-x-1">
-            <div
-              class="{assistant
-                ? 'size-1.5'
-                : 'size-1.5 sm:size-2'} bg-gray-500 dark:bg-gray-400 rounded-full animate-pulse"
-              style="animation-delay: 0ms; animation-duration: 1.5s;"
-            ></div>
-            <div
-              class="{assistant
-                ? 'size-1.5'
-                : 'size-1.5 sm:size-2'} bg-gray-500 dark:bg-gray-400 rounded-full animate-pulse"
-              style="animation-delay: 0.5s; animation-duration: 1.5s;"
-            ></div>
-            <div
-              class="{assistant
-                ? 'size-1.5'
-                : 'size-1.5 sm:size-2'} bg-gray-500 dark:bg-gray-400 rounded-full animate-pulse"
-              style="animation-delay: 1s; animation-duration: 1.5s;"
-            ></div>
+        <div class="py-3">
+          <div
+            class="text-sm sm:text-[1rem] text-gray-500 dark:text-gray-400 shimmer-text"
+          >
+            {"Gathering relevant data..."}
           </div>
         </div>
       {:else}

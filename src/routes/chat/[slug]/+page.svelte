@@ -1096,7 +1096,7 @@
 
                 <label
                   for={!data?.user ? "userLogin" : ""}
-                  on:click={() => (data?.user ? createChat() : "")}
+                  on:click={() => (data?.user ? llmChat() : "")}
                   class="{editorText?.trim()?.length > 0
                     ? 'cursor-pointer'
                     : 'cursor-not-allowed opacity-60'} py-2 text-white dark:text-black text-[1rem] rounded border border-gray-300 dark:border-gray-700 bg-black dark:bg-white px-3 transition-colors duration-200"
