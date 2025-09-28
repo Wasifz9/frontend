@@ -4,6 +4,7 @@
   import { toast } from "svelte-sonner";
   import { mode } from "mode-watcher";
   import { createEventDispatcher } from "svelte";
+  import { chatReasoning } from "$lib/store";
   const dispatch = createEventDispatcher();
 
   import TickerGraph from "$lib/components/Plot/TickerGraph.svelte";
@@ -229,7 +230,9 @@
           <div
             class="text-sm sm:text-[1rem] text-gray-500 dark:text-gray-400 shimmer-text"
           >
-            {"Gathering relevant data..."}
+            {$chatReasoning
+              ? "Thinking very hard..."
+              : "Gathering relevant data..."}
           </div>
         </div>
       {:else}
