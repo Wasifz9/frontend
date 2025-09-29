@@ -44,8 +44,8 @@
   let selectedPlotPeriod = "3Y";
 
   let selectedPlotCategory = {
-    name: "Stock Price",
-    value: "close",
+    name: "Total Return [%]",
+    value: "totalReturn",
     type: "price",
   };
 
@@ -166,8 +166,8 @@
   let tickerList = [];
 
   const colorPairs = [
-    { light: "#1E90FF", dark: "#60A5FA" }, // DodgerBlue → SkyBlue
-    { light: "#9400D3", dark: "#7C3AED" }, // DarkViolet → Violet
+    { light: "#1181fe", dark: "#1181fe" }, // DodgerBlue → SkyBlue
+    { light: "#ec7336", dark: "#ec7336" }, // DarkViolet → Violet
     { light: "#006400", dark: "#22C55E" }, // DarkGreen → Emerald
     { light: "#DC143C", dark: "#F43F5E" }, // Crimson → Rose
     { light: "#4682B4", dark: "#60A5FA" }, // SteelBlue → SkyBlue
@@ -239,9 +239,10 @@
 
   function presetStrategy(defaultTickers) {
     isLoaded = false;
+    tickerList = [];
     selectedPlotCategory = {
-      name: "Stock Price",
-      value: "close",
+      name: "Total Return [%]",
+      value: "totalReturn",
       type: "price",
     };
 
@@ -677,8 +678,8 @@
         type: "column", // change to bar chart
         data,
         color: $mode === "light" ? pair?.light : pair?.dark,
-        borderRadius: 2,
-        pointPadding: 0.2,
+        borderRadius: 3,
+        pointPadding: 0.1,
       };
     });
 
@@ -691,7 +692,7 @@
       },
       credits: { enabled: false },
       title: {
-        text: null,
+        text: `<div class= "mt-5"></div>`,
         useHTML: true,
         style: { color: $mode === "light" ? "black" : "white" },
       },
@@ -728,9 +729,7 @@
       yAxis: {
         title: null,
         opposite: true,
-        min: -100,
-        max: 100,
-        ttckPositions: [0, 50, 100],
+
         labels: {
           formatter() {
             // only render labels for > 0
@@ -749,6 +748,7 @@
         column: {
           borderWidth: 0,
           groupPadding: 0.1,
+          pointWidth: 50,
         },
         legendSymbol: "rectangle",
         series: {
@@ -1151,6 +1151,81 @@
                 </div>
               </div>
             {/if}
+
+            <div class="mt-6 md:mt-10">
+              <h3 class="font-semibold text-xl md:text-2xl">
+                Popular Stock Comparisons
+              </h3>
+              <div class="my-4 sm:flex md:my-5">
+                <div class="grid grid-cols-2 gap-x-2 gap-y-1 sm:grid-cols-4">
+                  <a
+                    class="cursor-pointer flex justify-center rounded border border-gray-300 dark:border-gray-800 text-white bg-black px-1 py-2 text-sm font-semibold sm:hover:bg-default dark:bg-[#2A2E39] dark:sm:hover:bg-primary md:text-lg"
+                    on:click={() => presetStrategy(["NVDA", "INTC"])}
+                    >NVDA vs. INTC</a
+                  ><a
+                    class="cursor-pointer flex justify-center rounded border border-gray-300 dark:border-gray-800 text-white bg-black px-1 py-2 text-sm font-semibold sm:hover:bg-default dark:bg-[#2A2E39] dark:sm:hover:bg-primary md:text-lg"
+                    on:click={() => presetStrategy(["AAPL", "MSFT"])}
+                    >AAPL vs. MSFT</a
+                  ><a
+                    class="cursor-pointer flex justify-center rounded border border-gray-300 dark:border-gray-800 text-white bg-black px-1 py-2 text-sm font-semibold sm:hover:bg-default dark:bg-[#2A2E39] dark:sm:hover:bg-primary md:text-lg"
+                    on:click={() => presetStrategy(["GOOGL", "META"])}
+                    >GOOGL vs. META</a
+                  ><a
+                    class="cursor-pointer flex justify-center rounded border border-gray-300 dark:border-gray-800 text-white bg-black px-1 py-2 text-sm font-semibold sm:hover:bg-default dark:bg-[#2A2E39] dark:sm:hover:bg-primary md:text-lg"
+                    on:click={() => presetStrategy(["AMZN", "BABA"])}
+                    >AMZN vs. BABA</a
+                  ><a
+                    class="cursor-pointer flex justify-center rounded border border-gray-300 dark:border-gray-800 text-white bg-black px-1 py-2 text-sm font-semibold sm:hover:bg-default dark:bg-[#2A2E39] dark:sm:hover:bg-primary md:text-lg"
+                    on:click={() => presetStrategy(["TSLA", "RIVN"])}
+                    >TSLA vs. RIVN</a
+                  ><a
+                    class="cursor-pointer flex justify-center rounded border border-gray-300 dark:border-gray-800 text-white bg-black px-1 py-2 text-sm font-semibold sm:hover:bg-default dark:bg-[#2A2E39] dark:sm:hover:bg-primary md:text-lg"
+                    on:click={() => presetStrategy(["AMD", "INTC"])}
+                    >AMD vs. INTC</a
+                  ><a
+                    class="cursor-pointer flex justify-center rounded border border-gray-300 dark:border-gray-800 text-white bg-black px-1 py-2 text-sm font-semibold sm:hover:bg-default dark:bg-[#2A2E39] dark:sm:hover:bg-primary md:text-lg"
+                    on:click={() => presetStrategy(["SHOP", "SQ"])}
+                    >SHOP vs. SQ</a
+                  ><a
+                    class="cursor-pointer flex justify-center rounded border border-gray-300 dark:border-gray-800 text-white bg-black px-1 py-2 text-sm font-semibold sm:hover:bg-default dark:bg-[#2A2E39] dark:sm:hover:bg-primary md:text-lg"
+                    on:click={() => presetStrategy(["PYPL", "SQ"])}
+                    >PYPL vs. SQ</a
+                  ><a
+                    class="cursor-pointer flex justify-center rounded border border-gray-300 dark:border-gray-800 text-white bg-black px-1 py-2 text-sm font-semibold sm:hover:bg-default dark:bg-[#2A2E39] dark:sm:hover:bg-primary md:text-lg"
+                    on:click={() => presetStrategy(["NFLX", "DIS"])}
+                    >NFLX vs. DIS</a
+                  ><a
+                    class="cursor-pointer flex justify-center rounded border border-gray-300 dark:border-gray-800 text-white bg-black px-1 py-2 text-sm font-semibold sm:hover:bg-default dark:bg-[#2A2E39] dark:sm:hover:bg-primary md:text-lg"
+                    on:click={() => presetStrategy(["UBER", "LYFT"])}
+                    >UBER vs. LYFT</a
+                  ><a
+                    class="cursor-pointer flex justify-center rounded border border-gray-300 dark:border-gray-800 text-white bg-black px-1 py-2 text-sm font-semibold sm:hover:bg-default dark:bg-[#2A2E39] dark:sm:hover:bg-primary md:text-lg"
+                    on:click={() => presetStrategy(["COIN", "HOOD"])}
+                    >COIN vs. HOOD</a
+                  ><a
+                    class="cursor-pointer flex justify-center rounded border border-gray-300 dark:border-gray-800 text-white bg-black px-1 py-2 text-sm font-semibold sm:hover:bg-default dark:bg-[#2A2E39] dark:sm:hover:bg-primary md:text-lg"
+                    on:click={() => presetStrategy(["SPOT", "ROKU"])}
+                    >SPOT vs. ROKU</a
+                  ><a
+                    class="cursor-pointer flex justify-center rounded border border-gray-300 dark:border-gray-800 text-white bg-black px-1 py-2 text-sm font-semibold sm:hover:bg-default dark:bg-[#2A2E39] dark:sm:hover:bg-primary md:text-lg"
+                    on:click={() => presetStrategy(["CRM", "NOW"])}
+                    >CRM vs. NOW</a
+                  ><a
+                    class="cursor-pointer flex justify-center rounded border border-gray-300 dark:border-gray-800 text-white bg-black px-1 py-2 text-sm font-semibold sm:hover:bg-default dark:bg-[#2A2E39] dark:sm:hover:bg-primary md:text-lg"
+                    on:click={() => presetStrategy(["JNJ", "PFE"])}
+                    >JNJ vs. PFE</a
+                  ><a
+                    class="cursor-pointer flex justify-center rounded border border-gray-300 dark:border-gray-800 text-white bg-black px-1 py-2 text-sm font-semibold sm:hover:bg-default dark:bg-[#2A2E39] dark:sm:hover:bg-primary md:text-lg"
+                    on:click={() => presetStrategy(["NKE", "LULU"])}
+                    >NKE vs. LULU</a
+                  ><a
+                    class="cursor-pointer flex justify-center rounded border border-gray-300 dark:border-gray-800 text-white bg-black px-1 py-2 text-sm font-semibold sm:hover:bg-default dark:bg-[#2A2E39] dark:sm:hover:bg-primary md:text-lg"
+                    on:click={() => presetStrategy(["ABNB", "BKNG"])}
+                    >ABNB vs. BKNG</a
+                  >
+                </div>
+              </div>
+            </div>
           {:else}
             <div
               class="mt-3 rounded border border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-[#2A2E39] xs:mt-4 md:mt-6"

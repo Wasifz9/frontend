@@ -1599,7 +1599,7 @@
   </div>
 {/if}
 
-{#if stockList?.length > 0}
+{#if stockList?.length >= 19}
   <Pagination
     {currentPage}
     {totalPages}
