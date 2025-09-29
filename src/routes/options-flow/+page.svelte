@@ -32,7 +32,7 @@
 
   let optionsWatchlist = data?.getOptionsWatchlist;
 
-  let ruleOfList = data?.getPredefinedCookieRuleOfList || [];
+  let ruleOfList = [];
 
   let displayRules = [];
   let filteredData = [];
@@ -181,13 +181,6 @@
     }
   });
 
-  // Update ruleCondition and valueMappings based on existing rules
-  ruleOfList.forEach((rule) => {
-    ruleCondition[rule.name] =
-      rule.condition || allRules[rule.name].defaultCondition;
-    valueMappings[rule.name] = rule.value || allRules[rule.name].defaultValue;
-  });
-
   async function handleDeleteRule(state) {
     // Find the index of the rule to be deleted or updated
     const index = ruleOfList?.findIndex((rule) => rule.name === state);
@@ -217,10 +210,12 @@
           value: defaultValue,
         };
         ruleOfList = [...ruleOfList]; // Trigger reactivity
+        saveRuleOfListToLocalStorage();
       } else {
         // If already at defaults, remove the rule
         ruleOfList.splice(index, 1);
         ruleOfList = [...ruleOfList];
+        saveRuleOfListToLocalStorage();
 
         // Reset checkedItems for multi-select rules
         if (checkedItems.has(state)) {
@@ -240,7 +235,7 @@
         ruleOfList?.some((rule) => rule.name === row.rule),
       );
       shouldLoadWorker.set(true);
-      await saveCookieRuleOfList();
+      saveRuleOfListToLocalStorage();
     }
   }
 
@@ -259,7 +254,7 @@
       ruleOfList.some((rule) => rule.name === row.rule),
     );
     displayedData = [...rawData];
-    await saveCookieRuleOfList();
+    saveRuleOfListToLocalStorage();
   }
 
   function changeRule(state: string) {
@@ -318,6 +313,7 @@
         // Remove the rule instead of showing an error
         ruleOfList.splice(existingRuleIndex, 1);
         ruleOfList = [...ruleOfList]; // Trigger reactivity
+        saveRuleOfListToLocalStorage();
         Object.keys(allRules).forEach((ruleName) => {
           ruleCondition[ruleName] = allRules[ruleName].defaultCondition;
           valueMappings[ruleName] = allRules[ruleName].defaultValue;
@@ -328,9 +324,11 @@
       } else {
         ruleOfList[existingRuleIndex] = newRule;
         ruleOfList = [...ruleOfList]; // Trigger reactivity
+        saveRuleOfListToLocalStorage();
       }
     } else {
       ruleOfList = [...ruleOfList, newRule];
+      saveRuleOfListToLocalStorage();
 
       shouldLoadWorker.set(true);
     }
@@ -453,7 +451,7 @@
 
     // Trigger worker load and save cookie
     shouldLoadWorker.set(true);
-    await saveCookieRuleOfList();
+    saveRuleOfListToLocalStorage();
   }
 
   async function stepSizeValue(value, condition) {
@@ -581,9 +579,13 @@
     if (data?.user?.tier !== "Pro" || !data?.wsURL) {
       return;
     }
-    
+
     // Prevent duplicate connections
-    if (socket && (socket.readyState === WebSocket.CONNECTING || socket.readyState === WebSocket.OPEN)) {
+    if (
+      socket &&
+      (socket.readyState === WebSocket.CONNECTING ||
+        socket.readyState === WebSocket.OPEN)
+    ) {
       console.log("WebSocket already connected or connecting");
       return;
     }
@@ -696,7 +698,9 @@
 
   // --- Reactive statement handles WebSocket connection based on market status and mode ---
   $: if ($isOpen && data?.user?.tier === "Pro" && modeStatus) {
-    console.log("Market is open, user is Pro, and live mode is active. Connecting to WebSocket.");
+    console.log(
+      "Market is open, user is Pro, and live mode is active. Connecting to WebSocket.",
+    );
     connectWebSocket();
   } else {
     console.log(
@@ -727,21 +731,35 @@
     return daysLeft;
   }
 
-  async function saveCookieRuleOfList() {
-    const postData = {
-      ruleOfList: ruleOfList,
-    };
-
-    const response = await fetch("/api/options-flow-filter-cookie", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(postData),
-    }); // make a POST request to the server with the FormData object
+  function saveRuleOfListToLocalStorage() {
+    localStorage.setItem("optionsFlowFilterRules", JSON.stringify(ruleOfList));
   }
 
   onMount(async () => {
+    // Load filter rules from localStorage with default fallback
+    const savedRules = localStorage.getItem("optionsFlowFilterRules");
+    if (savedRules) {
+      ruleOfList = [...JSON?.parse(savedRules)];
+    } else {
+      // Set default rules if no saved rules exist
+      ruleOfList = [
+        { name: "cost_basis", value: "any" },
+        { name: "date_expiration", value: "any" },
+      ];
+    }
+
+    ruleOfList?.forEach((rule) => {
+      ruleCondition[rule.name] =
+        rule.condition || allRules[rule.name].defaultCondition;
+      valueMappings[rule.name] = rule.value || allRules[rule.name].defaultValue;
+    });
+
+    // Load muted state from localStorage
+    const savedMutedState = localStorage.getItem("optionsFlowMuted");
+    if (savedMutedState !== null) {
+      muted = JSON.parse(savedMutedState);
+    }
+
     displayRules = allRows?.filter((row) =>
       ruleOfList?.some((rule) => rule?.name === row?.rule),
     );
@@ -755,11 +773,9 @@
     }
 
     if (filterQuery?.length > 0 || ruleOfList?.length !== 0) {
-      console.log("Initial filter/query detected, triggering worker load.");
       // Use non-debounced version for immediate initial load
     } else {
       // If no initial filter, set displayedData directly and mark as loaded
-      console.log("No initial filter/query. Displaying raw data.");
       displayedData = [...rawData];
       calculateStats(rawData);
     }
@@ -859,7 +875,7 @@
     if (data?.user?.tier === "Pro") {
       modeStatus = false;
       isLoaded = false;
-      
+
       // Disconnect WebSocket when viewing historical data
       console.log("Viewing historical data - disconnecting WebSocket");
       disconnectWebSocket();
@@ -953,6 +969,7 @@
         ruleToUpdate.value = valueMappings[ruleToUpdate.name];
         ruleToUpdate.condition = ruleCondition[ruleToUpdate.name];
         ruleOfList = [...ruleOfList];
+        saveRuleOfListToLocalStorage();
         //shouldLoadWorker.set(true);
       }
     }
@@ -1110,12 +1127,7 @@
               data-tip="Audio Preference"
               on:click={() => {
                 muted = !muted;
-                toast?.info(
-                  `Notification sound turned ${muted === false ? "on" : "off"}.`,
-                  {
-                    style: `border-radius: 5px; background: #fff; color: #000; border-color: ${$mode === "light" ? "#F9FAFB" : "#4B5563"}; font-size: 15px;`,
-                  },
-                );
+                localStorage.setItem("optionsFlowMuted", JSON.stringify(muted));
               }}
               class="mute-driver xl:tooltip xl:tooltip-bottom flex flex-col items-center mr-3 cursor-pointer"
             >
