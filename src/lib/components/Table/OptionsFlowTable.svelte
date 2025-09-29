@@ -19,6 +19,9 @@
   let optionsInsightContent = "";
   let optionsInsightThoughts = "";
   let isStreaming = false;
+
+  // Internal sorted data that we control
+  let sortedDisplayData = [];
   //  let animationClass = "";
   //  let animationId = "";
 
@@ -351,6 +354,10 @@
     oi: "none",
   };
 
+  // Store the current sort key and order
+  let currentSortKey = null;
+  let currentSortOrder = "none";
+
   // Generalized sorting function
   function sortData(key) {
     // Reset all other keys to 'none' except the current key
@@ -366,12 +373,18 @@
     sortOrders[key] = orderCycle[(currentOrderIndex + 1) % orderCycle.length];
 
     const sortOrder = sortOrders[key];
-    const originalData =
-      filteredData?.length !== 0 ? [...filteredData] : [...rawData];
+
+    // Store current sort state
+    currentSortKey = key;
+    currentSortOrder = sortOrder;
+
+    const originalData = [...displayedData];
 
     // Reset to original data when 'none'
     if (sortOrder === "none") {
-      displayedData = originalData;
+      currentSortKey = null;
+      currentSortOrder = "none";
+      sortedDisplayData = originalData;
       return;
     }
 
@@ -464,7 +477,134 @@
     };
 
     // Sort using the appropriate comparison function
-    displayedData = originalData.sort(compareFunctions[key]);
+    sortedDisplayData = originalData.sort(compareFunctions[key]);
+  }
+
+  // Function to apply sort without cycling
+  function applySortDirectly(data, key, sortOrder) {
+    if (sortOrder === "none") {
+      return data;
+    }
+
+    const compareFunctions = {
+      time: (a, b) => {
+        const timeA = new Date("1970-01-01T" + a.time).getTime();
+        const timeB = new Date("1970-01-01T" + b.time).getTime();
+        return sortOrder === "asc" ? timeA - timeB : timeB - timeA;
+      },
+      ticker: (a, b) => {
+        const tickerA = a.ticker.toUpperCase();
+        const tickerB = b.ticker.toUpperCase();
+        return sortOrder === "asc"
+          ? tickerA.localeCompare(tickerB)
+          : tickerB.localeCompare(tickerA);
+      },
+      expiry: (a, b) => {
+        const timeA = new Date(a.date_expiration);
+        const timeB = new Date(b.date_expiration);
+        return sortOrder === "asc" ? timeA - timeB : timeB - timeA;
+      },
+      dte: (a, b) => {
+        const timeA = new Date(a.date_expiration);
+        const timeB = new Date(b.date_expiration);
+        return sortOrder === "asc" ? timeA - timeB : timeB - timeA;
+      },
+      strike: (a, b) => {
+        const strikeA = parseFloat(a.strike_price);
+        const strikeB = parseFloat(b.strike_price);
+        return sortOrder === "asc" ? strikeA - strikeB : strikeB - strikeA;
+      },
+      spot: (a, b) => {
+        const spotA = parseFloat(a.underlying_price);
+        const spotB = parseFloat(b.underlying_price);
+        return sortOrder === "asc" ? spotA - spotB : spotB - spotA;
+      },
+      price: (a, b) => {
+        const priceA = parseFloat(a.price);
+        const priceB = parseFloat(b.price);
+        return sortOrder === "asc" ? priceA - priceB : priceB - priceA;
+      },
+      premium: (a, b) => {
+        const premiumA = parseFloat(a.cost_basis);
+        const premiumB = parseFloat(b.cost_basis);
+        return sortOrder === "asc" ? premiumA - premiumB : premiumB - premiumA;
+      },
+      size: (a, b) => {
+        const volA = parseFloat(a?.size);
+        const volB = parseFloat(b?.size);
+        return sortOrder === "asc" ? volA - volB : volB - volA;
+      },
+      vol: (a, b) => {
+        const volA = parseFloat(a.volume);
+        const volB = parseFloat(b.volume);
+        return sortOrder === "asc" ? volA - volB : volB - volA;
+      },
+      oi: (a, b) => {
+        const oiA = parseFloat(a.open_interest);
+        const oiB = parseFloat(b.open_interest);
+        return sortOrder === "asc" ? oiA - oiB : oiB - oiA;
+      },
+      callPut: (a, b) => {
+        const callPutA = a.put_call?.toUpperCase();
+        const callPutB = b.put_call?.toUpperCase();
+        return sortOrder === "asc"
+          ? callPutA.localeCompare(callPutB)
+          : callPutB.localeCompare(callPutA);
+      },
+      sentiment: (a, b) => {
+        const sentimentOrder = { BULLISH: 1, NEUTRAL: 2, BEARISH: 3 };
+        const sentimentA = sentimentOrder[a?.sentiment?.toUpperCase()] || 4;
+        const sentimentB = sentimentOrder[b?.sentiment?.toUpperCase()] || 4;
+        return sortOrder === "asc"
+          ? sentimentA - sentimentB
+          : sentimentB - sentimentA;
+      },
+      type: (a, b) => {
+        const typeOrder = { SWEEP: 1, TRADE: 2 };
+        const typeA = typeOrder[a.option_activity_type?.toUpperCase()] || 3;
+        const typeB = typeOrder[b.option_activity_type?.toUpperCase()] || 3;
+        return sortOrder === "asc" ? typeA - typeB : typeB - typeA;
+      },
+      exec: (a, b) => {
+        const tickerA = a?.execution_estimate?.toUpperCase();
+        const tickerB = b?.execution_estimate?.toUpperCase();
+        return sortOrder === "asc"
+          ? tickerA.localeCompare(tickerB)
+          : tickerB.localeCompare(tickerA);
+      },
+    };
+
+    return data.sort(compareFunctions[key]);
+  }
+
+  // Function to reapply current sort
+  function reapplySort(data) {
+    if (currentSortKey && currentSortOrder !== "none") {
+      // Reapply the current sort
+      return applySortDirectly(data, currentSortKey, currentSortOrder);
+    } else {
+      // No sort applied, just use the data as is
+      return data;
+    }
+  }
+
+  // Watch for changes in displayedData prop and update sortedDisplayData
+  // This ensures new data is shown while preserving sort
+  $: {
+    if (displayedData?.length > 0) {
+      // Apply current sort to the new data
+      if (currentSortKey && currentSortOrder !== "none") {
+        sortedDisplayData = applySortDirectly(
+          [...displayedData],
+          currentSortKey,
+          currentSortOrder,
+        );
+      } else {
+        sortedDisplayData = [...displayedData];
+      }
+    } else {
+      sortedDisplayData = [];
+    }
   }
 </script>
 
@@ -816,7 +956,7 @@
         : data?.user?.tier === "Pro"
           ? 850
           : 250}
-      itemCount={displayedData.length}
+      itemCount={sortedDisplayData.length}
       itemSize={40}
     >
       <div
@@ -833,8 +973,8 @@
           data?.user?.tier !== "Pro"}
       >
         <!-- Apply gradient overlay for options -->
-        {#if displayedData[index]}
-          {@const item = displayedData[index]}
+        {#if sortedDisplayData[index]}
+          {@const item = sortedDisplayData[index]}
           {@const isBullishCall =
             item?.put_call === "Calls" &&
             (item?.execution_estimate === "At Ask" ||
@@ -901,20 +1041,21 @@
         <div
           class="p-2 text-end text-xs sm:text-sm whitespace-nowrap relative z-10"
         >
-          {formatTime(displayedData[index]?.time)}
+          {formatTime(sortedDisplayData[index]?.time)}
         </div>
         <div
           on:click|stopPropagation
           class="p-2 text-center text-sm sm:text-[1rem] whitespace-nowrap relative z-10"
         >
           <HoverStockChart
-            symbol={displayedData[index]?.ticker}
-            assetType={displayedData[index]?.underlying_type}
+            symbol={sortedDisplayData[index]?.ticker}
+            assetType={sortedDisplayData[index]?.underlying_type}
           />
         </div>
 
         <div
-          on:click|stopPropagation={() => optionsInsight(displayedData[index])}
+          on:click|stopPropagation={() =>
+            optionsInsight(sortedDisplayData[index])}
           class="p-2 text-center text-sm sm:text-[1rem] whitespace-nowrap relative z-10"
         >
           <Spark
@@ -923,11 +1064,11 @@
         </div>
         <!--
         <div
-          id={displayedData[index]?.id}
+          id={sortedDisplayData[index]?.id}
           on:click|stopPropagation={() =>
-            addToWatchlist(displayedData[index]?.id)}
+            addToWatchlist(sortedDisplayData[index]?.id)}
           class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap {optionsWatchlist.optionsId?.includes(
-            displayedData[index]?.id,
+            sortedDisplayData[index]?.id,
           )
             ? 'text-[#FFA500]'
             : $mode === 'light'
@@ -935,7 +1076,7 @@
               : 'text-[#fff]'}"
         >
           <svg
-            class="{displayedData[index]?.id === animationId
+            class="{sortedDisplayData[index]?.id === animationId
               ? animationClass
               : ''} w-4 sm:w-5 sm:h-5 inline-block cursor-pointer shrink-0"
             xmlns="http://www.w3.org/2000/svg"
@@ -950,21 +1091,21 @@
         <div
           class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap relative z-10"
         >
-          {reformatDate(displayedData[index]?.date_expiration)}
+          {reformatDate(sortedDisplayData[index]?.date_expiration)}
         </div>
 
         <div
           class="p-2 text-center text-sm sm:text-[1rem] whitespace-nowrap relative z-10"
         >
-          {displayedData[index]?.dte < 0
+          {sortedDisplayData[index]?.dte < 0
             ? "expired"
-            : displayedData[index]?.dte + "d"}
+            : sortedDisplayData[index]?.dte + "d"}
         </div>
 
         <div
           class="p-2 text-center text-sm sm:text-[1rem] whitespace-nowrap relative z-10"
         >
-          {displayedData[index]?.strike_price}
+          {sortedDisplayData[index]?.strike_price}
         </div>
 
         <div
@@ -974,7 +1115,7 @@
             ? 'text-green-800 dark:text-[#00FC50]'
             : 'text-red-800 dark:text-[#FF2F1F]'} "
         >
-          {displayedData[index]?.put_call}
+          {sortedDisplayData[index]?.put_call}
         </div>
 
         <div
@@ -982,30 +1123,30 @@
             index
           ]?.sentiment === 'Bullish'
             ? 'text-green-800 dark:text-[#00FC50]'
-            : displayedData[index]?.sentiment === 'Bearish'
+            : sortedDisplayData[index]?.sentiment === 'Bearish'
               ? 'text-red-800 dark:text-[#FF2F1F]'
               : 'text-orange-800 dark:text-[#C6A755]'} "
         >
-          {displayedData[index]?.sentiment}
+          {sortedDisplayData[index]?.sentiment}
         </div>
 
         <div
           class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap relative z-10"
         >
-          {displayedData[index]?.underlying_price}
+          {sortedDisplayData[index]?.underlying_price}
         </div>
 
         <div
           class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap relative z-10"
         >
-          {displayedData[index]?.price}
+          {sortedDisplayData[index]?.price}
         </div>
 
         <div
           class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap relative z-10"
         >
           {@html abbreviateNumber(
-            displayedData[index]?.cost_basis,
+            sortedDisplayData[index]?.cost_basis,
             false,
             true,
           )}
@@ -1018,22 +1159,22 @@
             ? 'text-muted dark:text-[#C6A755]'
             : 'text-muted dark:text-[#976DB7]'}"
         >
-          {displayedData[index]?.option_activity_type}
+          {sortedDisplayData[index]?.option_activity_type}
         </div>
 
         <div
           class="p-2 text-end text-sm sm:text-[1rem] whitespace-nowrap relative z-10 {[
             'At Ask',
             'Above Ask',
-          ]?.includes(displayedData[index]?.execution_estimate)
+          ]?.includes(sortedDisplayData[index]?.execution_estimate)
             ? 'text-muted dark:text-[#C8A32D]'
             : ['At Bid', 'Below Bid']?.includes(
-                  displayedData[index]?.execution_estimate,
+                  sortedDisplayData[index]?.execution_estimate,
                 )
               ? 'text-muted dark:text-[#8F82FE]'
               : 'text-muted dark:text-[#A98184]'}"
         >
-          {displayedData[index]?.execution_estimate
+          {sortedDisplayData[index]?.execution_estimate
             ?.replace("At", "")
             ?.replace("Above", "")
             ?.replace("Below", "")
@@ -1046,7 +1187,7 @@
           {new Intl.NumberFormat("en", {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
-          }).format(displayedData[index]?.size)}
+          }).format(sortedDisplayData[index]?.size)}
         </div>
 
         <div
@@ -1055,7 +1196,7 @@
           {new Intl.NumberFormat("en", {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
-          }).format(displayedData[index]?.volume)}
+          }).format(sortedDisplayData[index]?.volume)}
         </div>
 
         <div
@@ -1064,7 +1205,7 @@
           {new Intl.NumberFormat("en", {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
-          }).format(displayedData[index]?.open_interest)}
+          }).format(sortedDisplayData[index]?.open_interest)}
         </div>
       </div>
     </VirtualList>
