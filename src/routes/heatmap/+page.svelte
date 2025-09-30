@@ -14,25 +14,28 @@
   let rawData;
   let iframe: HTMLIFrameElement;
   let selectedTimePeriod = "1D";
+  let selectedETF = "SPY";
   let iframeUrl;
 
   onMount(async () => {
-    await getHeatMap("1D");
+    await getHeatMap("1D", "SPY");
   });
 
-  async function getHeatMap(timePeriod) {
+  async function getHeatMap(timePeriod, etf = selectedETF) {
     selectedTimePeriod = timePeriod;
+    selectedETF = etf;
     isLoading = true;
 
     try {
-      const cachedData = getCache(selectedTimePeriod, "getHeatmap");
+      const cacheKey = `${selectedETF}_${selectedTimePeriod}`;
+      const cachedData = getCache(cacheKey, "getHeatmap");
       if (cachedData) {
         rawData = cachedData;
       } else {
-        if (timePeriod === "1D") {
+        if (timePeriod === "1D" && etf === "SPY") {
           rawData = data?.getHeatMap;
         } else {
-          const postData = { params: selectedTimePeriod };
+          const postData = { params: selectedTimePeriod, etf: selectedETF };
           const response = await fetch("/api/heatmap", {
             method: "POST",
             headers: {
@@ -43,7 +46,7 @@
 
           rawData = await response.json();
         }
-        setCache(selectedTimePeriod, rawData, "getHeatmap");
+        setCache(cacheKey, rawData, "getHeatmap");
       }
 
       const blob = new Blob([rawData], { type: "text/html" });
@@ -112,7 +115,7 @@
 
         const link = document.createElement("a");
         link.href = imageData;
-        link.download = `sp500-heatmap-${selectedTimePeriod}`;
+        link.download = `${selectedETF.toLowerCase()}-heatmap-${selectedTimePeriod}`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -210,14 +213,82 @@
         <main class="w-full">
           <div class="mb-6 border-[#2C6288] dark:border-white border-b-[2px]">
             <h1 class="mb-1 text-2xl sm:text-3xl font-bold">
-              S&P 500 - {selectedTimePeriod} Performance
+              {#if selectedETF === "SPY"}
+                S&P 500
+              {:else if selectedETF === "DIA"}
+                Dow Jones
+              {:else if selectedETF === "QQQ"}
+                Nasdaq 100
+              {:else}
+                {selectedETF}
+              {/if} - {selectedTimePeriod} Performance
             </h1>
           </div>
 
           <div class="flex flex-row items-center w-fit">
             <div
-              class="grid grid-cols-2 sm:grid-cols-3 gap-y-3 sm:gap-y-0 gap-x-2.5 lg:grid-cols-3 w-full mt-5"
+              class="grid grid-cols-2 sm:grid-cols-4 gap-y-3 sm:gap-y-0 gap-x-2.5 lg:grid-cols-4 w-full mt-5"
             >
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild let:builder>
+                  <Button
+                    builders={[builder]}
+                    class="border-gray-300 bg-black sm:hover:bg-default text-white  dark:border-gray-600 border dark:bg-primary dark:sm:hover:bg-secondary ease-out flex flex-row justify-between items-center px-3 py-2  rounded"
+                    disabled={isLoading}
+                  >
+                    <span class="truncate">
+                      {#if selectedETF === "SPY"}
+                        S&P 500
+                      {:else if selectedETF === "DIA"}
+                        Dow Jones
+                      {:else if selectedETF === "QQQ"}
+                        Nasdaq 100
+                      {:else}
+                        {selectedETF}
+                      {/if}
+                    </span>
+                    <svg
+                      class="-mr-1 ml-1 h-5 w-5 xs:ml-2 inline-block"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      style="max-width:40px"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                        clip-rule="evenodd"
+                      ></path>
+                    </svg>
+                  </Button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content
+                  side="bottom"
+                  align="end"
+                  sideOffset={10}
+                  alignOffset={0}
+                  class="w-auto h-fit max-h-72 overflow-y-auto scroller"
+                >
+                  <div
+                    class="relative sticky z-40 focus:outline-hidden -top-1"
+                    tabindex="0"
+                    role="menu"
+                    style=""
+                  ></div>
+                  <DropdownMenu.Group>
+                    {#each [{ value: "SPY", label: "S&P 500" }, { value: "DIA", label: "Dow Jones" }, { value: "QQQ", label: "Nasdaq 100" }] as item}
+                      <DropdownMenu.Item
+                        on:click={() =>
+                          getHeatMap(selectedTimePeriod, item.value)}
+                        class="sm:hover:bg-gray-300 dark:sm:hover:bg-primary cursor-pointer"
+                      >
+                        <span class="mr-8">{item.label}</span>
+                      </DropdownMenu.Item>
+                    {/each}
+                  </DropdownMenu.Group>
+                </DropdownMenu.Content>
+              </DropdownMenu.Root>
+
               <DropdownMenu.Root>
                 <DropdownMenu.Trigger asChild let:builder>
                   <Button
@@ -257,7 +328,7 @@
                   <DropdownMenu.Group>
                     {#each ["1D", "1W", "1M", "3M", "6M", "1Y", "3Y"] as item}
                       <DropdownMenu.Item
-                        on:click={() => getHeatMap(item)}
+                        on:click={() => getHeatMap(item, selectedETF)}
                         class="sm:hover:bg-gray-300 dark:sm:hover:bg-primary cursor-pointer"
                       >
                         <span class="mr-8">{item}</span>

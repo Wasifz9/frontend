@@ -4,7 +4,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   const data = await request.json();
   const { apiURL, apiKey } = locals;
 
-  const postData = { params: data?.params };
+  const postData = { params: data?.params, etf: data?.etf || "SPY" };
 
 
 

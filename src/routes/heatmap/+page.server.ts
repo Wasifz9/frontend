@@ -3,7 +3,7 @@ export const load = async ({ locals }) => {
 
     const { apiKey, apiURL } = locals;
 
-      const postData = { params: "1D" };
+      const postData = { params: "1D", etf: "SPY" };
 
 
    const response = await fetch(apiURL + "/heatmap", {
