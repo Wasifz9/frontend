@@ -521,28 +521,36 @@
   let notFound = false;
   let isLoaded = false;
 
-  $: modeStatus = $isOpen === true ? true : false;
+  $: modeStatus = $isOpen === true && data?.user?.tier === "Pro" ? true : false;
 
   function toggleMode() {
     if ($isOpen) {
-      modeStatus = !modeStatus;
-      if (modeStatus === true) {
-        // Switching to live mode
-        if (selectedDate !== undefined) {
-          selectedDate = undefined;
-          rawData = data?.getOptionsFlowFeed;
-          displayedData = [...rawData];
-          shouldLoadWorker.set(true);
-        }
-        // Reconnect WebSocket for Pro users when switching to live mode
-        if (data?.user?.tier === "Pro") {
+      // Check if user is trying to enable live mode and is not a Pro member
+      if (!modeStatus && data?.user?.tier !== "Pro") {
+        toast.error("Live Flow is available for Pro members only.", {
+          style: `border-radius: 5px; background: #fff; color: #000; border-color: ${$mode === "light" ? "#F9FAFB" : "#4B5563"}; font-size: 15px;`,
+        });
+        return;
+      }
+
+      // Pro members can toggle freely
+      if (data?.user?.tier === "Pro") {
+        modeStatus = !modeStatus;
+        if (modeStatus === true) {
+          // Switching to live mode
+          if (selectedDate !== undefined) {
+            selectedDate = undefined;
+            rawData = data?.getOptionsFlowFeed;
+            displayedData = [...rawData];
+            shouldLoadWorker.set(true);
+          }
           console.log("Switching to live mode - connecting WebSocket");
           connectWebSocket();
+        } else {
+          // Switching to historical mode - disconnect WebSocket
+          console.log("Switching to historical mode - disconnecting WebSocket");
+          disconnectWebSocket();
         }
-      } else {
-        // Switching to historical mode - disconnect WebSocket
-        console.log("Switching to historical mode - disconnecting WebSocket");
-        disconnectWebSocket();
       }
     }
   }
@@ -1177,7 +1185,9 @@
               class="live-flow-driver inline-flex items-center cursor-pointer focus-none focus:outline-hidden"
             >
               <input
-                on:click={toggleMode}
+                on:click={(e) => {
+                  toggleMode();
+                }}
                 type="checkbox"
                 checked={modeStatus}
                 value={modeStatus}
