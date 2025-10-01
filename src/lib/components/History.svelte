@@ -2,12 +2,12 @@
   import { displayCompanyName, screenWidth } from "$lib/store";
   import TableHeader from "$lib/components/Table/TableHeader.svelte";
   import DownloadData from "$lib/components/DownloadData.svelte";
+  import Pagination from "$lib/components/Table/Pagination.svelte";
 
   import Infobox from "$lib/components/Infobox.svelte";
   import * as DropdownMenu from "$lib/components/shadcn/dropdown-menu/index.js";
   import { Button } from "$lib/components/shadcn/button/index.js";
   import { goto } from "$app/navigation";
-  import { onMount } from "svelte";
   import highcharts from "$lib/highcharts.ts";
   import { mode } from "mode-watcher";
 
@@ -20,7 +20,13 @@
   let originalData = [];
   let config = null;
 
+  // Pagination state
+  let currentPage = 1;
+  let rowsPerPage = 20;
+  let rowsPerPageOptions = [20, 50, 100];
+  let totalPages = 1;
   let stockList = [];
+
   function prepareDataset(data, timePeriod = "Daily") {
     if (
       timePeriod === "Weekly" ||
@@ -122,23 +128,24 @@
     return modifiedData?.sort((a, b) => new Date(b?.time) - new Date(a?.time));
   }
 
-  async function handleScroll() {
-    const scrollThreshold = document.body.offsetHeight * 0.8; // 80% of the website height
-    const isBottom = window.innerHeight + window.scrollY >= scrollThreshold;
-
-    if (isBottom && stockList?.length !== originalData?.length) {
-      const nextIndex = stockList?.length;
-      const filteredNewResults = originalData?.slice(nextIndex, nextIndex + 50);
-      stockList = [...stockList, ...filteredNewResults];
-    }
+  // Pagination functions
+  function updatePaginatedData() {
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    stockList = originalData?.slice(startIndex, endIndex) || [];
+    totalPages = Math.ceil((originalData?.length || 0) / rowsPerPage);
   }
 
-  onMount(() => {
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  });
+  function handlePageChange(event) {
+    currentPage = event.detail.page;
+    updatePaginatedData();
+  }
+
+  function handleRowsPerPageChange(event) {
+    rowsPerPage = event.detail.rowsPerPage;
+    currentPage = 1; // Reset to first page when changing rows per page
+    updatePaginatedData();
+  }
 
   function filterDataByTimePeriod() {
     const rawData = data?.getData ?? []; // 1) grab the array (or empty)
@@ -409,7 +416,8 @@
     // Reset to original data when 'none' and stop further sorting
     if (sortOrder === "none") {
       originalData = [...rawData]; // Reset originalData to rawData
-      stockList = originalData?.slice(0, 50); // Reset displayed data
+      currentPage = 1; // Reset to first page
+      updatePaginatedData(); // Reset displayed data with pagination
       return;
     }
 
@@ -444,7 +452,9 @@
     };
 
     // Sort using the generic comparison function
-    stockList = [...originalData].sort(compareValues)?.slice(0, 50);
+    originalData = [...originalData].sort(compareValues);
+    currentPage = 1; // Reset to first page after sorting
+    updatePaginatedData(); // Update displayed data with pagination
   };
 
   $: {
@@ -453,7 +463,8 @@
       config = plotData();
       rawData = prepareDataset(data?.getData, timePeriod);
       originalData = rawData;
-      stockList = rawData?.slice(0, 20);
+      currentPage = 1; // Reset to first page when data changes
+      updatePaginatedData();
     }
   }
 
@@ -509,7 +520,7 @@
                       <DropdownMenu.Trigger asChild let:builder>
                         <Button
                           builders={[builder]}
-                          class="transition-all w-fit bg-default text-white shadow-xs dark:border-gray-600 border sm:hover:bg-black dark:sm:hover:bg-primary ease-out flex flex-row justify-between items-center px-3 py-2 rounded truncate"
+                          class="transition-all w-fit border border-gray-300 dark:border-gray-700 text-white bg-black sm:hover:bg-default dark:bg-primary dark:sm:hover:bg-secondary ease-out flex flex-row justify-between items-center px-3 py-2 rounded truncate"
                         >
                           <span class="truncate px-1">{timePeriod}</span>
                           <svg
@@ -692,6 +703,17 @@
                     </tbody>
                   </table>
                 </div>
+
+                {#if originalData?.length > rowsPerPage}
+                  <Pagination
+                    {currentPage}
+                    {totalPages}
+                    {rowsPerPage}
+                    {rowsPerPageOptions}
+                    on:pageChange={handlePageChange}
+                    on:rowsPerPageChange={handleRowsPerPageChange}
+                  />
+                {/if}
               </div>
             {:else}
               <Infobox
