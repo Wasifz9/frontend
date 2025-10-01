@@ -16,7 +16,7 @@
       return { avgPriceImpact: 0, volatilityImpact: 0 };
 
     const nextDayChanges = data
-      ?.map((item) => item?.forward_2_days_change_percent)
+      ?.map((item) => item?.forward_1_days_change_percent)
       ?.filter((change) => change !== undefined);
 
     // Average price impact
@@ -459,22 +459,22 @@
                       ></td><td
                         class="border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-t border-l rounded-tl-md px-4 last:pr-11 w-17 last:w-24.5 border-l px-1 text-center"
                         ><span class=" text-sm sm:text-[1rem]"
-                          >{item?.forward_2_days_close !== undefined
-                            ? item?.forward_2_days_close?.toFixed(2)
+                          >{item?.forward_1_days_close !== undefined
+                            ? item?.forward_1_days_close?.toFixed(2)
                             : "-"}</span
                         ></td
                       ><td
                         class="border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-t border-l px-4 last:pr-11 w-17 last:w-24.5 px-1 text-center"
                         ><span class=" text-sm sm:text-[1rem]"
-                          >{item?.forward_3_days_close !== undefined
-                            ? item?.forward_3_days_close?.toFixed(2)
+                          >{item?.forward_2_days_close !== undefined
+                            ? item?.forward_2_days_close?.toFixed(2)
                             : "-"}</span
                         ></td
                       ><td
                         class="border-gray-300 dark:border-gray-800 border-t border-l border-r px-3.5 py-0.5 px-4 last:pr-11 w-17 last:w-24.5 px-1 text-center"
                         ><span class=" text-sm sm:text-[1rem]"
-                          >{item?.forward_4_days_close !== undefined
-                            ? item?.forward_4_days_close?.toFixed(2)
+                          >{item?.forward_3_days_close !== undefined
+                            ? item?.forward_3_days_close?.toFixed(2)
                             : "-"}</span
                         ></td
                       ><td
@@ -616,6 +616,19 @@
                       ></td><td
                         class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-l border-r px-1 text-center"
                         ><span
+                          class="w-full text-sm sm:text-[1rem] items-baseline justify-end whitespace-nowrap {item?.forward_1_days_change_percent >=
+                          0
+                            ? "text-green-800 dark:text-positive before:content-['+']"
+                            : item?.forward_1_days_change_percent < 0
+                              ? 'text-red-800 dark:text-negative'
+                              : ''}"
+                          >{item?.forward_1_days_change_percent !== undefined
+                            ? item?.forward_1_days_change_percent + "%"
+                            : "-"}<span class="w-0 text-center"></span></span
+                        ></td
+                      ><td
+                        class="px-4 last:pr-11 w-17 last:w-24.5 border-l border-r border-gray-300 dark:border-gray-800 px-3.5 py-0.5 px-1 text-center"
+                        ><span
                           class="w-full text-sm sm:text-[1rem] items-baseline justify-end whitespace-nowrap {item?.forward_2_days_change_percent >=
                           0
                             ? "text-green-800 dark:text-positive before:content-['+']"
@@ -627,7 +640,7 @@
                             : "-"}<span class="w-0 text-center"></span></span
                         ></td
                       ><td
-                        class="px-4 last:pr-11 w-17 last:w-24.5 border-l border-r border-gray-300 dark:border-gray-800 px-3.5 py-0.5 px-1 text-center"
+                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-gray-800 px-3.5 py-0.5 px-1 text-center"
                         ><span
                           class="w-full text-sm sm:text-[1rem] items-baseline justify-end whitespace-nowrap {item?.forward_3_days_change_percent >=
                           0
@@ -637,19 +650,6 @@
                               : ''}"
                           >{item?.forward_3_days_change_percent !== undefined
                             ? item?.forward_3_days_change_percent + "%"
-                            : "-"}<span class="w-0 text-center"></span></span
-                        ></td
-                      ><td
-                        class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-gray-800 px-3.5 py-0.5 px-1 text-center"
-                        ><span
-                          class="w-full text-sm sm:text-[1rem] items-baseline justify-end whitespace-nowrap {item?.forward_4_days_change_percent >=
-                          0
-                            ? "text-green-800 dark:text-positive before:content-['+']"
-                            : item?.forward_4_days_change_percent < 0
-                              ? 'text-red-800 dark:text-negative'
-                              : ''}"
-                          >{item?.forward_4_days_change_percent !== undefined
-                            ? item?.forward_4_days_change_percent + "%"
                             : "-"}<span class="w-0 text-center"></span></span
                         ></td
                       ><td
