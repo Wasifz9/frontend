@@ -891,7 +891,7 @@
                             {data?.user?.credits} Credits left
                           </DropdownMenu.Label>
                         {/if}
-
+                        <!--
                         <DropdownMenu.Item
                           class="sm:hover:bg-gray-200 dark:sm:hover:bg-primary"
                         >
@@ -921,6 +921,7 @@
                             </div></label
                           >
                         </DropdownMenu.Item>
+                        -->
 
                         <DropdownMenu.Group>
                           <DropdownMenu.Item

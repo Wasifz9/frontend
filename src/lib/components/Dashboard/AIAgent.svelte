@@ -460,10 +460,11 @@
                         {data?.user?.credits} Credits left
                       </DropdownMenu.Label>
                     {/if}
-
+                    <!--
                     <DropdownMenu.Item
                       class="sm:hover:bg-gray-200 dark:sm:hover:bg-primary"
                     >
+                   
                       <label
                         on:click|capture={(event) => {
                           event.preventDefault();
@@ -489,7 +490,9 @@
                           ></div>
                         </div></label
                       >
+
                     </DropdownMenu.Item>
+                    -->
 
                     <DropdownMenu.Group>
                       <DropdownMenu.Item
