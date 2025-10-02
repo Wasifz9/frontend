@@ -8,7 +8,7 @@
   import MarketMover from "$lib/components/Dashboard/MarketMover.svelte";
   import UpcomingEarnings from "$lib/components/Dashboard/UpcomingEarnings.svelte";
   import OptionsFlow from "$lib/components/Dashboard/OptionsFlow.svelte";
-  import Wiim from "$lib/components/Dashboard/Wiim.svelte";
+  import MarketNews from "$lib/components/Dashboard/MarketNews.svelte";
   import AnalystReport from "$lib/components/Dashboard/AnalystReport.svelte";
   import AIAgent from "$lib/components/Dashboard/AIAgent.svelte";
 
@@ -184,7 +184,7 @@
       <div
         class="mx-auto flex flex-col px-3 pt-6 xs:px-4 sm:px-5 md:pt-8 lg:grid lg:max-w-[1200px] lg:grid-cols-3 lg:justify-evenly lg:gap-8 lg:pt-10"
       >
-        <Wiim {wiim} />
+        <MarketNews {wiim} />
 
         <div class="flex flex-col space-y-6 pt-6 lg:space-y-8 lg:pt-0">
           <AnalystReport {analystReport} />

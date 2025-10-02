@@ -752,6 +752,18 @@
                             class="w-full bg-gray-100 dark:bg-[#18181B] cursor-pointer"
                           >
                             <a
+                              href="/news-flow"
+                              class="text-start w-full text-[1rem] text-muted dark:text-white ml-4 mt-2"
+                              >News Flow</a
+                            >
+                          </Button>
+
+                          <Button
+                            builders={[builder]}
+                            type="submit"
+                            class="w-full bg-gray-100 dark:bg-[#18181B] cursor-pointer"
+                          >
+                            <a
                               href="/options-flow"
                               class="text-start w-full text-[1rem] text-muted dark:text-white ml-4 mt-4"
                               >Options Flow</a
@@ -1456,6 +1468,12 @@
                             href="/market-flow"
                             class="text-[1rem] text-muted dark:text-white ml-4 mt-4"
                             >Market Flow</a
+                          >
+
+                          <a
+                            href="/news-flow"
+                            class="text-[1rem] text-muted dark:text-white ml-4 mt-4"
+                            >News Flow</a
                           >
 
                           <a
