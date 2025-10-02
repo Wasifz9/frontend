@@ -304,7 +304,7 @@
                 />
               </div>
               <span class=" p-3 ml-3 mr-3">
-                Follow the latest executive orders of the US President
+                Track real-time options sentiment.
               </span>
             </a>
           </div>
@@ -313,7 +313,7 @@
             class="w-full border border-gray-300 dark:border-gray-600 rounded h-fit pb-4 mt-4 cursor-pointer sm:hover:shadow-lg dark:sm:hover:bg-secondary transition ease-out duration-100"
           >
             <a
-              href="/insider-tracker"
+              href="/options-flow"
               class="w-auto lg:w-full p-1 flex flex-col m-auto px-2 sm:px-0"
             >
               <div class="w-full flex justify-between items-center p-3 mt-3">
@@ -323,7 +323,7 @@
                 />
               </div>
               <span class=" p-3 ml-3 mr-3">
-                Get the latest unusual insider trading in realtime
+                Monitor real-time unusual options activity and flow patterns
               </span>
             </a>
           </div>
@@ -343,7 +343,7 @@
                 />
               </div>
               <span class=" p-3 ml-3 mr-3">
-                Get the latest unusual insider trading in realtime
+                Analyze hidden institutional flow and dark pool trading data
               </span>
             </a>
           </div>
