@@ -9,6 +9,7 @@
 
   let rawData = data?.getData?.history || [];
   let earningsData = data?.getData?.stats || {};
+  let isSubscribed = ["Plus", "Pro"]?.includes(data?.user?.tier);
 
   // Calculate metrics
   function calculateMetrics(data) {
@@ -251,14 +252,48 @@
                   <span>EPS Beats Estimate</span>
                 </div>
                 <div class="flex items-baseline">
-                  <span class="text-2xl font-bold"
-                    >{earningsData.positiveEpsPercent}%</span
-                  >
-                  <div class="flex flex-col ml-2">
-                    <span class="text-sm"
-                      >{`${earningsData?.positiveEpsSurprises}/${earningsData?.totalReports}`}
-                      quarters</span
+                  {#if isSubscribed}
+                    <span class="text-2xl font-bold"
+                      >{earningsData.positiveEpsPercent}%</span
                     >
+                  {:else}
+                    <a
+                      href="/pricing"
+                      class="sm:hover:text-default dark:sm:hover:text-blue-400"
+                    >
+                      <svg
+                        class="size-6 mb-1 inline-block"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M17 9V7c0-2.8-2.2-5-5-5S7 4.2 7 7v2c-1.7 0-3 1.3-3 3v7c0 1.7 1.3 3 3 3h10c1.7 0 3-1.3 3-3v-7c0-1.7-1.3-3-3-3M9 7c0-1.7 1.3-3 3-3s3 1.3 3 3v2H9z"
+                        />
+                      </svg>
+                    </a>
+                  {/if}
+                  <div class="flex flex-col ml-2">
+                    {#if isSubscribed}
+                      <span class="text-sm"
+                        >{`${earningsData?.positiveEpsSurprises}/${earningsData?.totalReports}`}
+                        quarters</span
+                      >
+                    {:else}
+                      <span class="text-sm">
+                        <svg
+                          class="size-3.5 mb-1 inline-block"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M17 9V7c0-2.8-2.2-5-5-5S7 4.2 7 7v2c-1.7 0-3 1.3-3 3v7c0 1.7 1.3 3 3 3h10c1.7 0 3-1.3 3-3v-7c0-1.7-1.3-3-3-3M9 7c0-1.7 1.3-3 3-3s3 1.3 3 3v2H9z"
+                          />
+                        </svg>{`/${earningsData?.totalReports}`}
+                        quarters</span
+                      >
+                    {/if}
                     <span class="text-xs font-semibold">
                       {earningsData?.positiveEpsSurprises >
                       earningsData?.totalReports / 2
@@ -276,14 +311,48 @@
                   <span>Revenue Beats Estimate</span>
                 </div>
                 <div class="flex items-baseline">
-                  <span class="text-2xl font-bold"
-                    >{earningsData.positiveRevenuePercent}%</span
-                  >
-                  <div class="flex flex-col ml-2">
-                    <span class="text-sm"
-                      >{`${earningsData?.positiveRevenueSurprises}/${earningsData?.totalReports}`}
-                      quarters</span
+                  {#if isSubscribed}
+                    <span class="text-2xl font-bold"
+                      >{earningsData.positiveRevenuePercent}%</span
                     >
+                  {:else}
+                    <a
+                      href="/pricing"
+                      class="sm:hover:text-default dark:sm:hover:text-blue-400"
+                    >
+                      <svg
+                        class="size-6 mb-1 inline-block"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M17 9V7c0-2.8-2.2-5-5-5S7 4.2 7 7v2c-1.7 0-3 1.3-3 3v7c0 1.7 1.3 3 3 3h10c1.7 0 3-1.3 3-3v-7c0-1.7-1.3-3-3-3M9 7c0-1.7 1.3-3 3-3s3 1.3 3 3v2H9z"
+                        />
+                      </svg>
+                    </a>
+                  {/if}
+                  <div class="flex flex-col ml-2">
+                    {#if isSubscribed}
+                      <span class="text-sm"
+                        >{`${earningsData?.positiveRevenueSurprises}/${earningsData?.totalReports}`}
+                        quarters</span
+                      >
+                    {:else}
+                      <span class="text-sm">
+                        <svg
+                          class="size-3.5 mb-1 inline-block"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            fill="currentColor"
+                            d="M17 9V7c0-2.8-2.2-5-5-5S7 4.2 7 7v2c-1.7 0-3 1.3-3 3v7c0 1.7 1.3 3 3 3h10c1.7 0 3-1.3 3-3v-7c0-1.7-1.3-3-3-3M9 7c0-1.7 1.3-3 3-3s3 1.3 3 3v2H9z"
+                          />
+                        </svg>{`/${earningsData?.totalReports}`}
+                        quarters</span
+                      >
+                    {/if}
                     <span class="text-xs font-semibold">
                       {earningsData?.positiveRevenueSurprises >
                       earningsData?.totalReports / 2
@@ -301,16 +370,43 @@
                   <span>Avg. Price Impact</span>
                 </div>
                 <div class="flex items-baseline">
-                  <span class="text-2xl font-bold"
-                    >{metrics?.avgPriceImpact >= 0
-                      ? "+"
-                      : ""}{metrics?.avgPriceImpact}%</span
-                  >
+                  {#if isSubscribed}
+                    <span class="text-2xl font-bold"
+                      >{metrics?.avgPriceImpact >= 0
+                        ? "+"
+                        : ""}{metrics?.avgPriceImpact}%</span
+                    >
+                  {:else}
+                    <a
+                      href="/pricing"
+                      class="sm:hover:text-default dark:sm:hover:text-blue-400"
+                    >
+                      <svg
+                        class="size-6 mb-1 inline-block"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M17 9V7c0-2.8-2.2-5-5-5S7 4.2 7 7v2c-1.7 0-3 1.3-3 3v7c0 1.7 1.3 3 3 3h10c1.7 0 3-1.3 3-3v-7c0-1.7-1.3-3-3-3M9 7c0-1.7 1.3-3 3-3s3 1.3 3 3v2H9z"
+                        />
+                      </svg>
+                    </a>
+                  {/if}
                   <div class="flex flex-col ml-2">
-                    <span class="text-sm">Next Day</span>
-                    <span class="text-xs font-semibold">
-                      {metrics?.avgPriceImpact >= 0 ? "Positive" : "Negative"} Trend
-                    </span>
+                    {#if isSubscribed}
+                      <span class="text-sm">Next Day</span>
+                      <span class="text-xs font-semibold">
+                        {metrics?.avgPriceImpact >= 0 ? "Positive" : "Negative"}
+                        Trend
+                      </span>
+                    {:else}
+                      <span class="text-sm">Next Day</span>
+                      <span class="text-xs font-semibold">
+                        {metrics?.avgPriceImpact >= 0 ? "Positive" : "Negative"}
+                        Trend
+                      </span>
+                    {/if}
                   </div>
                 </div>
               </div>
@@ -322,15 +418,45 @@
                   <span>Volatility Impact</span>
                 </div>
                 <div class="flex items-baseline">
-                  <span class="text-2xl font-bold"
-                    >±{metrics.volatilityImpact}%</span
-                  >
+                  {#if isSubscribed}
+                    <span class="text-2xl font-bold"
+                      >±{metrics.volatilityImpact}%</span
+                    >
+                  {:else}
+                    <a
+                      href="/pricing"
+                      class="sm:hover:text-default dark:sm:hover:text-blue-400"
+                    >
+                      <svg
+                        class="size-6 mb-1 inline-block"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          fill="currentColor"
+                          d="M17 9V7c0-2.8-2.2-5-5-5S7 4.2 7 7v2c-1.7 0-3 1.3-3 3v7c0 1.7 1.3 3 3 3h10c1.7 0 3-1.3 3-3v-7c0-1.7-1.3-3-3-3M9 7c0-1.7 1.3-3 3-3s3 1.3 3 3v2H9z"
+                        />
+                      </svg>
+                    </a>
+                  {/if}
                   <div class="flex flex-col ml-2">
-                    <span class="text-sm">Range</span>
-                    <span class="text-xs font-semibold">
-                      {Number(metrics.volatilityImpact) > 3 ? "High" : "Normal"}
-                      Impact
-                    </span>
+                    {#if isSubscribed}
+                      <span class="text-sm">Range</span>
+                      <span class="text-xs font-semibold">
+                        {Number(metrics.volatilityImpact) > 3
+                          ? "High"
+                          : "Normal"}
+                        Impact
+                      </span>
+                    {:else}
+                      <span class="text-sm">Range</span>
+                      <span class="text-xs font-semibold">
+                        {Number(metrics.volatilityImpact) > 3
+                          ? "High"
+                          : "Normal"}
+                        Impact
+                      </span>
+                    {/if}
                   </div>
                 </div>
               </div>
