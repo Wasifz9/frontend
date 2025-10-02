@@ -2,26 +2,58 @@
   import ArrowLogo from "lucide-svelte/icons/move-up-right";
   import SEO from "$lib/components/SEO.svelte";
   import Infobox from "$lib/components/Infobox.svelte";
+  import Pagination from "$lib/components/Table/Pagination.svelte";
   import { mode } from "mode-watcher";
 
   export let data;
 
-  let timePeriod = "oneWeek";
   let rawData = data?.getData;
-  let stockList = rawData?.slice(0, 50);
+
+  // Pagination state
+  let currentPage = 1;
+  let rowsPerPage = 20;
+  let rowsPerPageOptions = [20, 50, 100];
+  let totalPages = 1;
+  let stockList = [];
+
+  // Function to update paginated data
+  function updatePaginatedData() {
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    stockList = rawData?.slice(startIndex, endIndex) || [];
+    totalPages = Math.ceil((rawData?.length || 0) / rowsPerPage);
+  }
+
+  // Handle page change event from Pagination component
+  function handlePageChange(event) {
+    currentPage = event.detail.page;
+    updatePaginatedData();
+  }
+
+  // Handle rows per page change event from Pagination component
+  function handleRowsPerPageChange(event) {
+    rowsPerPage = event.detail.rowsPerPage;
+    currentPage = 1; // Reset to first page when changing rows per page
+    updatePaginatedData();
+  }
+
+  // Update pagination when rawData changes
+  $: if (rawData && rawData.length > 0) {
+    updatePaginatedData();
+  }
 </script>
 
 <SEO
-  title="Reddit Stock Tracker - WallStreetBets Analytics & WSB Sentiment "
-  description="Track WallStreetBets (WSB) stock discussions, sentiment analysis, and trending stocks from Reddit. Monitor r/wallstreetbets mentions, sentiment scores, and social trading insights. Free Reddit stock tracker with real-time data."
-  keywords="wallstreetbets, wsb tracker, reddit stocks, wsb sentiment, reddit trading, wallstreetbets tracker, wsb analytics, reddit stock mentions, social trading, wsb data"
+  title="Stock Market News Flow - Real-Time Financial News & Market Updates"
+  description="Track real-time stock market news and understand why prices moved. Get instant access to breaking financial news, market updates, and stock price movements with detailed explanations. Free real-time news flow tracker."
+  keywords="stock market news, financial news, market updates, stock news flow, real-time news, breaking news stocks, price movement news, market news tracker, stock alerts, financial updates"
   structuredData={{
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: "Reddit Stock Tracker",
+    name: "Stock Market News Flow",
     description:
-      "WallStreetBets and Reddit stock discussion tracker with sentiment analysis",
-    url: "https://stocknear.com/reddit-tracker",
+      "Real-time stock market news tracker with price movement explanations",
+    url: "https://stocknear.com/news-flow",
     applicationCategory: "FinanceApplication",
     breadcrumb: {
       "@type": "BreadcrumbList",
@@ -35,8 +67,8 @@
         {
           "@type": "ListItem",
           position: 2,
-          name: "Reddit Tracker",
-          item: "https://stocknear.com/reddit-tracker",
+          name: "News Flow",
+          item: "https://stocknear.com/news-flow",
         },
       ],
     },
@@ -68,7 +100,7 @@
             <h1 class="mb-1 text-2xl sm:text-3xl font-bold">News Flow</h1>
           </div>
 
-          <Infobox text="Latest Breaking news why the priced moved" />
+          <Infobox text="Track the latest breaking news and understand why stock prices moved in real-time" />
 
           {#if stockList?.length > 0}
             <table
@@ -125,6 +157,17 @@
           {:else}
             <Infobox
               text="There are no major stock market news available yet."
+            />
+          {/if}
+
+          {#if stockList?.length > 0}
+            <Pagination
+              {currentPage}
+              {totalPages}
+              {rowsPerPage}
+              {rowsPerPageOptions}
+              on:pageChange={handlePageChange}
+              on:rowsPerPageChange={handleRowsPerPageChange}
             />
           {/if}
         </main>
