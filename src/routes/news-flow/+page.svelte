@@ -2,6 +2,7 @@
   import ArrowLogo from "lucide-svelte/icons/move-up-right";
   import SEO from "$lib/components/SEO.svelte";
   import Infobox from "$lib/components/Infobox.svelte";
+  import { mode } from "mode-watcher";
 
   export let data;
 
@@ -74,8 +75,33 @@
               class="border-t border-gray-300 dark:border-gray-800 text-sm sm:text-[1rem] mt-6"
             >
               <tbody>
-                {#each stockList as item}
-                  <tr class="border-b border-gray-300 dark:border-gray-800"
+                {#each stockList as item, index}
+                  {@const isPositive = item?.changesPercentage > 0}
+                  {@const isNegative = item?.changesPercentage < 0}
+                  <tr
+                    class="border-b border-gray-300 dark:border-gray-800 transition-all duration-200"
+                    style="background: {(() => {
+                      const baseColor =
+                        $mode === 'light' ? '#ffffff' : '#09090B';
+
+                      if ($mode === 'light') {
+                        if (isPositive) {
+                          return `linear-gradient(90deg, ${baseColor} 0%, rgba(34, 197, 94, 0.1) 50%, rgba(34, 197, 94, 0.13) 100%)`;
+                        }
+                        if (isNegative) {
+                          return `linear-gradient(90deg, ${baseColor} 0%, rgba(238, 83, 101, 0.1) 50%, rgba(238, 83, 101, 0.13) 100%)`;
+                        }
+                      } else {
+                        // Dark mode
+                        if (isPositive) {
+                          return `linear-gradient(90deg, ${baseColor} 0%, rgba(0, 252, 80, 0.1) 50%, rgba(0, 252, 80, 0.16) 100%)`;
+                        }
+                        if (isNegative) {
+                          return `linear-gradient(90deg, ${baseColor} 0%, rgba(238, 83, 101, 0.1) 50%, rgba(238, 83, 101, 0.16) 100%)`;
+                        }
+                      }
+                      return baseColor;
+                    })()}"
                     ><td
                       class="hidden sm:inline-block pr-1 pt-2 align-top text-sm whitespace-nowrap font-bold"
                       >{item?.timeAgo}</td
@@ -88,7 +114,7 @@
 
                       <a
                         href={`/${item?.assetType}/${item?.ticker}`}
-                        class="inline-block rounded badge border border-gray-300 dark:border-gray-800 shadow-xs duration-0 bg-blue-100 dark:bg-primary font-semibold dark:font-normal rounded-sm ml-1 px-2 m-auto text-blue-800 dark:text-blue-400 dark:sm:hover:text-white sm:hover:text-muted"
+                        class="inline-block rounded badge border border-gray-300 dark:border-gray-800 shadow-xs duration-0 bg-blue-100 dark:bg-secondary font-semibold dark:font-normal rounded-sm ml-1 px-2 m-auto text-blue-800 dark:text-blue-400 dark:sm:hover:text-white sm:hover:text-muted"
                         >{item?.ticker}</a
                       >
                     </td>
@@ -108,11 +134,11 @@
             class="w-full border border-gray-300 dark:border-gray-600 rounded h-fit pb-4 mt-4 cursor-pointer sm:hover:shadow-lg dark:sm:hover:bg-secondary transition ease-out duration-100"
           >
             <a
-              href="/potus-tracker"
+              href="/market-flow"
               class="w-auto lg:w-full p-1 flex flex-col m-auto px-2 sm:px-0"
             >
               <div class="w-full flex justify-between items-center p-3 mt-3">
-                <h2 class="text-start text-xl font-bold ml-3">POTUS Tracker</h2>
+                <h2 class="text-start text-xl font-bold ml-3">Market Flow</h2>
                 <ArrowLogo
                   class="w-8 h-8 mr-3 shrink-0 text-gray-400 dark:text-white"
                 />
@@ -131,8 +157,26 @@
               class="w-auto lg:w-full p-1 flex flex-col m-auto px-2 sm:px-0"
             >
               <div class="w-full flex justify-between items-center p-3 mt-3">
+                <h2 class="text-start text-xl font-bold ml-3">Options Flow</h2>
+                <ArrowLogo
+                  class="w-8 h-8 mr-3 shrink-0 text-gray-400 dark:text-white"
+                />
+              </div>
+              <span class=" p-3 ml-3 mr-3">
+                Get the latest unusual insider trading in realtime
+              </span>
+            </a>
+          </div>
+          <div
+            class="w-full border border-gray-300 dark:border-gray-600 rounded h-fit pb-4 mt-4 cursor-pointer sm:hover:shadow-lg dark:sm:hover:bg-secondary transition ease-out duration-100"
+          >
+            <a
+              href="/dark-pool-flow"
+              class="w-auto lg:w-full p-1 flex flex-col m-auto px-2 sm:px-0"
+            >
+              <div class="w-full flex justify-between items-center p-3 mt-3">
                 <h2 class="text-start text-xl font-bold ml-3">
-                  Insider Tracker
+                  Dark Pool Flow
                 </h2>
                 <ArrowLogo
                   class="w-8 h-8 mr-3 shrink-0 text-gray-400 dark:text-white"
