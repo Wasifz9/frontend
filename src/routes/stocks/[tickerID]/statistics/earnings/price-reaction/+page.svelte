@@ -393,7 +393,7 @@
                         class="whitespace-nowrap border-l border-t border-gray-300 dark:border-gray-800 py-0.5 rounded-tl-md px-1"
                         ><div class="flex flex-col items-start w-fit">
                           <div
-                            class="pr-0.5 mt-2 flex flex-row items-center w-fit text-sm"
+                            class="pl-0.5 pr-0.5 mt-2 flex flex-row items-center w-fit text-sm"
                           >
                             <div class="">
                               {item?.date !== undefined
@@ -410,11 +410,6 @@
                                 : "-"}
                               ({item?.quarter})
                             </div>
-                          </div>
-
-                          <div class=" text-xs -mt-2 invisible">
-                            {item?.quarter}
-                            {item?.year}
                           </div>
                         </div></td
                       ><td
@@ -499,28 +494,35 @@
                       !['Pro', 'Plus']?.includes(data?.user?.tier)
                         ? 'opacity-[0.1]'
                         : ''}"
-                      ><td
-                        class="border-l border-gray-300 dark:border-gray-800 pl-1 text-muted dark:text-gray-200 text-sm px-1"
-                        ><div class="flex w-full justify-start">
-                          <div class="flex items-center">
-                            <div class="mr-1 font-semibold">IV:</div>
-                            <div
-                              class="leading-3 w-full whitespace-nowrap font-semibold"
-                            >
-                              {item?.iv ?? "-"}
-                            </div>
+                    >
+                      <td
+                        class="border-l border-gray-300 dark:border-gray-800 mt-auto text-xs text-muted dark:text-gray-200"
+                      >
+                        <div
+                          class="grid grid-cols-3 items-center justify-center pl-0.5 pr-0.5 w-full m-auto text-center"
+                        >
+                          <!-- IV -->
+                          <div class="flex items-center pl-1">
+                            <div class="font-semibold mr-1">IV:</div>
+                            <div class="font-semibold">{item?.iv ?? "-"}</div>
                           </div>
 
-                          <div class="ml-3 flex items-center">
-                            <div class="mr-1 font-semibold">RSI:</div>
-                            <div
-                              class="leading-3 w-full whitespace-nowrap font-semibold"
-                            >
-                              {item?.rsi ?? "-"}
+                          <!-- RSI -->
+                          <div class="flex items-center ml-1.5">
+                            <div class="font-semibold mr-1">RSI:</div>
+                            <div class="font-semibold">{item?.rsi ?? "-"}</div>
+                          </div>
+
+                          <!-- Time -->
+                          <div class="flex items-center justify-end pr-1">
+                            <div class="font-semibold">
+                              {checkTime(item?.time) ?? "-"}
                             </div>
                           </div>
-                        </div></td
-                      ><td
+                        </div>
+                      </td>
+
+                      <td
                         class="px-4 last:pr-11 w-17 last:w-24.5 border-gray-300 dark:border-gray-800 px-3.5 py-0.5 border-l px-1 text-right"
                         ><span
                           class="w-full text-sm sm:text-[1rem] items-baseline justify-end whitespace-nowrap {item?.backward_2_days_change_percent >=
