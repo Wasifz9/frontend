@@ -793,6 +793,7 @@
               isLatestSystemMessage={index === messages.length - 1}
               allMessages={messages}
               onExportPDF={exportToPDF}
+              {chatId}
               on:rewrite={rewriteResponse}
               on:edit={editMessage}
               on:start-edit={handleStartEdit}
@@ -812,6 +813,7 @@
               isLatestSystemMessage={index === messages.length - 1}
               allMessages={messages}
               onExportPDF={exportToPDF}
+              {chatId}
               on:rewrite={rewriteResponse}
               on:edit={editMessage}
               on:start-edit={handleStartEdit}

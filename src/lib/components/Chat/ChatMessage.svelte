@@ -32,6 +32,7 @@
   export let allMessages = [];
   export let onExportPDF = null;
   export let assistant = false;
+  export let chatId = null;
 
   // Smooth text rendering
   let displayedContent = "";
@@ -138,7 +139,10 @@
   }
 
   function handleShare() {
-    const url = $page?.url?.href;
+    // Use the chat-specific URL if chatId is available, otherwise use current URL
+    const url = chatId 
+      ? `${$page?.url?.origin}/chat/${chatId}`
+      : $page?.url?.href;
     navigator.clipboard
       ?.writeText(url)
       ?.then(() => {

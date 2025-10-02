@@ -1165,6 +1165,7 @@
               showPlots={false}
               showRelatedQuestions={false}
               assistant={true}
+              {chatId}
               on:rewrite={rewriteResponse}
               on:edit={editMessage}
               on:start-edit={handleStartEdit}
@@ -1187,6 +1188,7 @@
               showPlots={false}
               showRelatedQuestions={false}
               assistant={true}
+              {chatId}
               on:rewrite={rewriteResponse}
               on:edit={editMessage}
               on:start-edit={handleStartEdit}
