@@ -4,17 +4,23 @@
   import Infobox from "$lib/components/Infobox.svelte";
   import Pagination from "$lib/components/Table/Pagination.svelte";
   import { mode } from "mode-watcher";
+  import DownloadData from "$lib/components/DownloadData.svelte";
+  import { onMount } from "svelte";
+  import UpgradeToPro from "$lib/components/UpgradeToPro.svelte";
 
   export let data;
 
   let rawData = data?.getData;
-
+  let originalData = data?.getData;
   // Pagination state
   let currentPage = 1;
   let rowsPerPage = 20;
   let rowsPerPageOptions = [20, 50, 100];
   let totalPages = 1;
   let stockList = [];
+
+  let inputValue = "";
+  let searchWorker: Worker | undefined;
 
   // Function to update paginated data
   function updatePaginatedData() {
@@ -37,10 +43,57 @@
     updatePaginatedData();
   }
 
-  // Update pagination when rawData changes
-  $: if (rawData && rawData.length > 0) {
+  async function resetTableSearch() {
+    inputValue = "";
+    rawData = originalData;
+    currentPage = 1; // Reset to first page
     updatePaginatedData();
   }
+
+  async function search() {
+    inputValue = inputValue?.toLowerCase();
+
+    setTimeout(async () => {
+      if (inputValue?.length > 0) {
+        await loadSearchWorker();
+      } else {
+        // Reset to original data if filter is empty
+        rawData = originalData;
+        currentPage = 1; // Reset to first page
+        updatePaginatedData();
+      }
+    }, 100);
+  }
+
+  const loadSearchWorker = async () => {
+    if (searchWorker && originalData?.length > 0) {
+      searchWorker.postMessage({
+        rawData: originalData,
+        inputValue: inputValue,
+      });
+    }
+  };
+
+  const handleSearchMessage = (event) => {
+    if (event.data?.message === "success") {
+      rawData = event.data?.output ?? [];
+      currentPage = 1; // Reset to first page after search
+      updatePaginatedData();
+    }
+  };
+
+  onMount(async () => {
+    // Initialize pagination
+    updatePaginatedData();
+
+    if (!searchWorker) {
+      const SearchWorker = await import(
+        "$lib/workers/tableSearchWorker?worker"
+      );
+      searchWorker = new SearchWorker.default();
+      searchWorker.onmessage = handleSearchMessage;
+    }
+  });
 </script>
 
 <SEO
@@ -100,7 +153,59 @@
             <h1 class="mb-1 text-2xl sm:text-3xl font-bold">News Flow</h1>
           </div>
 
-          <Infobox text="Track the latest breaking news and understand why stock prices moved in real-time" />
+          <Infobox
+            text="Track the latest breaking news and understand why stock prices moved in real-time"
+          />
+
+          <div class="items-center lg:overflow-visible px-1 py-1 mt-4">
+            <div
+              class="col-span-2 flex flex-col lg:flex-row items-start sm:items-center lg:order-2 lg:grow py-1 border-t border-b border-gray-300 dark:border-gray-800"
+            >
+              <h2
+                class="text-start whitespace-nowrap text-xl sm:text-2xl font-semibold py-1 border-b border-gray-300 dark:border-gray-800 lg:border-none w-full"
+              >
+                {rawData?.length?.toLocaleString("en-US")} News
+              </h2>
+              <div
+                class="mt-1 w-full flex flex-row lg:flex order-1 items-center ml-auto pb-1 pt-1 sm:pt-0 w-full order-0 lg:order-1"
+              >
+                <div class="relative lg:ml-auto w-full lg:w-fit">
+                  <div
+                    class="inline-block cursor-pointer absolute right-2 top-2 text-sm"
+                  >
+                    {#if inputValue?.length > 0}
+                      <label
+                        class="cursor-pointer"
+                        on:click={() => resetTableSearch()}
+                      >
+                        <svg
+                          class="w-5 h-5"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          ><path
+                            fill="currentColor"
+                            d="m6.4 18.308l-.708-.708l5.6-5.6l-5.6-5.6l.708-.708l5.6 5.6l5.6-5.6l.708.708l-5.6 5.6l5.6 5.6l-.708.708l-5.6-5.6z"
+                          /></svg
+                        >
+                      </label>
+                    {/if}
+                  </div>
+
+                  <input
+                    bind:value={inputValue}
+                    on:input={search}
+                    type="text"
+                    placeholder="Find..."
+                    class=" py-[7px] text-[0.85rem] sm:text-sm border bg-white dark:bg-default shadow focus:outline-hidden border border-gray-300 dark:border-gray-600 rounded placeholder:text-gray-800 dark:placeholder:text-gray-300 px-3 focus:outline-none focus:ring-0 dark:focus:border-gray-800 grow w-full sm:min-w-56 lg:max-w-14"
+                  />
+                </div>
+
+                <div class="ml-2">
+                  <DownloadData {data} {rawData} title={"news_feed"} />
+                </div>
+              </div>
+            </div>
+          </div>
 
           {#if stockList?.length > 0}
             <table
@@ -111,7 +216,11 @@
                   {@const isPositive = item?.changesPercentage > 0}
                   {@const isNegative = item?.changesPercentage < 0}
                   <tr
-                    class="border-b border-gray-300 dark:border-gray-800 transition-all duration-200"
+                    class="border-b border-gray-300 dark:border-gray-800 transition-all duration-200 {index +
+                      1 ===
+                      rawData?.length && !['Pro']?.includes(data?.user?.tier)
+                      ? 'opacity-[0.1]'
+                      : ''}"
                     style="background: {(() => {
                       const baseColor =
                         $mode === 'light' ? '#ffffff' : '#09090B';
@@ -160,7 +269,9 @@
             />
           {/if}
 
-          {#if stockList?.length > 0}
+          <UpgradeToPro {data} />
+
+          {#if stockList?.length > 0 && data?.user?.tier === "Pro"}
             <Pagination
               {currentPage}
               {totalPages}
