@@ -10,8 +10,8 @@
 
   export let data;
 
-  let rawData = data?.getData;
-  let originalData = data?.getData;
+  let rawData = data?.getData?.output;
+  let originalData = data?.getData?.output;
   // Pagination state
   let currentPage = 1;
   let rowsPerPage = 20;
@@ -164,8 +164,9 @@
               <h2
                 class="text-start whitespace-nowrap text-xl sm:text-2xl font-semibold py-1 border-b border-gray-300 dark:border-gray-800 lg:border-none w-full"
               >
-                {rawData?.length?.toLocaleString("en-US")} News
+                {data?.getData?.totalItems?.toLocaleString("en-US")} News
               </h2>
+
               <div
                 class="mt-1 w-full flex flex-row lg:flex order-1 items-center ml-auto pb-1 pt-1 sm:pt-0 w-full order-0 lg:order-1"
               >
@@ -212,14 +213,17 @@
               class="border-t border-gray-300 dark:border-gray-800 text-sm sm:text-[1rem] mt-6"
             >
               <tbody>
-                {#each stockList as item, index}
+                {#each stockList as item, index (item?.id ?? index)}
+                  {@const list =
+                    data?.user?.tier === "Pro"
+                      ? stockList
+                      : stockList?.slice(0, 5)}
                   {@const isPositive = item?.changesPercentage > 0}
                   {@const isNegative = item?.changesPercentage < 0}
                   <tr
-                    class="border-b border-gray-300 dark:border-gray-800 transition-all duration-200 {index +
-                      1 ===
-                      rawData?.length && !['Pro']?.includes(data?.user?.tier)
-                      ? 'opacity-[0.1]'
+                    class="border-b border-gray-300 dark:border-gray-800 transition-all duration-200
+        {index === list.length - 1 && data?.user?.tier !== 'Pro'
+                      ? 'opacity-10'
                       : ''}"
                     style="background: {(() => {
                       const baseColor =
@@ -233,7 +237,6 @@
                           return `linear-gradient(90deg, ${baseColor} 0%, rgba(238, 83, 101, 0.1) 50%, rgba(238, 83, 101, 0.13) 100%)`;
                         }
                       } else {
-                        // Dark mode
                         if (isPositive) {
                           return `linear-gradient(90deg, ${baseColor} 0%, rgba(0, 252, 80, 0.1) 50%, rgba(0, 252, 80, 0.16) 100%)`;
                         }
@@ -243,10 +246,12 @@
                       }
                       return baseColor;
                     })()}"
-                    ><td
+                  >
+                    <td
                       class="hidden sm:inline-block pr-1 pt-2 align-top text-sm whitespace-nowrap font-bold"
-                      >{item?.timeAgo}</td
                     >
+                      {item?.timeAgo}
+                    </td>
                     <td class="py-2 pl-2">
                       <span class="sm:hidden font-semibold"
                         >{item?.timeAgo} ago -</span
@@ -256,8 +261,9 @@
                       <a
                         href={`/${item?.assetType}/${item?.ticker}`}
                         class="inline-block rounded badge border border-gray-300 dark:border-gray-800 shadow-xs duration-0 bg-blue-100 dark:bg-secondary font-semibold dark:font-normal rounded-sm ml-1 px-2 m-auto text-blue-800 dark:text-blue-400 dark:sm:hover:text-white sm:hover:text-muted"
-                        >{item?.ticker}</a
                       >
+                        {item?.ticker}
+                      </a>
                     </td>
                   </tr>
                 {/each}

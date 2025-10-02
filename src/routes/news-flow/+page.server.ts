@@ -1,7 +1,7 @@
 export const load = async ({ locals }) => {
   const getData = async () => {
 
-    const { apiKey, apiURL } = locals;
+    const { apiKey, apiURL, user } = locals;
 
     const response = await fetch(apiURL + "/news-flow", {
       method: "GET",
@@ -11,9 +11,11 @@ export const load = async ({ locals }) => {
       },
     });
 
-    const output = await response.json();
-  
-    return output;
+    let output = await response.json();
+    let totalItems = output?.length;
+    output = user?.tier === 'Pro' ? output : output?.slice(0,5);
+
+    return {output, totalItems};
   };
 
   // Make sure to return a promise
