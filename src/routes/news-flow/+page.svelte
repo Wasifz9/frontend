@@ -210,7 +210,7 @@
 
           {#if stockList?.length > 0}
             <table
-              class="border-t border-gray-300 dark:border-gray-800 text-sm sm:text-[1rem] mt-6"
+              class="border-t border-gray-300 dark:border-gray-800 text-sm sm:text-[1rem] mt-6 w-full"
             >
               <tbody>
                 {#each stockList as item, index (item?.id ?? index)}
@@ -221,7 +221,7 @@
                   {@const isPositive = item?.changesPercentage > 0}
                   {@const isNegative = item?.changesPercentage < 0}
                   <tr
-                    class="border-b border-gray-300 dark:border-gray-800 transition-all duration-200
+                    class="border-b border-gray-300 dark:border-gray-800 transition-all duration-200 w-full
         {index === list.length - 1 && data?.user?.tier !== 'Pro'
                       ? 'opacity-10'
                       : ''}"
@@ -259,10 +259,10 @@
                       {item?.text}
 
                       <a
-                        href={`/${item?.assetType}/${item?.ticker}`}
+                        href={`/${item?.assetType}/${item?.symbol}`}
                         class="inline-block rounded badge border border-gray-300 dark:border-gray-800 shadow-xs duration-0 bg-blue-100 dark:bg-secondary font-semibold dark:font-normal rounded-sm ml-1 px-2 m-auto text-blue-800 dark:text-blue-400 dark:sm:hover:text-white sm:hover:text-muted"
                       >
-                        {item?.ticker}
+                        {item?.symbol}
                       </a>
                     </td>
                   </tr>
