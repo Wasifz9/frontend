@@ -220,10 +220,10 @@
                       ? stockList
                       : stockList?.slice(0, 5)}
                   {@const isPositive =
-                    item?.text?.includes("higher") ||
+                    item?.text?.toLowerCase()?.includes("higher") &&
                     item?.changesPercentage > 0}
                   {@const isNegative =
-                    item?.text?.includes("lower") ||
+                    item?.text?.toLowerCase()?.includes("lower") &&
                     item?.changesPercentage < 0}
                   <tr
                     class="border-b border-gray-300 dark:border-gray-800 transition-all duration-200 w-full
