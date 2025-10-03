@@ -884,7 +884,6 @@ export function abbreviateNumber(
 
 export function formatDate(dateStr, short = false) {
   try {
-    // Parse the input date string in Berlin timezone
     const berlinFormatter = new Intl.DateTimeFormat('en-US', {
       timeZone: 'Europe/Berlin',
       year: 'numeric',
@@ -895,22 +894,27 @@ export function formatDate(dateStr, short = false) {
       second: '2-digit',
     });
 
-    const parseDate = (date) => {
-      const parts = berlinFormatter?.formatToParts(date);
-      const extract = (type) =>
-        parts.find((p) => p.type === type)?.value.padStart(2, '0');
-      return new Date(
-        `${extract('year')}-${extract('month')}-${extract('day')}T${extract('hour')}:${extract('minute')}:${extract('second')}`
-      );
+    const parseDateToUTCFromBerlinParts = (date) => {
+      const parts = berlinFormatter.formatToParts(date);
+      const get = (type) =>
+        Number(parts.find((p) => p.type === type)?.value ?? 0);
+      const year = get('year');
+      const month = get('month'); // 1-12
+      const day = get('day');
+      const hour = get('hour');
+      const minute = get('minute');
+      const second = get('second');
+
+      // Build a UTC timestamp from the Berlin-local components.
+      // Using Date.UTC ensures consistent arithmetic (offsets cancel when comparing two such dates).
+      return new Date(Date.UTC(year, month - 1, day, hour, minute, second));
     };
 
-    const berlinDateObj = parseDate(new Date(dateStr));
-    const berlinCurrentObj = parseDate(new Date());
+    const berlinDateObj = parseDateToUTCFromBerlinParts(new Date(dateStr));
+    const berlinCurrentObj = parseDateToUTCFromBerlinParts(new Date());
 
-    // Calculate the time difference in seconds
     const seconds = Math.floor((berlinCurrentObj - berlinDateObj) / 1000);
 
-    // Define time intervals
     const intervals = [
       { unit: 'year', short: 'y', seconds: 31536000 },
       { unit: 'month', short: 'mo', seconds: 2592000 },
@@ -925,7 +929,7 @@ export function formatDate(dateStr, short = false) {
       const count = Math.floor(seconds / secondsInUnit);
 
       if (count >= 1) {
-        // Special case: don't return "25h", switch to days instead
+        // Special case: prefer days instead of "25h".
         if (unit === 'hour' && count >= 24) {
           const days = Math.floor(count / 24);
           return short ? `${days}d` : `${days} day${days === 1 ? '' : 's'} ago`;
