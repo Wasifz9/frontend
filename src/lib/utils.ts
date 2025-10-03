@@ -882,7 +882,7 @@ export function abbreviateNumber(
 }
 
 
-export function formatDate(dateStr) {
+export function formatDate(dateStr, short = false) {
   try {
     // Parse the input date string in Berlin timezone
     const berlinFormatter = new Intl.DateTimeFormat('en-US', {
@@ -910,27 +910,35 @@ export function formatDate(dateStr) {
     // Calculate the time difference in seconds
     const seconds = Math.floor((berlinCurrentObj - berlinDateObj) / 1000);
 
-    // Define time intervals including seconds so that even differences < 60 are handled
+    // Define time intervals
     const intervals = [
-      { unit: 'year', seconds: 31536000 },
-      { unit: 'month', seconds: 2592000 },
-      { unit: 'week', seconds: 604800 },
-      { unit: 'day', seconds: 86400 },
-      { unit: 'hour', seconds: 3600 },
-      { unit: 'minute', seconds: 60 },
-      { unit: 'second', seconds: 1 },
+      { unit: 'year', short: 'y', seconds: 31536000 },
+      { unit: 'month', short: 'mo', seconds: 2592000 },
+      { unit: 'week', short: 'w', seconds: 604800 },
+      { unit: 'day', short: 'd', seconds: 86400 },
+      { unit: 'hour', short: 'h', seconds: 3600 },
+      { unit: 'minute', short: 'm', seconds: 60 },
+      { unit: 'second', short: 's', seconds: 1 },
     ];
 
-    // Determine the appropriate time interval
-    for (const { unit, seconds: secondsInUnit } of intervals) {
+    for (const { unit, short: s, seconds: secondsInUnit } of intervals) {
       const count = Math.floor(seconds / secondsInUnit);
+
       if (count >= 1) {
+        // Special case: don't return "25h", switch to days instead
+        if (unit === 'hour' && count >= 24) {
+          const days = Math.floor(count / 24);
+          return short ? `${days}d` : `${days} day${days === 1 ? '' : 's'} ago`;
+        }
+
+        if (short) {
+          return `${count}${s}`;
+        }
         return `${count} ${unit}${count === 1 ? '' : 's'} ago`;
       }
     }
 
-    // Fallback in case the difference is 0 seconds
-    return 'Just now';
+    return short ? '0s' : 'Just now';
   } catch (error) {
     console.error('Error formatting date:', error);
     return 'Invalid date';

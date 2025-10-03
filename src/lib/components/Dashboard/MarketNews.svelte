@@ -39,7 +39,7 @@
                         </td>
                         <td class="py-2 pl-2">
                             <span class="sm:hidden font-semibold"
-                                >{formatDate(item?.date, true)} -
+                                >{formatDate(item?.date, true)} ago -
                             </span>
                             {item?.text}
 
