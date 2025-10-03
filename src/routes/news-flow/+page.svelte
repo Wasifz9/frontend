@@ -275,7 +275,7 @@
             />
           {/if}
 
-          <UpgradeToPro {data} />
+          <UpgradeToPro {data} display={true} />
 
           {#if stockList?.length > 0 && data?.user?.tier === "Pro"}
             <Pagination
