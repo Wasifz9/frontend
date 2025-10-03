@@ -1,5 +1,6 @@
 <script lang="ts">
     import Infobox from "$lib/components/Infobox.svelte";
+    import { formatDate } from "$lib/utils";
 
     export let wiim = [];
 </script>
@@ -34,12 +35,12 @@
                     <tr class="border-b border-gray-300 dark:border-gray-800"
                         ><td
                             class="hidden sm:inline-block pr-1 pt-2 align-top text-sm whitespace-nowrap font-bold"
-                            >{item?.timeAgo}</td
-                        >
+                            >{formatDate(item?.date, true)}
+                        </td>
                         <td class="py-2 pl-2">
                             <span class="sm:hidden font-semibold"
-                                >{item?.timeAgo} ago -</span
-                            >
+                                >{formatDate(item?.date, true)} -
+                            </span>
                             {item?.text}
 
                             <a
