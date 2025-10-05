@@ -15,6 +15,7 @@
   import Infobox from "$lib/components/Infobox.svelte";
   import Input from "$lib/components/Input.svelte";
   import SEO from "$lib/components/SEO.svelte";
+  import InfoModal from "$lib/components/InfoModal.svelte";
 
   //const userConfirmation = confirm('Unsaved changes detected. Leaving now will discard your strategy. Continue?');
 
@@ -32,8 +33,6 @@
   let selectedDate = expirationList?.at(0)?.date;
 
   let indexDict = data?.getIndexDict ?? {};
-  let infoText = {};
-  let tooltipTitle;
   let removeList = false;
 
   let strategyList = data?.getAllStrategies || [];
@@ -219,26 +218,6 @@
           timeZone: "UTC",
         });
   };
-
-  async function getInfoText(parameter, title) {
-    tooltipTitle = title;
-    const cachedData = getCache(parameter, "getInfoText");
-    if (cachedData) {
-      infoText = cachedData;
-    } else {
-      const postData = { parameter };
-      const response = await fetch("/api/info-text", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(postData),
-      });
-
-      infoText = await response.json();
-      setCache(parameter, infoText, "getInfoText");
-    }
-  }
 
   async function handleCreateStrategy() {
     if (["Pro"]?.includes(data?.user?.tier)) {
@@ -1606,35 +1585,18 @@
           {#each displayRules as row (row?.rule)}
             <!--Start Added Rules-->
             <div
-              class="flex items-center justify-between space-x-2 px-1 py-1.5 text-[0.95rem] leading-tight"
+              class="flex items-center justify-between space-x-2 px-1 py-1.5 text-sm sm:text-[0.95rem] leading-tight"
             >
-              <div class="">
+              <div class=" flex flex-row items-start sm:items-end">
                 {row?.label?.length > 30
                   ? row?.label?.slice(0, 30)?.replace("[%]", "") + "..."
                   : row?.label?.replace("[%]", "")}
-                <span class="relative" role="tooltip"
-                  ><label
-                    for="mobileTooltip"
-                    on:click={() =>
-                      getInfoText(row?.rule, row?.label?.replace("[%]", ""))}
-                    class="relative"
-                    role="tooltip"
-                  >
-                    <span
-                      class="absolute -right-[15px] -top-[3px] cursor-pointer p-1 text-gray-500 dark:text-gray-300 dark:sm:hover:text-white"
-                    >
-                      <svg
-                        class="h-[10.5px] w-[10.5px]"
-                        viewBox="0 0 4 16"
-                        fill="currentColor"
-                        style="max-width:20px"
-                        ><path
-                          d="M0 6h4v10h-4v-10zm2-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z"
-                        ></path></svg
-                      >
-                    </span>
-                  </label></span
-                >
+                <InfoModal
+                  id={row?.rule}
+                  title={row?.label?.replace("[%]", "")}
+                  callAPI={true}
+                  parameter={row?.rule}
+                />
               </div>
 
               <div class="flex items-center">
@@ -2559,37 +2521,6 @@
 </dialog>
 
 <!--End Delete Strategy Modal-->
-
-<input type="checkbox" id="mobileTooltip" class="modal-toggle" />
-
-<dialog id="mobileTooltip" class="modal p-3">
-  <label for="mobileTooltip" class="cursor-pointer modal-backdrop"></label>
-
-  <!-- Desktop modal content -->
-  <div
-    class="modal-box rounded border border-gray-300 dark:border-gray-600 w-full bg-white dark:bg-secondary flex flex-col items-center"
-  >
-    <div class=" mb-5 text-center">
-      <h3 class="font-bold text-2xl mb-5">{tooltipTitle}</h3>
-      <span class=" text-[1rem] font-normal">{infoText?.text ?? "n/a"}</span>
-      {#if infoText?.equation !== undefined}
-        <div class="w-5/6 m-auto mt-5"></div>
-        <div class="text-[1rem] w-full pt-3 pb-3 m-auto">
-          {infoText?.equation}
-        </div>
-      {/if}
-    </div>
-
-    <div class="border-t border-gray-300 dark:border-gray-600 mt-2 w-full">
-      <label
-        for="mobileTooltip"
-        class="cursor-pointer mt-4 font-semibold text-xl m-auto flex justify-center"
-      >
-        Close
-      </label>
-    </div>
-  </div>
-</dialog>
 
 <!--Start Login Modal-->
 {#if LoginPopup}
