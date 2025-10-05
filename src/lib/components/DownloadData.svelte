@@ -29,14 +29,33 @@
   const generateCSVContent = () => {
     const csvRows: string[] = [];
 
+    // Expand symbolList arrays into individual rows
+    const expandedData = [];
+    for (const row of rawData) {
+      if (row.symbolList && Array.isArray(row.symbolList)) {
+        // Create a row for each symbol in symbolList
+        for (const symbol of row.symbolList) {
+          const newRow = { ...row };
+          delete newRow.symbolList;
+          newRow.symbol = symbol;
+          expandedData.push(newRow);
+        }
+      } else {
+        // Keep row as-is if no symbolList
+        expandedData.push(row);
+      }
+    }
+
     // Clean data first
-    const cleanedData = rawData.map((row) => {
+    const cleanedData = expandedData.map((row) => {
       const cleanedRow = { ...row };
       if (cleanedRow["name"]) {
         cleanedRow["name"] = cleanedRow["name"].replace(/,/g, "");
       }
       return cleanedRow;
     });
+
+    if (cleanedData.length === 0) return "";
 
     let headers = Object.keys(cleanedData[0]);
     if (headers.includes("rank")) {
@@ -78,7 +97,24 @@
   const exportExcel = async () => {
     const { utils, writeFile } = await import("xlsx");
 
-    const worksheet = utils.json_to_sheet(rawData);
+    // Expand symbolList arrays into individual rows
+    const expandedData = [];
+    for (const row of rawData) {
+      if (row.symbolList && Array.isArray(row.symbolList)) {
+        // Create a row for each symbol in symbolList
+        for (const symbol of row.symbolList) {
+          const newRow = { ...row };
+          delete newRow.symbolList;
+          newRow.symbol = symbol;
+          expandedData.push(newRow);
+        }
+      } else {
+        // Keep row as-is if no symbolList
+        expandedData.push(row);
+      }
+    }
+
+    const worksheet = utils.json_to_sheet(expandedData);
     const workbook = utils.book_new();
     utils.book_append_sheet(workbook, worksheet, "Sheet1");
     writeFile(workbook, `${title}.xlsx`);

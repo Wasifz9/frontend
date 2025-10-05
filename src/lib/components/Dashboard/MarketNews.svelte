@@ -43,11 +43,21 @@
                             </span>
                             {item?.text}
 
-                            <a
-                                href={`/${item?.assetType}/${item?.ticker}`}
-                                class="inline-block rounded badge border border-gray-300 dark:border-gray-800 shadow-xs duration-0 bg-blue-100 dark:bg-primary font-semibold dark:font-normal rounded-sm ml-1 px-2 m-auto text-blue-800 dark:text-blue-400 dark:sm:hover:text-white sm:hover:text-muted"
-                                >{item?.ticker}</a
-                            >
+                            {#if item?.symbolList && item?.symbolList?.length > 0}
+                                {#each item?.symbolList as symbol}
+                                    <a
+                                        href={`/${item?.assetType}/${symbol}`}
+                                        class="inline-block rounded badge border border-gray-300 dark:border-gray-800 shadow-xs duration-0 bg-blue-100 dark:bg-primary font-semibold dark:font-normal rounded-sm ml-1 px-2 m-auto text-blue-800 dark:text-blue-400 dark:sm:hover:text-white sm:hover:text-muted"
+                                        >{symbol}</a
+                                    >
+                                {/each}
+                            {:else if item?.symbol}
+                                <a
+                                    href={`/${item?.assetType}/${item?.symbol}`}
+                                    class="inline-block rounded badge border border-gray-300 dark:border-gray-800 shadow-xs duration-0 bg-blue-100 dark:bg-primary font-semibold dark:font-normal rounded-sm ml-1 px-2 m-auto text-blue-800 dark:text-blue-400 dark:sm:hover:text-white sm:hover:text-muted"
+                                    >{item?.symbol}</a
+                                >
+                            {/if}
                         </td>
                     </tr>
                 {/each}
