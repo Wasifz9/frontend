@@ -134,6 +134,38 @@
       category: "Options Activity",
       varType: "decimal",
     },
+    delta: {
+      label: "Delta",
+      step: ["0.9", "0.8", "0.7", "0.6", "0.5", "0.4", "0.3", "0.2", "0.1"],
+      defaultCondition: "over",
+      defaultValue: "any",
+      category: "Greeks",
+      varType: "decimal",
+    },
+    gamma: {
+      label: "Gamma",
+      step: ["0.1", "0.05", "0.03", "0.02", "0.01", "0.005"],
+      defaultCondition: "over",
+      defaultValue: "any",
+      category: "Greeks",
+      varType: "decimal",
+    },
+    theta: {
+      label: "Theta",
+      step: ["-0.01", "-0.02", "-0.05", "-0.1", "-0.2", "-0.5"],
+      defaultCondition: "over",
+      defaultValue: "any",
+      category: "Greeks",
+      varType: "decimal",
+    },
+    vega: {
+      label: "Vega",
+      step: ["0.5", "0.3", "0.2", "0.1", "0.05", "0.01"],
+      defaultCondition: "over",
+      defaultValue: "any",
+      category: "Greeks",
+      varType: "decimal",
+    },
   };
 
   let filteredData = [];
