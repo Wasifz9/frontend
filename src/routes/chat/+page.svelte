@@ -978,7 +978,7 @@
             </div>
           </div>
         {:else if !data?.user}
-          <div class="mx-auto w-full max-w-[850px]">
+          <div class="mx-auto w-full max-w-[850px] px-4 sm:px-0">
             <h2
               class="text-lg sm:text-xl text-start w-full font-semibold flex flex-row items-center"
             >
@@ -1019,7 +1019,7 @@
             </div>
           </div>
         {:else}
-          <div class="mx-auto w-full max-w-[850px]">
+          <div class="mx-auto w-full max-w-[850px] px-4 sm:px-0">
             <h2
               class="text-lg sm:text-xl text-start w-full font-semibold flex flex-row items-center"
             >
