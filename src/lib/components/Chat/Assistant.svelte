@@ -328,8 +328,7 @@
       clearEditor();
 
       // Trigger login popup
-      const closePopup = document.getElementById("userLogin");
-      closePopup?.dispatchEvent(new MouseEvent("click"));
+      openLoginModal();
       return;
     }
 
@@ -758,6 +757,16 @@
 
   function handleCancelEdit() {
     editingMessageIndex = null;
+  }
+
+  // Function to open login modal
+  function openLoginModal() {
+    const loginCheckbox = document.getElementById(
+      "userLogin",
+    ) as HTMLInputElement;
+    if (loginCheckbox) {
+      loginCheckbox.checked = true;
+    }
   }
 
   // Saving functions (exact same as working chat)
@@ -1534,6 +1543,13 @@
       </div>
     </div>
   </aside>
+{/if}
+
+<!-- Login Popup - Load when user is not logged in -->
+{#if !userData}
+  {#await import("$lib/components/LoginPopup.svelte") then { default: LoginPopup }}
+    <svelte:component this={LoginPopup} form={null} />
+  {/await}
 {/if}
 
 <style>

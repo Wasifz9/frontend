@@ -68,18 +68,6 @@
 
   let hasUnreadElement = false;
   let notificationList = [];
-  let AssistantComponent = null;
-
-  // Reactive statement to load/unload Assistant based on screen size changes
-  $: {
-    if ($screenWidth >= 640 && !AssistantComponent && browser) {
-      import("$lib/components/Chat/Assistant.svelte").then((module) => {
-        AssistantComponent = module.default;
-      });
-    } else if ($screenWidth < 640) {
-      AssistantComponent = null;
-    }
-  }
 
   //Define web workers:
   let syncWorker: Worker | undefined = undefined;
@@ -1691,8 +1679,10 @@
 </div>
 
 <!-- Floating AI Assistant -->
-{#if AssistantComponent && $screenWidth >= 640}
-  <svelte:component this={AssistantComponent} {data} />
+{#if $screenWidth >= 640}
+  {#await import("$lib/components/Chat/Assistant.svelte") then { default: Comp }}
+    <svelte:component this={Comp} {data} />
+  {/await}
 {/if}
 
 <style lang="scss">
