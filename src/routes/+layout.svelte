@@ -10,7 +10,6 @@
   import Footer from "$lib/components/Footer.svelte";
   import Searchbar from "$lib/components/Searchbar.svelte";
   import NotificationBell from "$lib/components/NotificationBell.svelte";
-  import Assistant from "$lib/components/Chat/Assistant.svelte";
 
   //import PullToRefresh from '$lib/components/PullToRefresh.svelte';
 
@@ -69,6 +68,18 @@
 
   let hasUnreadElement = false;
   let notificationList = [];
+  let AssistantComponent = null;
+
+  // Reactive statement to load/unload Assistant based on screen size changes
+  $: {
+    if ($screenWidth >= 640 && !AssistantComponent && browser) {
+      import("$lib/components/Chat/Assistant.svelte").then((module) => {
+        AssistantComponent = module.default;
+      });
+    } else if ($screenWidth < 640) {
+      AssistantComponent = null;
+    }
+  }
 
   //Define web workers:
   let syncWorker: Worker | undefined = undefined;
@@ -1680,7 +1691,9 @@
 </div>
 
 <!-- Floating AI Assistant -->
-<Assistant {data} />
+{#if AssistantComponent && $screenWidth >= 640}
+  <svelte:component this={AssistantComponent} {data} />
+{/if}
 
 <style lang="scss">
   :root {
