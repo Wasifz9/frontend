@@ -199,4 +199,19 @@ self.addEventListener('message', (event) => {
         .catch((error) => console.error('Service worker: Cache update failed:', error))
     );
   }
+
+  if (event.data?.type === 'CLEAR_AUTH_CACHE') {
+    // Clear any auth-related cached responses
+    event.waitUntil(
+      caches.open(CACHE).then((cache) => {
+        // Clear main page cache to force auth state reload
+        cache.delete('/');
+        // Clear API routes that might have cached auth responses
+        cache.delete('/api/user');
+        cache.delete('/login');
+        cache.delete('/logout');
+        console.log('[SW] Auth cache cleared');
+      })
+    );
+  }
 });

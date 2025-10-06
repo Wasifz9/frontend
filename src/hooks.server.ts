@@ -27,39 +27,46 @@ export const handle = sequence(async ({ event, resolve }) => {
   event.locals.pb.authStore?.loadFromCookie(authCookie);
 
   if (event?.locals?.pb?.authStore?.isValid) {
-    // Set user from stored auth immediately without blocking
-    event.locals.user = serializeNonPOJOs(event?.locals?.pb?.authStore?.model);
-    
-    // Refresh auth token in background if it's close to expiring
-    const authData = event.locals.pb.authStore.token;
-    if (authData) {
-      try {
-        // Parse JWT to check expiration
-        const payload = JSON.parse(atob(authData.split('.')[1]));
-        const expirationTime = payload.exp * 1000; // Convert to milliseconds
-        const currentTime = Date.now();
-        const timeUntilExpiry = expirationTime - currentTime;
-        
-        // Only refresh if token expires in less than 1 hour
-        if (timeUntilExpiry < 60 * 60 * 1000) {
-          // Refresh in background without blocking the request
-          event?.locals?.pb?.collection("users")?.authRefresh()
-            .then(() => {
-              console.log('[Auth] Token refreshed in background');
-            })
-            .catch((e) => {
-              // Only clear auth on actual auth errors (401, 403)
-              if (e.status === 401 || e.status === 403) {
-                event.locals.pb.authStore.clear();
-                console.log('[Auth] Token refresh failed - invalid token');
-              }
-              // Ignore network errors - keep existing auth
-            });
+    // Verify the auth is actually valid by checking the model
+    const authModel = event?.locals?.pb?.authStore?.model;
+    if (authModel && authModel.id) {
+      event.locals.user = serializeNonPOJOs(authModel);
+      
+      // Optional: Refresh auth token in background if it's close to expiring
+      const authData = event.locals.pb.authStore.token;
+      if (authData) {
+        try {
+          // Parse JWT to check expiration
+          const payload = JSON.parse(atob(authData.split('.')[1]));
+          const expirationTime = payload.exp * 1000;
+          const currentTime = Date.now();
+          const timeUntilExpiry = expirationTime - currentTime;
+          
+          // Only refresh if token expires in less than 30 minutes (reduced from 1 hour)
+          if (timeUntilExpiry < 30 * 60 * 1000) {
+            // Refresh in background without blocking the request
+            event?.locals?.pb?.collection("users")?.authRefresh()
+              .then(() => {
+                console.log('[Auth] Token refreshed in background');
+              })
+              .catch((e) => {
+                // Only clear auth on actual auth errors (401, 403)
+                if (e.status === 401 || e.status === 403) {
+                  console.log('[Auth] Token refresh failed - invalid token');
+                }
+                // Ignore network errors - keep existing auth
+              });
+          }
+        } catch (e) {
+          // If we can't parse the token, keep existing auth but log it
+          console.log('[Auth] Could not parse token for expiry check:', e.message);
         }
-      } catch (e) {
-        // If we can't parse the token, keep existing auth
-        console.log('[Auth] Could not parse token for expiry check');
       }
+    } else {
+      // Auth store says valid but no model - clear it
+      event.locals.pb.authStore.clear();
+      event.locals.user = undefined;
+      console.log('[Auth] Invalid auth store detected - cleared');
     }
   }
 

@@ -154,6 +154,19 @@
 
     if (!browser) return;
 
+    // Force auth state synchronization in production
+    // This fixes the hydration mismatch where server/client auth states differ
+    const currentUser = data?.user;
+    if (currentUser && currentUser.id) {
+      // User is logged in according to server - ensure client state matches
+      $loginData = currentUser;
+      console.log('[Auth] Synchronized logged-in state');
+    } else if (!currentUser && $loginData?.id) {
+      // Server says logged out but client thinks logged in - clear client state
+      $loginData = undefined;
+      console.log('[Auth] Synchronized logged-out state');
+    }
+
     // Use optimized service worker registration
     registerServiceWorker();
 
@@ -212,7 +225,18 @@
 
   $: {
     if ($page.url.pathname) {
+      // Force reactive update of login data
       $loginData = data?.user;
+      
+      // In production, ensure service worker doesn't cache auth state
+      if (browser && 'serviceWorker' in navigator) {
+        // Clear any cached auth-related data on auth changes
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'CLEAR_AUTH_CACHE'
+          });
+        }
+      }
     }
   }
 
