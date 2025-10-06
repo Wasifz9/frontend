@@ -12,7 +12,6 @@ export const handle = sequence(async ({ event, resolve }) => {
   
   const themeMode = event?.cookies?.get("theme-mode") || "dark";
   
-  
   event.locals = {
     pb: new PocketBase(pbURL),
     apiURL,
@@ -24,16 +23,35 @@ export const handle = sequence(async ({ event, resolve }) => {
 
   const authCookie = event?.request?.headers?.get("cookie") || "";
 
+  // Load auth from cookie - PocketBase uses 'pb_auth' by default
   event.locals.pb.authStore?.loadFromCookie(authCookie);
 
   if (event?.locals?.pb?.authStore?.isValid) {
     try {
-      await event?.locals?.pb?.collection("users")?.authRefresh();
+      // Add timeout to prevent hanging requests
+      const refreshPromise = event?.locals?.pb?.collection("users")?.authRefresh();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Auth refresh timeout')), 5000)
+      );
+      
+      await Promise.race([refreshPromise, timeoutPromise]);
       event.locals.user = serializeNonPOJOs(event?.locals?.pb?.authStore?.model);
     } catch (e) {
-      event.locals.pb.authStore.clear();
-      event.locals.user = undefined;
-      console.log(e)
+      // Only clear auth if it's not a network/timeout error and not a 401
+      if (!e.message?.includes('timeout') && 
+          !e.message?.includes('network') && 
+          !e.message?.includes('fetch')) {
+        event.locals.pb.authStore.clear();
+        event.locals.user = undefined;
+      } else {
+        // Keep the existing auth on network errors
+        event.locals.user = serializeNonPOJOs(event?.locals?.pb?.authStore?.model);
+      }
+      
+      // Only log non-network errors
+      if (!e.message?.includes('fetch failed')) {
+        console.log('Auth refresh error:', e.message);
+      }
     }
   }
 
@@ -41,13 +59,18 @@ export const handle = sequence(async ({ event, resolve }) => {
     transformPageChunk: ({html}) => html.replace('data-theme=""', `data-theme="${themeMode}"`)
   });
 
-  // Use a more compatible way to set the cookie
+  // Determine if we're in production based on the URL
+  const isProduction = event.url.hostname !== 'localhost' && 
+                       !event.url.hostname.includes('127.0.0.1') &&
+                       !event.url.hostname.includes('192.168.');
+
+  // Export cookie with appropriate settings
   const cookieString = event?.locals?.pb?.authStore?.exportToCookie({
     httpOnly: true,
     path: "/",
-    sameSite: "lax",
-    secure: true,
-    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax", // Use lax for both to prevent issues
+    secure: isProduction,
+    maxAge: 60 * 60 * 24 * 30, // 30 days
   });
 
   response.headers.append("set-cookie", cookieString);

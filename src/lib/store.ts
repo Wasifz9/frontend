@@ -1,14 +1,29 @@
 import { writable } from "svelte/store";
 
-// Cache expiration time in milliseconds (5 minutes)
-const CACHE_EXPIRATION_TIME = 5 * 60 * 1000;
+// Cache expiration time in milliseconds (10 minutes - increased for better performance)
+const CACHE_EXPIRATION_TIME = 10 * 60 * 1000;
+// Maximum cache size to prevent memory issues
+const MAX_CACHE_ENTRIES = 50;
 
 export const clientSideCache = writable({});
 
-// Function to set cache data for a specific key
+// Function to set cache data for a specific key with size limits
 export const setCache = (key, data, name) => {
   const timestamp = Date.now();
   clientSideCache.update((cache) => {
+    // Check cache size and remove oldest entries if needed
+    const cacheKeys = Object.keys(cache);
+    if (cacheKeys.length > MAX_CACHE_ENTRIES) {
+      // Remove oldest 10 entries
+      const sortedKeys = cacheKeys.sort((a, b) => {
+        const aTime = Object.values(cache[a])[0]?.timestamp || 0;
+        const bTime = Object.values(cache[b])[0]?.timestamp || 0;
+        return aTime - bTime;
+      });
+      
+      sortedKeys.slice(0, 10).forEach(k => delete cache[k]);
+    }
+    
     return {
       ...cache,
       [key]: {
@@ -19,10 +34,11 @@ export const setCache = (key, data, name) => {
   });
 };
 
-// Function to get cache data for a specific key
+// Function to get cache data for a specific key without subscription leak
 export const getCache = (key, name) => {
   let cacheData;
-  clientSideCache.subscribe((cache) => {
+  // Use get() to avoid subscription memory leak
+  const unsubscribe = clientSideCache.subscribe((cache) => {
     const entry = cache[key]?.[name];
     if (entry) {
       const { data, timestamp } = entry;
@@ -32,9 +48,13 @@ export const getCache = (key, name) => {
       } else {
         // Cache has expired, so return undefined to fetch new data
         cacheData = undefined;
+        // Clean up expired entry
+        delete cache[key][name];
       }
     }
   });
+  // Immediately unsubscribe to prevent memory leak
+  unsubscribe();
   return cacheData;
 };
 

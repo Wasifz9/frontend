@@ -157,15 +157,8 @@
     // Use optimized service worker registration
     registerServiceWorker();
 
-    if ("caches" in window && false) {
-      // Disabled aggressive cache clearing
-      // Extra safeguard: clear any leftover Cache Storage
-      const keys = await caches?.keys();
-      for (const key of keys) {
-        await caches.delete(key);
-      }
-    }
-
+    // Remove aggressive cache clearing - this was causing memory issues
+    
     deferFunction(() => {
       // Delay these tasks by 2 seconds to ensure they don't block main thread
       setTimeout(async () => {
@@ -179,12 +172,28 @@
       }, 1000);
     });
 
-    // Cache clearing interval (independent of the deferred tasks)
-    const cacheInterval = window.setInterval(clearCache, 20 * 60 * 1000);
+    // Increase cache clearing interval to 60 minutes and add memory check
+    let cacheIntervalId: number;
+    
+    const smartCacheClear = () => {
+      // Only clear cache if memory usage is high or cache is large
+      if (performance?.memory?.usedJSHeapSize > 100 * 1024 * 1024) { // 100MB threshold
+        clearCache();
+      }
+    };
+    
+    cacheIntervalId = window.setInterval(smartCacheClear, 60 * 60 * 1000); // 60 minutes
 
     // Cleanup function
     return () => {
-      clearInterval(cacheInterval);
+      if (cacheIntervalId) {
+        clearInterval(cacheIntervalId);
+      }
+      // Clean up worker on unmount
+      if (syncWorker) {
+        syncWorker.terminate();
+        syncWorker = undefined;
+      }
     };
   });
 
