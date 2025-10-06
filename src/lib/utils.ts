@@ -1991,12 +1991,20 @@ export const agentCategory = ["Stocks", "Options", "Investors", "Others"];
 
 
 export function getCreditFromQuery(query, agentOptions) {
+  let totalCredit = 0;
+  let foundAnyTrigger = false;
+  
+  // Check for all triggers in the query and sum their credits
   for (const item of agentOptions) {
     if (query?.includes(`@${item?.name}`)) {
-      return item?.credit;
+      totalCredit += item?.credit || 0;
+      foundAnyTrigger = true;
     }
   }
-  return 2;
+  
+  // If no triggers found, return default credit of 2
+  // If triggers found, return the sum (minimum 2)
+  return foundAnyTrigger ? Math.max(totalCredit, 2) : 2;
 }
 
 export let defaultChats = [
