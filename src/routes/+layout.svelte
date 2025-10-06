@@ -160,18 +160,16 @@
     if (currentUser && currentUser.id) {
       // User is logged in according to server - ensure client state matches
       $loginData = currentUser;
-      console.log('[Auth] Synchronized logged-in state');
+      console.log("[Auth] Synchronized logged-in state");
     } else if (!currentUser && $loginData?.id) {
       // Server says logged out but client thinks logged in - clear client state
       $loginData = undefined;
-      console.log('[Auth] Synchronized logged-out state');
+      console.log("[Auth] Synchronized logged-out state");
     }
 
     // Use optimized service worker registration
     registerServiceWorker();
 
-    // Remove aggressive cache clearing - this was causing memory issues
-    
     deferFunction(() => {
       // Delay these tasks by 2 seconds to ensure they don't block main thread
       setTimeout(async () => {
@@ -185,23 +183,8 @@
       }, 1000);
     });
 
-    // Increase cache clearing interval to 60 minutes and add memory check
-    let cacheIntervalId: number;
-    
-    const smartCacheClear = () => {
-      // Only clear cache if memory usage is high or cache is large
-      if (performance?.memory?.usedJSHeapSize > 100 * 1024 * 1024) { // 100MB threshold
-        clearCache();
-      }
-    };
-    
-    cacheIntervalId = window.setInterval(smartCacheClear, 60 * 60 * 1000); // 60 minutes
-
     // Cleanup function
     return () => {
-      if (cacheIntervalId) {
-        clearInterval(cacheIntervalId);
-      }
       // Clean up worker on unmount
       if (syncWorker) {
         syncWorker.terminate();
@@ -227,16 +210,6 @@
     if ($page.url.pathname) {
       // Force reactive update of login data
       $loginData = data?.user;
-      
-      // In production, ensure service worker doesn't cache auth state
-      if (browser && 'serviceWorker' in navigator) {
-        // Clear any cached auth-related data on auth changes
-        if (navigator.serviceWorker.controller) {
-          navigator.serviceWorker.controller.postMessage({
-            type: 'CLEAR_AUTH_CACHE'
-          });
-        }
-      }
     }
   }
 

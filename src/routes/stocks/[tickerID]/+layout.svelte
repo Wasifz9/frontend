@@ -149,11 +149,6 @@
     }
   }
 
-  async function updatePrePostQuote() {
-    // This function is now replaced by WebSocket
-    // Kept for backward compatibility but not used
-  }
-
   function changeSection(state) {
     const sectionMap = {
       insider: "/insider",

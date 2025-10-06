@@ -14,6 +14,7 @@
     currentPortfolioPrice,
     stockTicker,
     screenWidth,
+    isOpen,
   } from "$lib/store";
   import { onDestroy } from "svelte";
   import WIIM from "$lib/components/WIIM.svelte";
@@ -43,6 +44,98 @@
   let output = null;
   let displayData = "1D";
   let lastValue;
+
+  // One-Day Price WebSocket
+  let oneDayPriceSocket = null;
+
+  function connectOneDayPriceWebSocket() {
+    if (!data?.wsURL || !$isOpen) {
+      return;
+    }
+
+    // Prevent duplicate connections
+    if (
+      oneDayPriceSocket &&
+      (oneDayPriceSocket.readyState === WebSocket.CONNECTING ||
+        oneDayPriceSocket.readyState === WebSocket.OPEN)
+    ) {
+      console.log("One-day price WebSocket already connected or connecting");
+      return;
+    }
+
+    try {
+      oneDayPriceSocket = new WebSocket(data?.wsURL + "/one-day-price");
+
+      oneDayPriceSocket.addEventListener("open", () => {
+        console.log("One-day price WebSocket connection opened");
+
+        // Send the ticker to the server
+        const message = {
+          ticker: $stockTicker,
+        };
+        oneDayPriceSocket.send(JSON.stringify(message));
+      });
+
+      oneDayPriceSocket.addEventListener("message", (event) => {
+        try {
+          const newData = JSON?.parse(event.data);
+
+          if (newData && Array.isArray(newData) && newData.length > 0) {
+            console.log(
+              "Received one-day price update:",
+              newData.length,
+              "data points",
+            );
+            // Update oneDayPrice data
+            oneDayPrice = newData;
+            output = [...oneDayPrice];
+
+            // Recalculate the chart if we're displaying 1D data
+            if (displayData === "1D") {
+              config = plotData(oneDayPrice) || null;
+            }
+          }
+        } catch (error) {
+          console.error(
+            "Error processing one-day price WebSocket message:",
+            error,
+          );
+        }
+      });
+
+      oneDayPriceSocket.addEventListener("close", (event) => {
+        console.log(
+          "One-day price WebSocket connection closed:",
+          event.code,
+          event.reason,
+        );
+        oneDayPriceSocket = null;
+      });
+
+      oneDayPriceSocket.addEventListener("error", (error) => {
+        console.error("One-day price WebSocket error:", error);
+      });
+    } catch (error) {
+      console.error("Failed to create one-day price WebSocket:", error);
+    }
+  }
+
+  function disconnectOneDayPriceWebSocket() {
+    if (oneDayPriceSocket) {
+      oneDayPriceSocket.close();
+      oneDayPriceSocket = null;
+      console.log("One-day price WebSocket disconnected");
+    }
+  }
+
+  // Connect/disconnect based on market status
+  $: {
+    if ($isOpen && typeof window !== "undefined") {
+      connectOneDayPriceWebSocket();
+    } else {
+      disconnectOneDayPriceWebSocket();
+    }
+  }
 
   function plotData(priceData) {
     const rawData = priceData || [];
@@ -667,6 +760,7 @@
   onDestroy(async () => {
     $priceIncrease = null;
     $globalForm = [];
+    disconnectOneDayPriceWebSocket();
   });
 
   $: dataMapping = {

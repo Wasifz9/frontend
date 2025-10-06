@@ -3,26 +3,6 @@
 
 declare let self: ServiceWorkerGlobalScope;
 
-import { build, files, version } from "$service-worker";
-
-const CACHE = `cache-${version}`;
-// Only cache essential files immediately
-const CRITICAL_ASSETS = [
-  '/',
-  '/manifest.json',
-  '/favicon.png',
-  '/pwa-192x192.png'
-];
-
-// Filter out large files and non-essential assets
-const DEFERRED_ASSETS = [...build, ...files].filter(file => {
-  // Skip caching large images and senator images
-  if (file.includes('/senator/') || file.includes('/img/')) return false;
-  // Skip caching JSON data files
-  if (file.endsWith('.json') && !file.includes('manifest')) return false;
-  return true;
-});
-
 function getIconPath(size: string) {
   return new URL(`/pwa-${size}.png`, self.location.origin).href;
 }
@@ -34,18 +14,19 @@ const ICONS = {
 };
 
 self.addEventListener('install', (event) => {
+  // Delete all existing caches on install
   event.waitUntil(
-    caches.open(CACHE)
-      .then((cache) => {
-        // Only cache critical assets during install
-        console.log('[SW] Caching critical assets');
-        return cache.addAll(CRITICAL_ASSETS);
-      })
-      .then(() => {
-        console.log('[SW] Installed with critical assets');
-        // Cache other assets in background after activation
-        return self.skipWaiting();
-      })
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.map((key) => {
+          console.log('[SW] Deleting cache:', key);
+          return caches.delete(key);
+        })
+      );
+    }).then(() => {
+      console.log('[SW] Installed - no caching enabled');
+      return self.skipWaiting();
+    })
   );
 });
 
@@ -54,74 +35,20 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE) {
-            console.log('[SW] Deleting old cache:', key);
-            return caches.delete(key);
-          }
+          console.log('[SW] Deleting cache:', key);
+          return caches.delete(key);
         })
       );
     }).then(() => {
-      console.log('[SW] Claiming clients');
-      // Cache deferred assets in background without blocking
-      cacheInBackground();
+      console.log('[SW] Activated - claiming clients');
       return self.clients.claim();
     })
   );
 });
 
-// Cache remaining assets in background without blocking
-async function cacheInBackground() {
-  try {
-    const cache = await caches.open(CACHE);
-    // Cache in small batches to avoid blocking
-    const batchSize = 10;
-    for (let i = 0; i < DEFERRED_ASSETS.length; i += batchSize) {
-      const batch = DEFERRED_ASSETS.slice(i, i + batchSize);
-      // Use addAll but don't wait
-      cache.addAll(batch).catch(() => {
-        // Ignore errors for individual assets
-      });
-      // Small delay between batches
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    console.log('[SW] Background caching complete');
-  } catch (error) {
-    console.log('[SW] Background caching error:', error);
-  }
-}
-
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-  
-  // Skip caching for API requests
-  const url = new URL(event.request.url);
-  if (url.pathname.includes('/api/') || 
-      url.hostname.includes('localhost') ||
-      url.hostname.includes('127.0.0.1')) {
-    return;
-  }
-
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      // Return cache if available, but also fetch fresh in background
-      const fetchPromise = fetch(event.request).then(response => {
-        // Only cache successful responses
-        if (response.ok && response.status === 200) {
-          const responseToCache = response.clone();
-          caches.open(CACHE).then(cache => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return response;
-      }).catch(() => {
-        // If fetch fails and we have cache, return it
-        return cachedResponse;
-      });
-
-      // Return cached response immediately if available
-      return cachedResponse || fetchPromise;
-    })
-  );
+  // No caching - always fetch from network
+  return;
 });
 
 self.addEventListener('push', (event: PushEvent) => {
@@ -192,26 +119,5 @@ self.addEventListener('message', (event) => {
     self.skipWaiting();
   }
 
-  if (event.data?.type === 'CACHE_URLS') {
-    event.waitUntil(
-      caches.open(CACHE)
-        .then((cache) => cache.addAll(event.data.payload))
-        .catch((error) => console.error('Service worker: Cache update failed:', error))
-    );
-  }
-
-  if (event.data?.type === 'CLEAR_AUTH_CACHE') {
-    // Clear any auth-related cached responses
-    event.waitUntil(
-      caches.open(CACHE).then((cache) => {
-        // Clear main page cache to force auth state reload
-        cache.delete('/');
-        // Clear API routes that might have cached auth responses
-        cache.delete('/api/user');
-        cache.delete('/login');
-        cache.delete('/logout');
-        console.log('[SW] Auth cache cleared');
-      })
-    );
-  }
+  // All caching-related messages are ignored since caching is disabled
 });
