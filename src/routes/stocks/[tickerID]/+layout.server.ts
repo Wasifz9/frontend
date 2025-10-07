@@ -33,8 +33,8 @@ const cleanString = (() => {
 })();
 
 // Constants
-const CACHE_DURATION = 5 * 60 * 1000;
-const REQUEST_TIMEOUT = 5000;
+const CACHE_DURATION =  30 * 1000;
+const REQUEST_TIMEOUT = 2000;
 const ENDPOINTS = Object.freeze([
   "/stockdeck",
   "/analyst-summary-rating",

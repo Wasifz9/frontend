@@ -19,8 +19,8 @@ const REMOVE_PATTERNS = {
 };
 
 // Constants
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-const REQUEST_TIMEOUT = 5000; // 5 seconds
+const CACHE_DURATION = 30 * 1000; // 5 minutes
+const REQUEST_TIMEOUT = 2000; // 5 seconds
 const ENDPOINTS = Object.freeze([
   "/index-profile",
   "/etf-holdings",
