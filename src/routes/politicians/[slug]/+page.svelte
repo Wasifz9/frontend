@@ -21,13 +21,13 @@
   let stockList = [];
   let inputValue = "";
   let searchWorker: Worker | undefined;
-  
+
   // Pagination state
   let currentPage = 1;
   let rowsPerPage = 20;
   let rowsPerPageOptions = [20, 50, 100];
   let totalPages = 1;
-  
+
   let pagePathName = $page?.url?.pathname;
 
   let name = rawData?.history?.at(0)?.representative ?? "n/a";
@@ -214,10 +214,10 @@
   onMount(async () => {
     // Load pagination preference
     loadRowsPerPage();
-    
+
     // Initialize pagination
     updatePaginatedData();
-    
+
     if (!searchWorker) {
       const SearchWorker = await import(
         "$lib/workers/tableSearchWorker?worker"
@@ -226,12 +226,12 @@
       searchWorker.onmessage = handleSearchMessage;
     }
   });
-  
+
   // Update pagination when rawDataTable changes
   $: if (rawDataTable && rawDataTable.length > 0) {
     updatePaginatedData();
   }
-  
+
   // Reactive statement to load pagination settings when page changes
   $: if ($page?.url?.pathname && $page?.url?.pathname !== pagePathName) {
     pagePathName = $page?.url?.pathname;
@@ -472,7 +472,7 @@
             {#if stockList?.length > 0}
               <div class="w-full overflow-x-auto">
                 <table
-                  class="mt-5 table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
+                  class="mt-5 table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
                 >
                   <!-- head -->
                   <thead class="text-white bg-default">
@@ -645,10 +645,12 @@
                 />
               </div>
             {/if}
-            
+
             <!-- Pagination controls -->
             {#if stockList?.length > 0}
-              <div class="flex flex-row items-center justify-between mt-8 sm:mt-5">
+              <div
+                class="flex flex-row items-center justify-between mt-8 sm:mt-5"
+              >
                 <!-- Previous button -->
                 <div class="flex items-center gap-2">
                   <Button
@@ -668,7 +670,8 @@
                         d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
                         clip-rule="evenodd"
                       ></path>
-                    </svg> <span class="hidden sm:inline">Previous</span></Button
+                    </svg>
+                    <span class="hidden sm:inline">Previous</span></Button
                   >
                 </div>
 

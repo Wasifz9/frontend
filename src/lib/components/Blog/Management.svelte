@@ -5,10 +5,10 @@
 <h2 class="text-xl sm:text-3xl font-bold mt-8">Management</h2>
 
 <div
-  class="overflow-x-auto no-scrollbar flex justify-start items-center w-full m-auto rounded-none sm:rounded mb-8 mt-5"
+  class="overflow-x-auto flex justify-start items-center w-full m-auto rounded-none sm:rounded mb-8 mt-5"
 >
   <table
-    class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
+    class="table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
   >
     <tbody class="">
       {#each blogData?.data as item}

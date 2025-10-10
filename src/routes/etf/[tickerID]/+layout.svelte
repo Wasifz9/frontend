@@ -51,7 +51,7 @@
 
   let displaySection = "";
   let displayLegend = {};
-  
+
   let isComponentDestroyed = false;
 
   function changeSection(state) {
@@ -189,13 +189,13 @@
       console.error("WebSocket is not open. Unable to send message.");
     }
   }
-  
+
   // Pre-Post Quote WebSocket connection
   function connectPrePostWebSocket() {
     if (!data?.wsURL || $isOpen || $isWeekend) {
       return;
     }
-    
+
     // Prevent duplicate connections
     if (
       prePostSocket &&
@@ -205,24 +205,24 @@
       console.log("Pre-post WebSocket already connected or connecting");
       return;
     }
-    
+
     try {
       prePostSocket = new WebSocket(data?.wsURL + "/pre-post-quote");
-      
+
       prePostSocket.addEventListener("open", () => {
         console.log("Pre-post quote WebSocket connection opened");
-        
+
         // Send the ticker to the server
         const message = {
           ticker: $etfTicker,
         };
         prePostSocket.send(JSON.stringify(message));
       });
-      
+
       prePostSocket.addEventListener("message", (event) => {
         try {
           const newData = JSON.parse(event.data);
-          
+
           if (newData && Object.keys(newData).length > 0) {
             //console.log("Received pre-post quote update:", newData);
             prePostData = newData;
@@ -234,14 +234,14 @@
           );
         }
       });
-      
+
       prePostSocket.addEventListener("close", (event) => {
         console.log(
           "Pre-post quote WebSocket connection closed:",
           event.reason,
         );
         prePostSocket = null;
-        
+
         // Attempt to reconnect if market is closed and component not destroyed
         if (!$isOpen && !$isWeekend && !isComponentDestroyed) {
           setTimeout(() => {
@@ -249,7 +249,7 @@
           }, 5000);
         }
       });
-      
+
       prePostSocket.addEventListener("error", (error) => {
         console.error("Pre-post quote WebSocket error:", error);
       });
@@ -260,7 +260,7 @@
       );
     }
   }
-  
+
   function disconnectPrePostWebSocket() {
     if (prePostSocket) {
       prePostSocket.close();
@@ -341,7 +341,7 @@
   afterUpdate(async () => {
     if (previousTicker !== $etfTicker) {
       previousTicker = $etfTicker;
-      
+
       // Handle price data WebSocket reconnection
       if (typeof socket !== "undefined") {
         socket?.close();
@@ -357,13 +357,13 @@
         $wsBidPrice = null;
         $wsShares = null;
       }
-      
+
       // Handle pre-post quote WebSocket reconnection
       if (prePostSocket) {
         disconnectPrePostWebSocket();
         // Small delay to ensure clean disconnect
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
         if (!$isOpen && !$isWeekend) {
           connectPrePostWebSocket();
           console.log("Pre-post WebSocket connecting for new ticker");
@@ -600,7 +600,7 @@
                     <!--Start Ticker Section-->
 
                     <nav
-                      class="sm:ml-4 border-b-[2px] border-[#2C6288] dark:border-white overflow-x-auto whitespace-nowrap no-scrollbar"
+                      class="sm:ml-4 border-b-[2px] border-[#2C6288] dark:border-white overflow-x-auto whitespace-nowrap"
                     >
                       <ul
                         class="flex flex-row items-center w-full text-[1rem] text-white"

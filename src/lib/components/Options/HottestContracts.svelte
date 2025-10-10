@@ -421,15 +421,15 @@
 
         <div class="w-full overflow-x-auto">
           <table
-            class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto mt-4"
+            class="table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto mt-4"
           >
             <thead>
               <TableHeader {columns} {sortOrders} {sortData} />
             </thead>
             <tbody>
               {#each data?.user?.tier === "Pro" ? tableData : tableData?.slice(0, 3) as item, index}
-                {@const isCall = item?.option_type === 'C'}
-                {@const isPut = item?.option_type === 'P'}
+                {@const isCall = item?.option_type === "C"}
+                {@const isPut = item?.option_type === "P"}
                 {@const highVolume = item?.volume > 1000}
                 {@const highOI = item?.open_interest > 5000}
                 <tr
@@ -440,10 +440,15 @@
                     ? 'opacity-[0.1]'
                     : ''}"
                   style="background: {(() => {
-                    const baseColor = $mode === 'light' 
-                      ? (index % 2 === 0 ? '#ffffff' : '#F6F7F8')
-                      : (index % 2 === 0 ? '#09090B' : '#1A1A1F');
-                    
+                    const baseColor =
+                      $mode === 'light'
+                        ? index % 2 === 0
+                          ? '#ffffff'
+                          : '#F6F7F8'
+                        : index % 2 === 0
+                          ? '#09090B'
+                          : '#1A1A1F';
+
                     if ($mode === 'light') {
                       if (isCall) {
                         // Higher intensity for high volume/OI

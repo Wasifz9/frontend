@@ -17,15 +17,15 @@
   let displayList = [];
   let inputValue = "";
   let searchWorker: Worker | undefined;
-  
+
   let pagePathName = $page?.url?.pathname;
-  
+
   // Pagination state
   let currentPage = 1;
   let rowsPerPage = 20;
   let rowsPerPageOptions = [20, 50, 100];
   let totalPages = 1;
-  
+
   // Pagination functions
   function updatePaginatedData() {
     const startIndex = (currentPage - 1) * rowsPerPage;
@@ -34,23 +34,23 @@
     displayList = dataSource?.slice(startIndex, endIndex) || [];
     totalPages = Math.ceil((dataSource?.length || 0) / rowsPerPage);
   }
-  
+
   function handlePageChange(event) {
     currentPage = event.detail.page;
     updatePaginatedData();
   }
-  
+
   function handleRowsPerPageChange(event) {
     rowsPerPage = event.detail.rowsPerPage;
     currentPage = 1; // Reset to first page when changing rows per page
     updatePaginatedData();
     saveRowsPerPage(); // Save to localStorage
   }
-  
+
   // Save rows per page preference to localStorage
   function saveRowsPerPage() {
     if (!pagePathName || typeof localStorage === "undefined") return;
-    
+
     try {
       const paginationKey = `${pagePathName}_rowsPerPage`;
       localStorage.setItem(paginationKey, String(rowsPerPage));
@@ -58,20 +58,20 @@
       console.warn("Failed to save rows per page preference:", e);
     }
   }
-  
+
   // Load rows per page preference from localStorage
   function loadRowsPerPage() {
     const currentPath = pagePathName || $page?.url?.pathname;
-    
+
     if (!currentPath || typeof localStorage === "undefined") {
       rowsPerPage = 20; // Default value
       return;
     }
-    
+
     try {
       const paginationKey = `${currentPath}_rowsPerPage`;
       const savedRows = localStorage.getItem(paginationKey);
-      
+
       if (savedRows && rowsPerPageOptions.includes(Number(savedRows))) {
         rowsPerPage = Number(savedRows);
       } else {
@@ -82,17 +82,17 @@
       rowsPerPage = 20; // Default on error
     }
   }
-  
+
   async function resetTableSearch() {
     inputValue = "";
     rawData = originalData;
     currentPage = 1; // Reset to first page
     updatePaginatedData();
   }
-  
+
   async function search() {
     inputValue = inputValue?.toLowerCase();
-    
+
     setTimeout(async () => {
       if (inputValue?.length > 0) {
         await loadSearchWorker();
@@ -104,7 +104,7 @@
       }
     }, 100);
   }
-  
+
   const loadSearchWorker = async () => {
     if (searchWorker && originalData?.length > 0) {
       searchWorker.postMessage({
@@ -113,7 +113,7 @@
       });
     }
   };
-  
+
   const handleSearchMessage = (event) => {
     if (event.data?.message === "success") {
       rawData = event.data?.output ?? [];
@@ -121,11 +121,11 @@
       updatePaginatedData();
     }
   };
-  
+
   onMount(async () => {
     // Load pagination preference
     loadRowsPerPage();
-    
+
     if (!searchWorker) {
       const SearchWorker = await import(
         "$lib/workers/tableSearchWorker?worker"
@@ -133,11 +133,11 @@
       searchWorker = new SearchWorker.default();
       searchWorker.onmessage = handleSearchMessage;
     }
-    
+
     // Initialize pagination
     updatePaginatedData();
   });
-  
+
   // Reactive statement to load pagination settings when page changes
   $: if ($page?.url?.pathname && $page?.url?.pathname !== pagePathName) {
     pagePathName = $page?.url?.pathname;
@@ -394,7 +394,7 @@
       {#if displayList?.length > 0}
         <div class="w-full overflow-x-auto">
           <table
-            class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
+            class="table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
           >
             <thead>
               <TableHeader {columns} {sortOrders} {sortData} />
@@ -441,7 +441,9 @@
                     {item?.expenseRatio}%
                   </td>
 
-                  <td class=" text-end text-sm sm:text-[1rem] whitespace-nowrap">
+                  <td
+                    class=" text-end text-sm sm:text-[1rem] whitespace-nowrap"
+                  >
                     {abbreviateNumber(item?.totalAssets)}
                   </td>
                 </tr>

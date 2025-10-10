@@ -1214,7 +1214,7 @@
         <div class="flex w-full">
           <div class="hidden 3xl:block 3xl:w-[300px]">
             <aside
-              class="shadow fixed overflow-y-auto no-scrollbar overflow-hidden inset-y-0 left-0 z-50 3xl:flex w-64 flex-col xl:border-r border-gray-300 dark:3xl:border-gray-800 bg-gray-100 dark:bg-[#18181B]"
+              class="shadow fixed overflow-y-auto overflow-hidden inset-y-0 left-0 z-50 3xl:flex w-64 flex-col xl:border-r border-gray-300 dark:3xl:border-gray-800 bg-gray-100 dark:bg-[#18181B]"
             >
               <nav
                 class="flex flex-col items-center mr-auto gap-y-4 3xl:py-5 w-full"

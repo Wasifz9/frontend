@@ -1048,7 +1048,7 @@
                 class="flex justify-start items-center m-auto overflow-x-auto cursor-normal"
               >
                 <table
-                  class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto mt-4"
+                  class="table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto mt-4"
                 >
                   <thead class="text-white bg-default">
                     <tr class="">
@@ -1087,7 +1087,8 @@
                         </td>
 
                         <td class="text-sm sm:text-[1rem] text-end">
-                          {item?.open_interest !== undefined
+                          {item?.open_interest &&
+                          item?.open_interest !== undefined
                             ? item?.open_interest?.toLocaleString("en-US")
                             : "n/a"}
                         </td>

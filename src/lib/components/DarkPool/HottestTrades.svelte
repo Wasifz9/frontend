@@ -156,7 +156,7 @@
         class="w-full m-auto rounded-none sm:rounded mb-4 overflow-x-auto mt-4"
       >
         <table
-          class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
+          class="table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
         >
           <thead>
             <TableHeader {columns} {sortOrders} {sortData} />

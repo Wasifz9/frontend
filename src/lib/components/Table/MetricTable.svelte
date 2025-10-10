@@ -35,10 +35,10 @@
   <h2 class="mt-5 text-xl sm:text-2xl font-bold mb-4">{title}</h2>
 
   <div
-    class="no-scrollbar flex justify-start items-center w-screen sm:w-full mt-6 m-auto overflow-x-auto pr-5 sm:pr-0"
+    class=" flex justify-start items-center w-screen sm:w-full mt-6 m-auto overflow-x-auto pr-5 sm:pr-0"
   >
     <table
-      class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
+      class="table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
     >
       <thead class="bg-default text-white">
         <tr>

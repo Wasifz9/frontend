@@ -396,10 +396,10 @@
                 </div>
               {:else}
                 <div
-                  class="w-full rounded-none sm:rounded m-auto overflow-x-auto no-scrollbar"
+                  class="w-full rounded-none sm:rounded m-auto overflow-x-auto"
                 >
                   <table
-                    class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
+                    class="table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
                   >
                     <thead class="text-white bg-default">
                       <tr class="border min-w-[250px]">

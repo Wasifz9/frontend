@@ -725,9 +725,7 @@
             </div>
 
             <!--Start Table-->
-            <div
-              class="w-full rounded overflow-hidden overflow-x-auto no-scrollbar"
-            >
+            <div class="w-full rounded overflow-hidden overflow-x-auto">
               <table
                 class="table table-sm table-compact rounded-none sm:rounded w-full m-auto mt-2 overflow-x-auto border border-gray-300 dark:border-gray-800"
               >
@@ -1046,7 +1044,7 @@
         <div class="flex justify-start items-center m-auto cursor-normal">
           {#if isLoaded}
             <table
-              class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto mt-4"
+              class="table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto mt-4"
             >
               <thead class="text-white bg-default">
                 <tr class="">

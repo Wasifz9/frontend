@@ -359,7 +359,7 @@
               <div class="flex flex-col justify-center items-center">
                 <div class="w-full overflow-x-auto">
                   <table
-                    class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
+                    class="table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
                   >
                     <thead>
                       <TableHeader {columns} {sortOrders} {sortData} />
@@ -430,7 +430,8 @@
                           <td
                             class=" text-sm sm:text-[1rem] whitespace-nowrap text-end"
                           >
-                            {item?.totalAssets !== 0 && item?.totalAssets !== null
+                            {item?.totalAssets !== 0 &&
+                            item?.totalAssets !== null
                               ? item?.totalAssets?.toLocaleString("en-US")
                               : "n/a"}
                           </td>

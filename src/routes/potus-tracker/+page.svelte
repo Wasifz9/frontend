@@ -534,7 +534,7 @@
             ></div>
 
             <nav
-              class="navbar-driver border-[#2C6288] dark:border-white border-b-[2px] overflow-x-auto whitespace-nowrap no-scrollbar mt-4"
+              class="navbar-driver border-[#2C6288] dark:border-white border-b-[2px] overflow-x-auto whitespace-nowrap mt-4"
             >
               <ul class="flex flex-row items-center w-full text-[1rem]">
                 {#each tabs as item, i}

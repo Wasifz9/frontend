@@ -462,7 +462,7 @@
               </div>
             </div>
 
-            <div class=" w-full overflow-x-auto no-scrollbar">
+            <div class=" w-full overflow-x-auto">
               <table
                 class="table-fixed leading-3 border-separate border-spacing-0 border-b border-gray-300 dark:border-gray-800 font-sans tabular-nums w-full"
               >

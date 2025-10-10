@@ -423,9 +423,7 @@
             </div>
             <!--Start Table-->
             {#if priceAlertList?.length > 0}
-              <div
-                class="w-full rounded overflow-hidden overflow-x-auto no-scrollbar"
-              >
+              <div class="w-full rounded overflow-hidden overflow-x-auto">
                 <table
                   class="table table-sm table-compact rounded-none sm:rounded w-full bg-white dark:bg-table border border-gray-300 dark:border-gray-800 m-auto mt-4"
                 >

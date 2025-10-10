@@ -565,18 +565,18 @@
 
         <div class="w-full overflow-x-auto mt-5">
           <table
-            class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto mt-4"
+            class="table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto mt-4"
           >
             <thead>
               <TableHeader {columns} {sortOrders} {sortData} />
             </thead>
             <tbody>
               {#each data?.user?.tier !== "Pro" ? displayList?.slice(0, 3) : displayList as item, index}
-                {@const isCall = item?.optionType === 'Calls'}
-                {@const isPut = item?.optionType === 'Puts'}
-                {@const isBullish = item?.sentiment === 'Bullish'}
-                {@const isBearish = item?.sentiment === 'Bearish'}
-                {@const isNeutral = item?.sentiment === 'Neutral'}
+                {@const isCall = item?.optionType === "Calls"}
+                {@const isPut = item?.optionType === "Puts"}
+                {@const isBullish = item?.sentiment === "Bullish"}
+                {@const isBearish = item?.sentiment === "Bearish"}
+                {@const isNeutral = item?.sentiment === "Neutral"}
                 <tr
                   class="dark:sm:hover:bg-[#245073]/10 odd:bg-[#F6F7F8] dark:odd:bg-odd relative {index +
                     1 ===
@@ -585,10 +585,15 @@
                     ? 'opacity-[0.1]'
                     : ''}"
                   style="background: {(() => {
-                    const baseColor = $mode === 'light' 
-                      ? (index % 2 === 0 ? '#ffffff' : '#F6F7F8')
-                      : (index % 2 === 0 ? '#09090B' : '#1A1A1F');
-                    
+                    const baseColor =
+                      $mode === 'light'
+                        ? index % 2 === 0
+                          ? '#ffffff'
+                          : '#F6F7F8'
+                        : index % 2 === 0
+                          ? '#09090B'
+                          : '#1A1A1F';
+
                     if ($mode === 'light') {
                       if (isCall && isBullish) {
                         return `linear-gradient(90deg, ${baseColor} 0%, rgba(34, 197, 94, 0.15) 60%, rgba(34, 197, 94, 0.25) 100%)`;

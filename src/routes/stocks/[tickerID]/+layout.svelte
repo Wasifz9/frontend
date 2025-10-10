@@ -611,7 +611,7 @@
                     <!--Start Ticker Section-->
 
                     <nav
-                      class="sm:ml-4 border-b-[2px] border-[#2C6288] dark:border-white overflow-x-auto whitespace-nowrap no-scrollbar"
+                      class="sm:ml-4 border-b-[2px] border-[#2C6288] dark:border-white overflow-x-auto whitespace-nowrap"
                     >
                       <ul class="flex flex-row items-center w-full text-[1rem]">
                         <a

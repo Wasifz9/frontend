@@ -4146,7 +4146,7 @@ const handleKeyDown = (event) => {
       {#if displayTableTab === "general"}
         <div class="w-full rounded overflow-x-auto">
           <table
-            class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
+            class="table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
           >
             <thead>
               <TableHeader {columns} {sortOrders} {sortData} />
@@ -4211,7 +4211,7 @@ const handleKeyDown = (event) => {
       {:else if displayTableTab === "filters"}
         <div class="w-full rounded overflow-x-auto">
           <table
-            class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
+            class="table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
           >
             <thead>
               <TableHeader {columns} {sortOrders} {sortData} />
@@ -4295,7 +4295,7 @@ const handleKeyDown = (event) => {
       {:else if displayTableTab === "performance"}
         <div class="w-full rounded overflow-x-auto">
           <table
-            class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
+            class="table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
           >
             <thead>
               <TableHeader {columns} {sortOrders} {sortData} />
@@ -4349,7 +4349,7 @@ const handleKeyDown = (event) => {
       {:else if displayTableTab === "analysts"}
         <div class="w-full rounded overflow-x-auto">
           <table
-            class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
+            class="table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
           >
             <thead>
               <TableHeader {columns} {sortOrders} {sortData} />
@@ -4423,7 +4423,7 @@ const handleKeyDown = (event) => {
       {:else if ["dividends", "financials"]?.includes(displayTableTab)}
         <div class="w-full rounded overflow-x-auto">
           <table
-            class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
+            class="table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
           >
             <thead>
               <TableHeader {columns} {sortOrders} {sortData} />

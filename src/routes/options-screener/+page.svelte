@@ -1997,7 +1997,7 @@
       {#if displayTableTab === "general"}
         <div class="w-full rounded overflow-x-auto">
           <table
-            class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
+            class="table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
           >
             <thead>
               <TableHeader {columns} {sortOrders} {sortData} />
@@ -2109,7 +2109,7 @@
       {:else if displayTableTab === "filters"}
         <div class="w-full rounded overflow-x-auto">
           <table
-            class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
+            class="table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
           >
             <thead>
               <TableHeader {columns} {sortOrders} {sortData} />
@@ -2194,7 +2194,7 @@
       {:else if displayTableTab === "greeks"}
         <div class="w-full rounded overflow-x-auto">
           <table
-            class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
+            class="table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
           >
             <thead>
               <TableHeader {columns} {sortOrders} {sortData} />

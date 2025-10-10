@@ -783,10 +783,10 @@
       {#if isLoaded}
         {#if analystEstimateList?.length !== 0}
           <div
-            class="no-scrollbar flex justify-start items-center w-screen sm:w-full mt-2 m-auto overflow-x-auto pr-5 sm:pr-0"
+            class=" flex justify-start items-center w-screen sm:w-full mt-2 m-auto overflow-x-auto pr-5 sm:pr-0"
           >
             <table
-              class="table table-sm table-compact no-scrollbar rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
+              class="table table-sm table-compact rounded-none sm:rounded w-full border border-gray-300 dark:border-gray-800 m-auto"
             >
               <thead class="text-white bg-default">
                 <tr class="">
