@@ -30,7 +30,7 @@
     if (data?.user) {
       let subId;
 
-      if (subscriptionType?.toLowerCase() === "lifeTime") {
+      if (subscriptionType?.toLowerCase() === "lifetime") {
         subId = import.meta.env.VITE_LEMON_SQUEEZY_LIFE_TIME_ACCESS_ID;
       } else {
         const isPro = subscriptionType?.toLowerCase() === "pro";
@@ -1484,7 +1484,7 @@
           <div class="mt-10 flex justify-center lg:justify-end mx-4 lg:mx-0">
             <label
               for={data?.user ? "" : "userLogin"}
-              on:click={() => purchasePlan("lifeTime")}
+              on:click={() => purchasePlan("lifetime")}
               class="cursor-pointer w-full lg:w-auto py-3 lg:mt-2 px-4 bg-white rounded-[3px] font-semibold sm:hover:bg-gray-100 dark:sm:hover:bg-gray-100 text-black transition duration-100 flex items-center justify-center lg:justify-end"
             >
               Get Lifetime Now
