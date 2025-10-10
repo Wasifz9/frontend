@@ -881,10 +881,14 @@ export function abbreviateNumber(
   }
 }
 
-
 export function formatDate(dateStr, short = false) {
   try {
-    const berlinFormatter = new Intl.DateTimeFormat('en-US', {
+    // Normalize common "YYYY-MM-DD HH:MM:SS" to "YYYY-MM-DDTHH:MM:SS"
+    const isoLike = typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateStr)
+      ? dateStr.replace(' ', 'T')
+      : dateStr;
+
+    const berlinFormatter = new Intl.DateTimeFormat('en-GB', {
       timeZone: 'Europe/Berlin',
       year: 'numeric',
       month: '2-digit',
@@ -892,28 +896,27 @@ export function formatDate(dateStr, short = false) {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
+      hour12: false, // <- IMPORTANT: use 24-hour clock so 'hour' is 0-23
     });
 
     const parseDateToUTCFromBerlinParts = (date) => {
       const parts = berlinFormatter.formatToParts(date);
-      const get = (type) =>
-        Number(parts.find((p) => p.type === type)?.value ?? 0);
+      const get = (type) => Number(parts.find((p) => p.type === type)?.value ?? 0);
       const year = get('year');
       const month = get('month'); // 1-12
       const day = get('day');
-      const hour = get('hour');
+      const hour = get('hour');   // now 0-23
       const minute = get('minute');
       const second = get('second');
 
-      // Build a UTC timestamp from the Berlin-local components.
-      // Using Date.UTC ensures consistent arithmetic (offsets cancel when comparing two such dates).
       return new Date(Date.UTC(year, month - 1, day, hour, minute, second));
     };
 
-    const berlinDateObj = parseDateToUTCFromBerlinParts(new Date(dateStr));
+    const berlinDateObj = parseDateToUTCFromBerlinParts(new Date(isoLike));
     const berlinCurrentObj = parseDateToUTCFromBerlinParts(new Date());
 
     const seconds = Math.floor((berlinCurrentObj - berlinDateObj) / 1000);
+    if (Number.isNaN(seconds)) throw new Error('Invalid date');
 
     const intervals = [
       { unit: 'year', short: 'y', seconds: 31536000 },
@@ -948,6 +951,7 @@ export function formatDate(dateStr, short = false) {
     return 'Invalid date';
   }
 }
+
 
 
 
